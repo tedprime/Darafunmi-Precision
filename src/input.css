@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/Inter-VariableFont_wght.ttf") format("truetype");
+}
+@theme {
+  --font-inter: "Inter", sans-serif;
+  --color-primary: #2563eb;
+  --color-background_gray: #f9fafb;
+  --color-success_green: #10b981;
+  --color-error_red: #ef4444;
+  --color-warning_yellow: #f59e0b;
+}
