@@ -22,7 +22,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { name: "Dashboard", icon: Home, path: "/" },
+  { name: "Dashboard", icon: Home, path: "/dashboard" },
   {
     name: "Clients",
     icon: Users,
@@ -177,10 +177,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       {/* Logout */}
       <div className="absolute bottom-0 left-0 w-full p-2 border-t border-gray-200">
         <Link
-          to="../pages/auth/LoginPage"
+          to="/login"
           title={!isOpen ? "Logout" : undefined}
           className={`flex items-center py-2 text-red-600 hover:bg-red-100 rounded-md transition-colors duration-200
-            ${!isOpen ? "justify-center px-2" : "px-4"}`}
+      ${!isOpen ? "justify-center px-2" : "px-4"}`}
         >
           <LogOut size={20} className={isOpen ? "mr-3" : ""} />
           {isOpen && <span>Logout</span>}
