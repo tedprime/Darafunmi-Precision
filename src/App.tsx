@@ -9,6 +9,8 @@ import AddProductPage from "./library/pages/products/AddProductPage";
 import CategoriesPage from "./library/pages/products/CategoriesPage";
 import QuoteListPage from "./library/pages/quotes/QuoteListPage";
 import AddQuotePage from "./library/pages/quotes/AddQuotePage";
+import AddCalibrationPage from "./library/pages/calibrations/AddCalibrationPage";
+import CalibrationHistoryPage from "./library/pages/calibrations/CalibrationHistoryPage";
 import CertificationListPage from "./library/pages/certifications/CertificationListPage";
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
 import GenerateCertificatePreviewPage from "./library/pages/certifications/GenerateCertificatePreviewPage";
@@ -29,6 +31,11 @@ function App() {
         <Route path="/products/categories" element={<CategoriesPage />} />
         <Route path="/quotes" element={<QuoteListPage />} />
         <Route path="/quotes/add" element={<AddQuotePage />} />
+        <Route path="/calibrations/add" element={<AddCalibrationPage />} />
+        <Route
+          path="/calibrations/history"
+          element={<CalibrationHistoryPage />}
+        />
         <Route path="/certifications" element={<CertificationListPage />} />
         <Route
           path="/certifications/generate"

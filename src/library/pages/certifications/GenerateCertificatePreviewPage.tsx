@@ -3,8 +3,12 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Table from "../../components/ui/Table";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const GenerateCertificatePreviewPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const calibrationResultsHeaders = [
     "Standard Value (cm)",
     "Measured Value (cm)",
@@ -16,10 +20,29 @@ const GenerateCertificatePreviewPage: React.FC = () => {
   ];
 
   return (
-    <Layout pageTitle="Generate Certificate">
-      <div className="flex items-center mb-4">
-        <span className="text-blue-600 font-medium mr-4">Form</span>
-        <span className="font-medium text-gray-800 border-b-2 border-blue-600 pb-1">
+    <Layout
+      pageTitle="Generate Certificate"
+      pageSubtitle="Create a new calibration certificate."
+    >
+      <div className="flex items-center mb-6">
+        <span
+          onClick={() => navigate("/certifications/generate")}
+          className={`font-medium pb-1 mr-4 cursor-pointer ${
+            location.pathname === "/certifications/generate"
+              ? "text-gray-800 border-b-2 border-blue-600"
+              : "text-gray-500"
+          }`}
+        >
+          Form
+        </span>
+        <span
+          onClick={() => navigate("/certifications/generate/preview")}
+          className={`font-medium pb-1 cursor-pointer ${
+            location.pathname === "/certifications/generate/preview"
+              ? "text-gray-800 border-b-2 border-blue-600"
+              : "text-gray-500"
+          }`}
+        >
           Preview
         </span>
       </div>
@@ -93,7 +116,12 @@ const GenerateCertificatePreviewPage: React.FC = () => {
       </Card>
 
       <div className="flex justify-center mt-6 space-x-4">
-        <Button variant="secondary">Back to Form</Button>
+        <Button
+          variant="secondary"
+          onClick={() => navigate("/certifications/generate")}
+        >
+          Back to Form
+        </Button>
         <Button>Generate Certificate</Button>
       </div>
     </Layout>

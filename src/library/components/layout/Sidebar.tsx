@@ -8,9 +8,12 @@ import {
   Settings,
   Book,
   Award,
-  X,
+  Gauge,
+  Menu,
+  LogOut,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -48,7 +51,15 @@ const navItems = [
       { name: "Add Quote", path: "/quotes/add" },
     ],
   },
-  { name: "Calibrations", icon: Award, path: "/calibrations" }, // Assuming a placeholder for now
+  {
+    name: "Calibrations",
+    icon: Gauge,
+    path: "/calibrations",
+    subItems: [
+      { name: "Add Calibration", path: "/calibrations/add" },
+      { name: "History", path: "/calibrations/history" },
+    ],
+  },
   {
     name: "Certifications",
     icon: Award,
@@ -82,54 +93,64 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg overflow-y-auto transition-transform duration-300
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+      className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg overflow-y-auto transition-all duration-300
+        ${isOpen ? "w-72" : "w-16"}`}
     >
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <div className="flex items-center">
-          <div className="bg-blue-600 text-white p-2 rounded-md font-bold mr-2">
-            DPT
+      {/* Header */}
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
+        {isOpen && (
+          <div className="flex items-center">
+            <div className="bg-blue-600 text-white text-xl px-4 py-2 rounded-lg font-bold mr-2">
+              D
+            </div>
+            <span className="text-lg font-semibold text-gray-800">
+              Admin Panel
+            </span>
           </div>
-          <span className="text-lg font-semibold text-gray-800">
-            Admin Panel
-          </span>
-        </div>
+        )}
         <button
           onClick={toggleSidebar}
-          className="text-gray-500 hover:text-gray-700 focus:outline-none lg:hidden"
+          className={`text-gray-500 hover:text-gray-700 focus:outline-none ${!isOpen ? "mx-auto" : ""}`}
         >
-          <X size={24} />
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      <nav className="mt-5">
+      {/* Nav */}
+      <nav className="mt-5 px-2">
         {navItems.map(item => (
           <div key={item.name}>
             {item.subItems ? (
-              <div className="relative">
+              <div>
                 <button
-                  onClick={() => toggleSubmenu(item.name)}
-                  className={`flex items-center justify-between w-full px-4 py-2 text-gray-700 hover:bg-blue-500 hover:text-white rounded-md transition-colors duration-200
-                    ${location.pathname.startsWith(item.path) ? "bg-blue-600 text-white" : ""}`}
+                  onClick={() => isOpen && toggleSubmenu(item.name)}
+                  title={!isOpen ? item.name : undefined}
+                  className={`flex items-center justify-between w-full py-3 font-medium text-gray-500 hover:bg-blue-50 hover:text-blue-500 rounded-md transition-colors duration-200
+                    ${location.pathname.startsWith(item.path) ? "bg-blue-50 text-blue-500" : ""}
+                    ${!isOpen ? "justify-center px-2" : "px-4"}`}
                 >
-                  <div className="flex items-center">
-                    <item.icon size={20} className="mr-3" />
-                    <span>{item.name}</span>
+                  <div
+                    className={`flex items-center ${!isOpen ? "justify-center" : ""}`}
+                  >
+                    <item.icon size={20} className={isOpen ? "mr-3" : ""} />
+                    {isOpen && <span>{item.name}</span>}
                   </div>
-                  {openSubmenus[item.name] ? (
-                    <ChevronUp size={16} />
-                  ) : (
-                    <ChevronDown size={16} />
-                  )}
+                  {isOpen &&
+                    (openSubmenus[item.name] ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    ))}
                 </button>
-                {openSubmenus[item.name] && (
+
+                {isOpen && openSubmenus[item.name] && (
                   <div className="ml-6 mt-1 space-y-1">
                     {item.subItems.map(subItem => (
                       <Link
                         key={subItem.name}
                         to={subItem.path}
-                        className={`flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-blue-500 hover:text-white rounded-md transition-colors duration-200
-                          ${location.pathname === subItem.path ? "bg-blue-600 text-white" : ""}`}
+                        className={`flex items-center px-4 py-3 text-sm text-gray-500 hover:bg-blue-50 hover:text-blue-500 rounded-md transition-colors duration-200
+                          ${location.pathname === subItem.path ? "bg-blue-50 text-blue-500" : ""}`}
                       >
                         {subItem.name}
                       </Link>
@@ -140,25 +161,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             ) : (
               <Link
                 to={item.path}
-                className={`flex items-center px-4 py-2 text-gray-700 hover:bg-blue-500 hover:text-white rounded-md transition-colors duration-200
-                  ${location.pathname === item.path ? "bg-blue-600 text-white" : ""}`}
+                title={!isOpen ? item.name : undefined}
+                className={`flex items-center py-3 font-medium text-gray-500 hover:bg-blue-50 hover:text-blue-500 rounded-md transition-colors duration-200
+                  ${location.pathname === item.path ? "bg-blue-50 text-blue-500" : ""}
+                  ${!isOpen ? "justify-center px-2" : "px-4"}`}
               >
-                <item.icon size={20} className="mr-3" />
-                <span>{item.name}</span>
+                <item.icon size={20} className={isOpen ? "mr-3" : ""} />
+                {isOpen && <span>{item.name}</span>}
               </Link>
             )}
           </div>
         ))}
       </nav>
 
-      <div className="absolute bottom-0 left-0 w-full p-4 border-t border-gray-200">
+      {/* Logout */}
+      <div className="absolute bottom-0 left-0 w-full p-2 border-t border-gray-200">
         <Link
-          to="/logout"
-          className="flex items-center px-4 py-2 text-red-600 hover:bg-red-100 rounded-md transition-colors duration-200"
+          to="../pages/auth/LoginPage"
+          title={!isOpen ? "Logout" : undefined}
+          className={`flex items-center py-2 text-red-600 hover:bg-red-100 rounded-md transition-colors duration-200
+            ${!isOpen ? "justify-center px-2" : "px-4"}`}
         >
-          <X size={20} className="mr-3" />{" "}
-          {/* Using X as a placeholder for logout icon */}
-          <span>Logout</span>
+          <LogOut size={20} className={isOpen ? "mr-3" : ""} />
+          {isOpen && <span>Logout</span>}
         </Link>
       </div>
     </div>

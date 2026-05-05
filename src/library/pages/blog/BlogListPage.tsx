@@ -4,8 +4,10 @@ import Card from "../../components/common/Card";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Edit2, Trash2, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const BlogListPage: React.FC = () => {
+  const navigate = useNavigate();
   const blogs = [
     {
       title: "Importance of Equipment Calibration",
@@ -28,14 +30,18 @@ const BlogListPage: React.FC = () => {
   ];
 
   return (
-    <Layout pageTitle="Blog Management">
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-gray-600">Create and manage blog posts.</p>
-        <Button className="flex items-center">
-          <Plus size={16} className="mr-2" /> New Post
+    <Layout
+      pageTitle="Blog Management"
+      pageSubtitle="Manage all blog posts and their details here."
+      action={
+        <Button
+          className="flex items-center"
+          onClick={() => navigate("/blog/add")}
+        >
+          <Plus size={16} className="mr-2" /> Add Blog Post
         </Button>
-      </div>
-
+      }
+    >
       <div className="mb-6 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search size={18} className="text-gray-400" />
@@ -49,7 +55,10 @@ const BlogListPage: React.FC = () => {
 
       <div className="space-y-4">
         {blogs.map((blog, index) => (
-          <Card key={index} className="flex justify-between items-center py-4">
+          <Card
+            key={index}
+            className="flex justify-between items-center py-8 px-6"
+          >
             <div>
               <h4 className="text-base font-medium text-gray-900">
                 {blog.title}
@@ -66,10 +75,10 @@ const BlogListPage: React.FC = () => {
                 <button className="hover:text-gray-600">
                   <Eye size={18} />
                 </button>
-                <button className="hover:text-blue-600">
+                <button className="text-blue-500 hover:text-blue-600">
                   <Edit2 size={18} />
                 </button>
-                <button className="hover:text-red-600">
+                <button className="text-red-500 hover:text-red-600">
                   <Trash2 size={18} />
                 </button>
               </div>

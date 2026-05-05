@@ -5,8 +5,10 @@ import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Download, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const CertificationListPage: React.FC = () => {
+  const navigate = useNavigate();
   const headers = [
     "Certificate No",
     "Client",
@@ -87,14 +89,18 @@ const CertificationListPage: React.FC = () => {
   ];
 
   return (
-    <Layout pageTitle="Certifications">
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-gray-600">Manage all issued certificates</p>
-        <Button className="flex items-center">
+    <Layout
+      pageTitle="Certifications"
+      pageSubtitle="Manage all issued certificates"
+      action={
+        <Button
+          className="flex items-center"
+          onClick={() => navigate("/certifications/generate")}
+        >
           <Plus size={16} className="mr-2" /> Generate Certificate
         </Button>
-      </div>
-
+      }
+    >
       <Card>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           All Certificates

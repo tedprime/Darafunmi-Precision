@@ -4,19 +4,37 @@ import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { Plus, Trash2, Download } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const GenerateCertificateFormPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
-    <Layout pageTitle="Generate Certificate">
-      <p className="text-gray-600 mb-6">
-        Create a new calibration certificate.
-      </p>
-
+    <Layout
+      pageTitle="Generate Certificate"
+      pageSubtitle="Create a new calibration certificate."
+    >
       <div className="flex items-center mb-6">
-        <span className="font-medium text-gray-800 border-b-2 border-blue-600 pb-1 mr-4">
+        <span
+          onClick={() => navigate("/certifications/generate")}
+          className={`font-medium pb-1 mr-4 cursor-pointer ${
+            location.pathname === "/certifications/generate"
+              ? "text-gray-800 border-b-2 border-blue-600"
+              : "text-gray-500"
+          }`}
+        >
           Form
         </span>
-        <span className="text-gray-500 font-medium">Preview</span>
+        <span
+          onClick={() => navigate("/certifications/generate/preview")}
+          className={`font-medium pb-1 cursor-pointer ${
+            location.pathname === "/certifications/generate/preview"
+              ? "text-gray-800 border-b-2 border-blue-600"
+              : "text-gray-500"
+          }`}
+        >
+          Preview
+        </span>
       </div>
 
       <form className="space-y-6">

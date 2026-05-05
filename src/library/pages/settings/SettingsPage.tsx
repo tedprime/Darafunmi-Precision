@@ -9,9 +9,11 @@ const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("general");
 
   return (
-    <Layout pageTitle="Settings">
-      <p className="text-gray-600 mb-6">Manage your application settings</p>
-
+    <Layout
+      pageTitle="
+      Settings"
+      pageSubtitle="Manage your application settings and preferences"
+    >
       <div className="bg-gray-100 p-1 rounded-lg flex mb-6 max-w-3xl">
         <button
           className={`flex-1 py-2 px-4 text-sm font-medium rounded-md ${activeTab === "general" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
@@ -33,7 +35,7 @@ const SettingsPage: React.FC = () => {
         </button>
       </div>
 
-      <Card className="max-w-3xl">
+      <Card className="w-full">
         {activeTab === "general" && (
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">

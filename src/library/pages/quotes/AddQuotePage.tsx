@@ -6,9 +6,7 @@ import Button from "../../components/common/Button";
 
 const AddQuotePage: React.FC = () => {
   return (
-    <Layout pageTitle="Add Quote">
-      <p className="text-gray-600 mb-6">Create a new quotation</p>
-
+    <Layout pageTitle="Add Quote" pageSubtitle="Create a new quotation">
       <form>
         <Card className="mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">

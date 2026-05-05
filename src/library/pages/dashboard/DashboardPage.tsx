@@ -73,11 +73,10 @@ const DashboardPage: React.FC = () => {
   ];
 
   return (
-    <Layout pageTitle="Dashboard">
-      <p className="text-gray-600 mb-6">
-        Welcome back. Here's your business overview.
-      </p>
-
+    <Layout
+      pageTitle="Dashboard"
+      pageSubtitle="Welcome back. Here's your business overview."
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card>
           <div className="flex items-center justify-between">
@@ -125,7 +124,7 @@ const DashboardPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
             Activity Log
           </h3>
           <p className="text-sm text-gray-500 mb-4">
@@ -134,7 +133,7 @@ const DashboardPage: React.FC = () => {
           <Table headers={activityLogHeaders} data={activityLogData} />
         </Card>
         <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
             Expiring Soon
           </h3>
           <p className="text-sm text-gray-500 mb-4">
@@ -142,8 +141,11 @@ const DashboardPage: React.FC = () => {
           </p>
           <ul className="space-y-4">
             {expiringSoonData.map((item, index) => (
-              <li key={index} className="flex items-center justify-between">
-                <div>
+              <li
+                key={index}
+                className={`flex items-center justify-between p-1.5 ${index < expiringSoonData.length - 1 ? "border-b border-gray-200" : ""}`}
+              >
+                <div className="flex flex-col gap-2">
                   <p className="text-sm font-medium text-gray-900">{item.id}</p>
                   <p className="text-xs text-gray-600">{item.company}</p>
                   <p
@@ -152,7 +154,7 @@ const DashboardPage: React.FC = () => {
                     {item.daysLeft} days left
                   </p>
                 </div>
-                <Mail size={20} className="text-gray-400" />
+                <Mail size={20} className="text-gray-400 font-medium" />
               </li>
             ))}
           </ul>

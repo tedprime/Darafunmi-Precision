@@ -5,8 +5,10 @@ import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const QuoteListPage: React.FC = () => {
+  const navigate = useNavigate();
   const headers = [
     "Quote No",
     "Client",
@@ -18,7 +20,7 @@ const QuoteListPage: React.FC = () => {
   ];
 
   const renderActions = () => (
-    <button className="text-gray-500 hover:text-blue-600">
+    <button className="text-gray-500 hover:text-gray-600">
       <Eye size={16} />
     </button>
   );
@@ -28,7 +30,7 @@ const QuoteListPage: React.FC = () => {
       "QT-2025-001",
       "Acme Corp",
       "$5,000.00",
-      <Badge key="1" color="blue">
+      <Badge key="1" color="yellow">
         pending
       </Badge>,
       "2025-04-20",
@@ -39,7 +41,7 @@ const QuoteListPage: React.FC = () => {
       "QT-2025-002",
       "Tech Solutions",
       "$8,500.00",
-      <Badge key="2" color="blue">
+      <Badge key="2" color="green">
         accepted
       </Badge>,
       "2025-04-18",
@@ -50,7 +52,7 @@ const QuoteListPage: React.FC = () => {
       "QT-2025-003",
       "Global Industries",
       "$3,200.00",
-      <Badge key="3" color="blue">
+      <Badge key="3" color="red">
         rejected
       </Badge>,
       "2025-04-15",
@@ -60,16 +62,18 @@ const QuoteListPage: React.FC = () => {
   ];
 
   return (
-    <Layout pageTitle="Quotations">
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-gray-600">
-          Manage all quotations, orders, and services
-        </p>
-        <Button className="flex items-center">
-          <Plus size={16} className="mr-2" /> Add Quote
+    <Layout
+      pageTitle="Quotes"
+      pageSubtitle="Manage all quotes and their details here."
+      action={
+        <Button
+          className="flex items-center"
+          onClick={() => navigate("/quotes/add")}
+        >
+          <Plus size={16} className="mr-2" /> Add Quotes
         </Button>
-      </div>
-
+      }
+    >
       <div className="mb-6 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search size={18} className="text-gray-400" />

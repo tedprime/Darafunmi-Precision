@@ -7,9 +7,10 @@ import { Upload } from "lucide-react";
 
 const AddProductPage: React.FC = () => {
   return (
-    <Layout pageTitle="Add Product">
-      <p className="text-gray-600 mb-6">Create a new product</p>
-
+    <Layout
+      pageTitle="Products"
+      pageSubtitle="Create and manage your products here. Add new products to keep your inventory up to date."
+    >
       <form>
         <Card className="mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -34,6 +35,25 @@ const AddProductPage: React.FC = () => {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
               >
                 <option>Select category</option>
+                <option value="laboratory equipment">
+                  Laboratory Equipment
+                </option>
+                <option value="pressure instruments">
+                  Pressure Instruments
+                </option>
+                <option value="temperature instruments">
+                  Temperature Instruments
+                </option>
+                <option value="flow instruments">Flow Instruments</option>
+                <option value="analytical instruments">
+                  Analytical Instruments
+                </option>
+                <option value="electrical instruments">
+                  Electrical Instruments
+                </option>
+                <option value="calibration equipment">
+                  Calibration Equipment
+                </option>
               </select>
             </div>
             <Input id="price" label="Price" placeholder="Enter price" />

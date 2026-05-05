@@ -3,7 +3,6 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
 import { Plus, Edit2, Trash2, Search } from "lucide-react";
 
 const CategoriesPage: React.FC = () => {
@@ -11,10 +10,10 @@ const CategoriesPage: React.FC = () => {
 
   const renderActions = () => (
     <div className="flex space-x-3">
-      <button className="text-gray-500 hover:text-blue-600">
+      <button className="text-blue-500 hover:text-blue-600">
         <Edit2 size={16} />
       </button>
-      <button className="text-gray-500 hover:text-red-600">
+      <button className="text-red-500 hover:text-red-600">
         <Trash2 size={16} />
       </button>
     </div>

@@ -7,13 +7,11 @@ import { ArrowLeft, Image as ImageIcon, Save } from "lucide-react";
 
 const AddBlogPage: React.FC = () => {
   return (
-    <Layout pageTitle="Create New Blog Post">
-      <div className="flex items-center mb-6">
-        <button className="mr-4 text-gray-500 hover:text-gray-700">
-          <ArrowLeft size={20} />
-        </button>
-        <p className="text-gray-600">Write and publish a new article</p>
-      </div>
+    <Layout
+      pageTitle="Add Blog Post"
+      pageSubtitle="Write and publish a new blog post"
+    >
+      <div className="flex items-center mb-6"></div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
