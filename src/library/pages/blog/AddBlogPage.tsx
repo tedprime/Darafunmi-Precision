@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { ArrowLeft, Image as ImageIcon, Save } from "lucide-react";
+import { Image as ImageIcon, Save } from "lucide-react";
 
 const AddBlogPage: React.FC = () => {
   return (
