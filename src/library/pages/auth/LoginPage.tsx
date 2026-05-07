@@ -1,43 +1,122 @@
-import React from "react";
-import { Lock, ArrowRight } from "lucide-react";
-import Button from "../../components/common/Button";
-import Card from "../../components/common/Card";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 const LoginPage: React.FC = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-600 p-4">
-      <Card className="w-full max-w-md p-8 text-center">
-        <div className="bg-blue-600 text-white p-3 rounded-md inline-block font-bold text-xl mb-4">
-          DPT
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-        <p className="text-gray-600 mb-6">DPT Admin Panel</p>
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-        <div className="bg-blue-50 p-4 rounded-md mb-6">
-          <div className="flex items-center justify-center mb-2">
-            <Lock size={20} className="text-blue-600 mr-2" />
-            <span className="font-medium text-gray-800">Secure Access</span>
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate("/dashboard");
+  };
+
+  return (
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Left Panel — decorative blue split */}
+      <div className="hidden lg:flex w-1/2 bg-blue-600 relative overflow-hidden items-center justify-center">
+        {/* Decorative circles */}
+        <div className="absolute -top-20 -left-20 w-96 h-96 bg-blue-500 rounded-full opacity-40" />
+        <div className="absolute -bottom-16 -right-16 w-80 h-80 bg-blue-700 rounded-full opacity-40" />
+        <div className="relative z-10 text-center px-12">
+          <div className="bg-white text-blue-600 text-3xl font-extrabold px-6 py-4 rounded-2xl inline-block mb-6 shadow-lg">
+            DPT
           </div>
-          <p className="text-sm text-gray-600">
-            Sign in with your Manus account to access the admin panel.
+          <h1 className="text-white text-4xl font-bold leading-tight mb-4">
+            Darafunmi Precision
+            <br />
+            Technologies
+          </h1>
+          <p className="text-blue-100 text-lg">
+            Admin management portal for calibrations, certifications, and more.
           </p>
         </div>
-
-        <Button className="w-full flex items-center justify-center">
-          Sign In with Manus <ArrowRight size={18} className="ml-2" />
-        </Button>
-
-        <p className="text-xs text-gray-500 mt-8">
-          Darafunmi Precision Technologies Ltd.
-          <br />
-          &copy; 2025 All rights reserved
-        </p>
-      </Card>
-
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center text-white text-sm">
-        <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-        Secure Connection
       </div>
+
+      {/* Right Panel — form */}
+      <div className="flex flex-1 items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-8">
+            <div className="bg-blue-600 text-white text-2xl font-extrabold px-5 py-3 rounded-xl inline-block">
+              DPT
+            </div>
+          </div>
+
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">
+            Welcome back
+          </h2>
+          <p className="text-gray-500 mb-8">Sign in to your admin account</p>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Email */}
+            <div className="relative">
+              <label className="block text-xs font-semibold text-blue-600 mb-1 ml-1">
+                Email Address
+              </label>
+              <div className="flex items-center border-2 border-gray-200 rounded-xl px-4 py-3 focus-within:border-blue-500 transition-colors bg-white">
+                <Mail size={18} className="text-gray-400 mr-3 shrink-0" />
+                <input
+                  type="email"
+                  placeholder="admin@dpt.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="flex-1 outline-none text-gray-800 bg-transparent text-sm placeholder-gray-400"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="relative">
+              <label className="block text-xs font-semibold text-blue-600 mb-1 ml-1">
+                Password
+              </label>
+              <div className="flex items-center border-2 border-gray-200 rounded-xl px-4 py-3 focus-within:border-blue-500 transition-colors bg-white">
+                <Lock size={18} className="text-gray-400 mr-3 shrink-0" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="flex-1 outline-none text-gray-800 bg-transparent text-sm placeholder-gray-400"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="text-gray-400 hover:text-gray-600 ml-2"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Forgot password */}
+            <div className="text-right">
+              <a href="#" className="text-sm text-blue-600 hover:underline">
+                Forgot your password?
+              </a>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm"
+            >
+              Login <ArrowRight size={16} />
+            </button>
+          </form>
+
+          <p className="text-xs text-gray-400 text-center mt-10">
+            Darafunmi Precision Technologies Ltd. &copy; 2025 All rights
+            reserved
+          </p>
+        </div>
+      </div>
+
     </div>
   );
 };

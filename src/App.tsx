@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import LoginPage from "./library/pages/auth/LoginPage";
 import DashboardPage from "./library/pages/dashboard/DashboardPage";
 import ClientListPage from "./library/pages/clients/ClientListPage";
@@ -21,8 +26,9 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/clients" element={<ClientListPage />} />
         <Route path="/clients/add" element={<AddClientPage />} />
         <Route path="/products" element={<ProductListPage />} />
