@@ -1,167 +1,93 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Badge from "../../components/common/Badge";
-import Table from "../../components/ui/Table";
-import { Users, TrendingUp, Award, DollarSign, Mail } from "lucide-react";
+import { getDashboardSummary } from "../../../services/dashboard";
 
-const DashboardPage: React.FC = () => {
-  const activityLogHeaders = ["EVENT", "CATEGORY", "STATUS", "USER", "TIME"];
-  const activityLogData = [
-    [
-      "Order #ORD-2025-001 confirmed",
-      <Badge key="order-badge" color="blue">
-        Order
-      </Badge>,
-      <Badge key="completed-badge" color="green">
-        Completed
-      </Badge>,
-      "System",
-      "2 hours ago",
-    ],
-    [
-      "Booking #BK-2025-045 scheduled",
-      <Badge key="booking-badge" color="purple">
-        Booking
-      </Badge>,
-      <Badge key="pending-badge" color="yellow">
-        Pending
-      </Badge>,
-      "Admin",
-      "4 hours ago",
-    ],
-    [
-      "Quote request #QT-2025-012 received",
-      <Badge key="quote-badge" color="orange">
-        Quote
-      </Badge>,
-      <Badge key="new-badge" color="blue">
-        New
-      </Badge>,
-      "John Doe",
-      "6 hours ago",
-    ],
-    [
-      "Contact form submission from John Doe",
-      <Badge key="contact-badge" color="green">
-        Contact
-      </Badge>,
-      <Badge key="new-badge-2" color="blue">
-        New
-      </Badge>,
-      "John Doe",
-      "8 hours ago",
-    ],
-    [
-      "Certificate #DPT/CAL/2025-001 issued",
-      <Badge key="certificate-badge" color="yellow">
-        Certificate
-      </Badge>,
-      <Badge key="completed-badge-2" color="green">
-        Completed
-      </Badge>,
-      "System",
-      "1 day ago",
-    ],
-  ];
+interface DashboardSummary {
+  clients: { total: number };
+  certificates: { total: number; expiringSoon: number; expired: number };
+  calibrations: { total: number; overdue: number };
+  quotes: { total: number };
+  products: { total: number };
+  recentActivity: {
+    event: string;
+    category: string;
+    status: string;
+    user: string;
+    createdAt: string;
+  }[];
+}
 
-  const expiringSoonData = [
-    { id: "DPT/CAL/2024-156", company: "Acme Corp", daysLeft: 17 },
-    { id: "DPT/CAL/2024-142", company: "Tech Solutions Inc", daysLeft: 24 },
-    { id: "DPT/CAL/2024-138", company: "Global Industries", daysLeft: 43 },
-    { id: "DPT/CAL/2024-125", company: "Manufacturing Ltd", daysLeft: 10 },
-  ];
+const DashboardPage = () => {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getDashboardSummary()
+      .then(setSummary)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p className="text-sm text-gray-500">Loading dashboard...</p>;
+  if (error) return <p className="text-sm text-red-500">{error}</p>;
 
   return (
     <Layout
       pageTitle="Dashboard"
       pageSubtitle="Welcome back. Here's your business overview."
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total Clients</p>
-              <p className="text-3xl font-bold text-gray-900">248</p>
-              <p className="text-sm text-green-500">+12%</p>
-            </div>
-            <Users size={48} className="text-gray-300" />
-          </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Active Jobs</p>
-              <p className="text-3xl font-bold text-gray-900">45</p>
-              <p className="text-sm text-green-500">+8%</p>
-            </div>
-            <TrendingUp size={48} className="text-gray-300" />
-          </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Certificates Issued
-              </p>
-              <p className="text-3xl font-bold text-gray-900">1,205</p>
-              <p className="text-sm text-green-500">+24%</p>
-            </div>
-            <Award size={48} className="text-gray-300" />
-          </div>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Revenue</p>
-              <p className="text-3xl font-bold text-gray-900">$124,580</p>
-              <p className="text-sm text-green-500">+12.5%</p>
-            </div>
-            <DollarSign size={48} className="text-gray-300" />
-          </div>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Total Clients"       value={summary?.clients.total} />
+        <StatCard label="Total Certificates"  value={summary?.certificates.total} />
+        <StatCard label="Expiring Soon"       value={summary?.certificates.expiringSoon} />
+        <StatCard label="Expired"             value={summary?.certificates.expired} />
+        <StatCard label="Total Calibrations"  value={summary?.calibrations.total} />
+        <StatCard label="Overdue Calibrations" value={summary?.calibrations.overdue} />
+        <StatCard label="Quotes"              value={summary?.quotes.total} />
+        <StatCard label="Products"            value={summary?.products.total} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Activity Log
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Recent system activities and events
-          </p>
-          <Table headers={activityLogHeaders} data={activityLogData} />
-        </Card>
-        <Card>
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Expiring Soon
-          </h3>
-          <p className="text-sm text-gray-500 mb-4">
-            Certificates expiring within 60 days
-          </p>
-          <ul className="space-y-4">
-            {expiringSoonData.map((item, index) => (
-              <li
-                key={index}
-                className={`flex items-center justify-between p-1.5 ${index < expiringSoonData.length - 1 ? "border-b border-gray-200" : ""}`}
-              >
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-gray-900">{item.id}</p>
-                  <p className="text-xs text-gray-600">{item.company}</p>
-                  <p
-                    className={`text-xs ${item.daysLeft <= 30 ? "text-red-500" : "text-gray-500"}`}
-                  >
-                    {item.daysLeft} days left
-                  </p>
-                </div>
-                <Mail size={20} className="text-gray-400 font-medium" />
-              </li>
+      {/* Recent Activity */}
+      <div>
+        <h3 className="text-lg font-semibold mb-1">Activity Log</h3>
+        <p className="text-sm text-gray-500 mb-4">Recent system activities and events</p>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-gray-500 border-b">
+              <th className="pb-2">Event</th>
+              <th className="pb-2">Category</th>
+              <th className="pb-2">Status</th>
+              <th className="pb-2">User</th>
+              <th className="pb-2">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summary?.recentActivity.map((entry, index) => (
+              <tr key={index} className="border-b">
+                <td className="py-2">{entry.event}</td>
+                <td className="py-2">{entry.category}</td>
+                <td className="py-2">{entry.status}</td>
+                <td className="py-2">{entry.user}</td>
+                <td className="py-2">
+                  {new Date(entry.createdAt).toLocaleDateString()}
+                </td>
+              </tr>
             ))}
-          </ul>
-        </Card>
+          </tbody>
+        </table>
       </div>
     </Layout>
   );
 };
+
+// Reusable stat card component
+const StatCard = ({ label, value }: { label: string; value?: number }) => (
+  <div className="bg-white rounded-lg border border-gray-200 p-5">
+    <p className="text-sm text-gray-500">{label}</p>
+    <p className="text-3xl font-bold mt-1">{value ?? "—"}</p>
+  </div>
+);
 
 export default DashboardPage;

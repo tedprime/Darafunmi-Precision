@@ -4,8 +4,10 @@ export async function getDashboardSummary() {
   const res = await fetch(`${BASE_URL}/dashboard/summary`, {
     headers: {
       accept: "application/json",
+      // "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
   });
   if (!res.ok) throw new Error("Failed to fetch dashboard summary");
-  return res.json();
+  const json = await res.json();
+  return json.data;
 }
