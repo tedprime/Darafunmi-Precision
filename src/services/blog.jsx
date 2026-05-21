@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { apiFetch } from "./api";//jfj
+
+import { apiFetch } from "./api";
 
 export const getBlogs = () =>
   apiFetch("/blog").then((res) => {
