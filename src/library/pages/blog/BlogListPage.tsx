@@ -1,33 +1,47 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Edit2, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getBlogs, deleteBlog } from "../../../services/blog.jsx";
 
-const BlogListPage: React.FC = () => {
+interface Blog {
+  id: string | number;
+  title: string;
+  author: string;
+  date: string;
+  status: "published" | "draft" | string; // adjust based on your API
+}
+
+const BlogListPage = () => {
   const navigate = useNavigate();
-  const blogs = [
-    {
-      title: "Importance of Equipment Calibration",
-      author: "Admin",
-      date: "2025-02-20",
-      status: "published",
-    },
-    {
-      title: "Best Practices in Precision Measurement",
-      author: "Admin",
-      date: "2025-02-18",
-      status: "draft",
-    },
-    {
-      title: "Industry Standards Update",
-      author: "Admin",
-      date: "2025-02-15",
-      status: "published",
-    },
-  ];
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    getBlogs()
+      .then(setBlogs)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this post?")) return;
+    try {
+      await deleteBlog(id);
+      setBlogs((prev) => prev.filter((b) => b.id !== id));
+    } catch {
+      alert("Failed to delete post.");
+    }
+  };
+
+  const filtered = blogs.filter((b) =>
+    b.title.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <Layout
@@ -48,15 +62,20 @@ const BlogListPage: React.FC = () => {
         </div>
         <input
           type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           placeholder="Search posts..."
         />
       </div>
 
+      {loading && <p className="text-sm text-gray-500">Loading posts...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
       <div className="space-y-4">
-        {blogs.map((blog, index) => (
+        {filtered.map((blog) => (
           <Card
-            key={index}
+            key={blog.id}
             className="flex justify-between items-center py-8 px-6"
           >
             <div>
@@ -72,13 +91,22 @@ const BlogListPage: React.FC = () => {
                 {blog.status}
               </Badge>
               <div className="flex space-x-2 text-gray-400">
-                <button className="hover:text-gray-600">
+                <button
+                  className="hover:text-gray-600"
+                  onClick={() => navigate(`/blog/${blog.id}`)}
+                >
                   <Eye size={18} />
                 </button>
-                <button className="text-blue-500 hover:text-blue-600">
+                <button
+                  className="text-blue-500 hover:text-blue-600"
+                  onClick={() => navigate(`/blog/edit/${blog.id}`)}
+                >
                   <Edit2 size={18} />
                 </button>
-                <button className="text-red-500 hover:text-red-600">
+                <button
+                  className="text-red-500 hover:text-red-600"
+                  onClick={() => handleDelete(blog.id)}
+                >
                   <Trash2 size={18} />
                 </button>
               </div>
