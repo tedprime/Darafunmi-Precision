@@ -1,11 +1,80 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Image as ImageIcon, Save } from "lucide-react";
+import { Image as ImageIcon, Save, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createBlog } from "../../../services/blog.jsx";
+
+const CATEGORIES = [
+  "Calibration",
+  "Certification",
+  "Instrumentation",
+  "Industry News",
+  "General",
+];
 
 const AddBlogPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [status, setStatus] = useState("draft");
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [featuredImage, setFeaturedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFeaturedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setFeaturedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+
+    if (!title.trim()) {
+      setError("Blog title is required.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await createBlog({
+        title: title.trim(),
+        excerpt: excerpt.trim(),
+        content: content.trim(),
+        category,
+        status,
+        isFeatured,
+        featuredImage: featuredImage ?? undefined,
+      });
+      navigate("/blog");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to create blog post.";
+      console.log("Server error:", message);
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Layout
       pageTitle="Add Blog Post"
@@ -13,13 +82,22 @@ const AddBlogPage: React.FC = () => {
     >
       <div className="flex items-center mb-6"></div>
 
+      {error && (
+        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── Left column ── */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <Input
               id="title"
               label="Blog Title"
               placeholder="Enter blog post title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
             <p className="text-xs text-gray-500 mt-1">
               Make it compelling and descriptive for better SEO
@@ -36,10 +114,15 @@ const AddBlogPage: React.FC = () => {
             <textarea
               id="excerpt"
               rows={3}
+              maxLength={160}
+              value={excerpt}
+              onChange={(e) => setExcerpt(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder="Brief summary of the blog post (shown in listings)"
-            ></textarea>
-            <p className="text-xs text-gray-500 mt-1">0/160 characters</p>
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {excerpt.length}/160 characters
+            </p>
           </Card>
 
           <Card>
@@ -52,29 +135,67 @@ const AddBlogPage: React.FC = () => {
             <textarea
               id="content"
               rows={10}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
               placeholder="Write your blog post content here..."
-            ></textarea>
+            />
             <p className="text-xs text-gray-500 mt-1">
               Supports markdown formatting
             </p>
           </Card>
         </div>
 
+        {/* ── Right column ── */}
         <div className="space-y-6">
+          {/* Featured Image */}
           <Card>
             <h3 className="text-sm font-medium text-gray-700 mb-3">
               Featured Image
             </h3>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer">
-              <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-              <p className="text-sm font-medium text-gray-900">
-                Click to upload image
-              </p>
-              <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-            </div>
+
+            {imagePreview ? (
+              <div className="relative rounded-lg overflow-hidden">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-40 object-cover rounded-lg"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                >
+                  <X size={14} className="text-gray-600" />
+                </button>
+                <p className="text-xs text-gray-500 mt-2 truncate">
+                  {featuredImage?.name}
+                </p>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                <p className="text-sm font-medium text-gray-900">
+                  Click to upload image
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  PNG, JPG up to 10MB
+                </p>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg"
+              className="hidden"
+              onChange={handleImageChange}
+            />
           </Card>
 
+          {/* Category */}
           <Card>
             <div className="mb-4">
               <label
@@ -85,13 +206,20 @@ const AddBlogPage: React.FC = () => {
               </label>
               <select
                 id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
               >
-                <option>Calibration</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
           </Card>
 
+          {/* Status */}
           <Card>
             <div className="mb-4">
               <label
@@ -102,19 +230,24 @@ const AddBlogPage: React.FC = () => {
               </label>
               <select
                 id="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
               >
-                <option>Draft</option>
-                <option>Published</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
               </select>
             </div>
           </Card>
 
+          {/* isFeatured */}
           <Card>
             <div className="flex items-center mb-2">
               <input
                 id="featured"
                 type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label
@@ -129,10 +262,21 @@ const AddBlogPage: React.FC = () => {
             </p>
           </Card>
 
-          <Button className="w-full flex justify-center items-center mb-3">
-            <Save size={16} className="mr-2" /> Publish Blog Post
+          <Button
+            className="w-full flex justify-center items-center mb-3"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            <Save size={16} className="mr-2" />
+            {submitting ? "Publishing..." : "Publish Blog Post"}
           </Button>
-          <Button variant="secondary" className="w-full">
+
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => navigate("/blog")}
+            disabled={submitting}
+          >
             Cancel
           </Button>
         </div>

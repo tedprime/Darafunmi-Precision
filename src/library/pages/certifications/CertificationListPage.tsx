@@ -1,14 +1,100 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Eye, Download, Mail } from "lucide-react";
+import { Plus, Eye, Download, Mail, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  getCertifications,
+  deleteCertification,
+  generatePdf,
+  sendCertificateEmail,
+} from "../../../services/certification.jsx";
+
+interface Certificate {
+  id: number;
+  certificateNumber: string;
+  customerName: string;
+  equipmentCalibrated: string;
+  expiryDate: string;
+  status: "draft" | "active" | "expiring-soon" | "expired" | string;
+}
+
+const STATUS_COLOR: Record<string, "gray" | "green" | "yellow" | "red"> = {
+  draft: "gray",
+  active: "green",
+  "expiring-soon": "yellow",
+  expired: "red",
+};
 
 const CertificationListPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const [certs, setCerts] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [count, setCount] = useState(0);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  useEffect(() => {
+    getCertifications({ search, status })
+      .then(({ data, count }) => {
+        setCerts(data);
+        setCount(count);
+        setError(null);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [search, status]);
+
+  const handleDelete = async (id: number, certNo: string) => {
+    if (!confirm(`Delete certificate ${certNo}?`)) return;
+    try {
+      setActionLoading(id);
+      await deleteCertification(id);
+      setCerts((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      alert("Failed to delete certificate.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDownload = async (id: number, certNo: string) => {
+    try {
+      setActionLoading(id);
+      const blob = await generatePdf(id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${certNo}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to generate PDF.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSendEmail = async (id: number) => {
+    const email = prompt("Enter recipient email address:");
+    if (!email) return;
+    try {
+      setActionLoading(id);
+      await sendCertificateEmail(id, email);
+      alert("Email sent successfully!");
+    } catch {
+      alert("Failed to send email.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const headers = [
     "Certificate No",
     "Client",
@@ -18,80 +104,50 @@ const CertificationListPage: React.FC = () => {
     "Actions",
   ];
 
-  const renderActions = () => (
-    <div className="flex space-x-2">
-      <button className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50">
+  const data = certs.map((cert) => [
+    cert.certificateNumber,
+    cert.customerName,
+    cert.equipmentCalibrated,
+    cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString() : "—",
+    <Badge key={`status-${cert.id}`} color={STATUS_COLOR[cert.status] ?? "gray"}>
+      {cert.status}
+    </Badge>,
+    <div key={`actions-${cert.id}`} className="flex space-x-2">
+      <button
+        className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+        onClick={() => navigate(`/certifications/${cert.id}`)}
+        disabled={actionLoading === cert.id}
+      >
         <Eye size={16} />
       </button>
-      <button className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50">
+      <button
+        className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+        onClick={() => handleDownload(cert.id, cert.certificateNumber)}
+        disabled={actionLoading === cert.id}
+      >
         <Download size={16} />
       </button>
-      <button className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50">
+      <button
+        className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+        onClick={() => handleSendEmail(cert.id)}
+        disabled={actionLoading === cert.id}
+      >
         <Mail size={16} />
       </button>
-    </div>
-  );
-
-  const renderStatus = (status: string, days: string) => {
-    let color: "yellow" | "green" | "red" = "green";
-    if (status === "Expiring Soon") color = "yellow";
-    if (status === "Expired") color = "red";
-
-    return (
-      <div className="flex items-center space-x-2">
-        <Badge color={color}>{status}</Badge>
-        {days && <span className="text-xs text-gray-500">{days}</span>}
-      </div>
-    );
-  };
-
-  const data = [
-    [
-      "DPT/CAL/2024-156",
-      "Acme Corp",
-      "Pressure Gauge",
-      "2025-05-15",
-      renderStatus("Expiring Soon", "17 days"),
-      renderActions(),
-    ],
-    [
-      "DPT/CAL/2024-142",
-      "Tech Solutions Inc",
-      "Temperature Sensor",
-      "2025-05-22",
-      renderStatus("Expiring Soon", "24 days"),
-      renderActions(),
-    ],
-    [
-      "DPT/CAL/2024-138",
-      "Global Industries",
-      "Flow Meter",
-      "2025-06-10",
-      renderStatus("Active", "43 days"),
-      renderActions(),
-    ],
-    [
-      "DPT/CAL/2024-125",
-      "Manufacturing Ltd",
-      "Pressure Gauge",
-      "2025-05-08",
-      renderStatus("Expiring Soon", "10 days"),
-      renderActions(),
-    ],
-    [
-      "DPT/CAL/2024-100",
-      "Industrial Corp",
-      "Calibration Block",
-      "2025-03-15",
-      renderStatus("Expired", ""),
-      renderActions(),
-    ],
-  ];
+      <button
+        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
+        onClick={() => handleDelete(cert.id, cert.certificateNumber)}
+        disabled={actionLoading === cert.id}
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>,
+  ]);
 
   return (
     <Layout
       pageTitle="Certifications"
-      pageSubtitle="Manage all issued certificates"
+      pageSubtitle={`Manage all issued certificates${count ? ` (${count} total)` : ""}`}
       action={
         <Button
           className="flex items-center"
@@ -101,12 +157,50 @@ const CertificationListPage: React.FC = () => {
         </Button>
       }
     >
-      <Card>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          All Certificates
-        </h3>
-        <Table headers={headers} data={data} />
-      </Card>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={18} className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Search by certificate number or customer name..."
+          />
+        </div>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="draft">Draft</option>
+          <option value="active">Active</option>
+          <option value="expiring-soon">Expiring Soon</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
+
+      {loading && <p className="text-sm text-gray-500">Loading certificates...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {!loading && !error && (
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            All Certificates
+          </h3>
+          {data.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-8">
+              No certificates found.
+            </p>
+          ) : (
+            <Table headers={headers} data={data} />
+          )}
+        </Card>
+      )}
     </Layout>
   );
 };
