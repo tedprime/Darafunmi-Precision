@@ -223,7 +223,7 @@ const GenerateCertificateFormPage: React.FC = () => {
             </div>
             <Input
               id="clientId"
-              label="Client ID (optional)"
+              label="Client ID"
               placeholder="Enter client ID"
               type="number"
               value={clientId}

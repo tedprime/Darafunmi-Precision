@@ -15,11 +15,25 @@ export const getCertifications = ({
   });
 };
 
-export const createCertification = (body) =>
-  apiFetch("/certifications", {
+export const createCertification = async (body) => {
+  const token = localStorage.getItem("token");
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  const response = await fetch(`${BASE_URL}/certifications`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
     body: JSON.stringify(body),
   });
+
+  const data = await response.json();
+  console.log("Certifications response:", data);
+
+  if (!response.ok) throw new Error(data.message || `API error: ${response.status}`);
+  return data;
+};
 
 export const deleteCertification = (id) =>
   apiFetch(`/certifications/${id}`, { method: "DELETE" });

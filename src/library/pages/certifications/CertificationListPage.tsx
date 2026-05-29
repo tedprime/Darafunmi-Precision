@@ -115,7 +115,7 @@ const CertificationListPage: React.FC = () => {
     <div key={`actions-${cert.id}`} className="flex space-x-2">
       <button
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => navigate(`/certifications/${cert.id}`)}
+        onClick={() => navigate(`/certifications/generate/preview?id=${cert.id}`)}
         disabled={actionLoading === cert.id}
       >
         <Eye size={16} />
