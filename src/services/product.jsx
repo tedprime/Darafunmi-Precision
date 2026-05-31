@@ -1,6 +1,12 @@
 import { apiFetch } from "./api";
 
-export const getProducts = ({ page = 1, limit = 20, search = "", status = "", categoryId = "" } = {}) => {
+export const getProducts = ({
+  page = 1,
+  limit = 20,
+  search = "",
+  status = "",
+  categoryId = "",
+} = {}) => {
   const params = new URLSearchParams({ page, limit });
   if (search) params.append("search", search);
   if (status) params.append("status", status);
@@ -11,13 +17,23 @@ export const getProducts = ({ page = 1, limit = 20, search = "", status = "", ca
   });
 };
 
-const buildProductFormData = ({ name, categoryId, price, stock, description, image }) => {
+const buildProductFormData = ({
+  name,
+  categoryId,
+  price,
+  stock,
+  description,
+  image,
+}) => {
   const formData = new FormData();
   if (name) formData.append("name", name);
   if (categoryId) formData.append("categoryId", String(categoryId));
-  if (price !== undefined && price !== "") formData.append("price", String(price));
-  if (stock !== undefined && stock !== "") formData.append("stock", String(stock));
+  if (price !== undefined && price !== "")
+    formData.append("price", String(price));
+  if (stock !== undefined && stock !== "")
+    formData.append("stock", String(stock));
   if (description) formData.append("description", description);
+  formData.append("features", "[]");
   if (image) formData.append("image", image);
   return formData;
 };

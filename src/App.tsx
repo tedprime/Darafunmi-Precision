@@ -41,10 +41,19 @@ function App() {
         <Route path="/quotes" element={<QuoteListPage />} />
         <Route path="/quotes/add" element={<AddQuotePage />} />
         <Route path="/calibrations/add" element={<AddCalibrationPage />} />
-        <Route path="/calibrations/history" element={<CalibrationHistoryPage />} />
+        <Route
+          path="/calibrations/history"
+          element={<CalibrationHistoryPage />}
+        />
         <Route path="/certifications" element={<CertificationListPage />} />
-        <Route path="/certifications/generate" element={<GenerateCertificateFormPage />} />
-        <Route path="/certifications/generate/preview" element={<GenerateCertificatePreviewPage />} />
+        <Route
+          path="/certifications/generate"
+          element={<GenerateCertificateFormPage />}
+        />
+        <Route
+          path="/certifications/generate/preview"
+          element={<GenerateCertificatePreviewPage />}
+        />
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/add" element={<AddBlogPage />} />
         <Route path="/settings" element={<SettingsPage />} />
