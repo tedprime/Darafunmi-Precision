@@ -4,7 +4,7 @@ import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Trash2, Search, Pencil } from "lucide-react";
+import { Plus, Trash2, Search, Edit2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getQuotes, deleteQuote } from "../../../services/quote.jsx";
 
@@ -83,7 +83,7 @@ const QuoteListPage: React.FC = () => {
     quote.quoteNumber,
     getClientName(quote.client),
     quote.amount !== undefined
-      ? `$${Number(quote.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+      ? `₦${Number(quote.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
       : "—",
     <Badge
       key={`status-${quote.id}`}
@@ -95,11 +95,11 @@ const QuoteListPage: React.FC = () => {
     quote.notes ?? "—",
     <div key={`actions-${quote.id}`} className="flex space-x-2">
       <button
-        className="p-1 border border-gray-200 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
         onClick={() => navigate(`/quotes/edit/${quote.id}`)}
         disabled={deletingId === quote.id}
       >
-        <Pencil size={15} />
+        <Edit2 size={15} />
       </button>
       <button
         className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
