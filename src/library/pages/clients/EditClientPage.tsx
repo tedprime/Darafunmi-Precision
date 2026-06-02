@@ -7,6 +7,10 @@ import Button from "../../components/common/Button";
 import { updateClient } from "../../../services/client.jsx";
 import { apiFetch } from "../../../services/api";
 
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
 const EditClientPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -24,15 +28,26 @@ const EditClientPage: React.FC = () => {
 
   useEffect(() => {
     apiFetch(`/clients/${id}`)
-      .then((res: { data: { name: string; email: string; phone: string; location: string; address: string; status: string } }) => {
-        const c = res.data;
-        setName(c.name ?? "");
-        setEmail(c.email ?? "");
-        setPhone(c.phone ?? "");
-        setLocation(c.location ?? "");
-        setAddress(c.address ?? "");
-        setStatus(c.status ?? "active");
-      })
+      .then(
+        (res: {
+          data: {
+            name: string;
+            email: string;
+            phone: string;
+            location: string;
+            address: string;
+            status: string;
+          };
+        }) => {
+          const c = res.data;
+          setName(c.name ?? "");
+          setEmail(c.email ?? "");
+          setPhone(c.phone ?? "");
+          setLocation(c.location ?? "");
+          setAddress(c.address ?? "");
+          setStatus(c.status ?? "active");
+        },
+      )
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -57,9 +72,8 @@ const EditClientPage: React.FC = () => {
         status,
       });
       navigate("/clients");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to update client.";
-      setError(message);
+    } catch {
+      setError("Failed to update client. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -67,9 +81,46 @@ const EditClientPage: React.FC = () => {
 
   return (
     <Layout pageTitle="Edit Client" pageSubtitle="Update client information">
-      {loading && <p className="text-sm text-gray-500">Loading client...</p>}
+      {/* Loading Skeleton */}
+      {loading && (
+        <Card className="w-full">
+          <Skeleton className="h-5 w-40 mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i}>
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+          <div className="mb-6">
+            <Skeleton className="h-4 w-20 mb-2" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <div className="flex space-x-4">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-20" />
+          </div>
+        </Card>
+      )}
 
-      {!loading && (
+      {/* Error State */}
+      {!loading && error && !submitting && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-gray-700 font-medium">Failed to load client</p>
+          <p className="text-sm text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Edit Form */}
+      {!loading && (!error || submitting) && (
         <>
           {error && (
             <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
@@ -114,7 +165,10 @@ const EditClientPage: React.FC = () => {
                   onChange={(e) => setLocation(e.target.value)}
                 />
                 <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="status"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Status
                   </label>
                   <select
@@ -130,7 +184,10 @@ const EditClientPage: React.FC = () => {
               </div>
 
               <div className="mb-6">
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="address"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Address
                 </label>
                 <textarea
