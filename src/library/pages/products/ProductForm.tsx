@@ -33,6 +33,10 @@ interface ProductFormProps {
   }) => void;
 }
 
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
 const ProductForm: React.FC<ProductFormProps> = ({
   initialName = "",
   initialCategoryId = "",
@@ -57,11 +61,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(initialImageUrl);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
     getCategories()
       .then(({ data }) => setCategories(data))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setCategoriesLoading(false));
   }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +96,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       )}
 
+      {/* Product Details Card */}
       <Card className="mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Product Details
@@ -110,19 +117,23 @@ const ProductForm: React.FC<ProductFormProps> = ({
             >
               Category
             </label>
-            <select
-              id="category"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
-            >
-              <option value="">Select category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            {categoriesLoading ? (
+              <Skeleton className="h-10 w-full mt-1" />
+            ) : (
+              <select
+                id="category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+              >
+                <option value="">Select category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <Input
@@ -180,6 +191,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </Card>
 
+      {/* Product Image Card */}
       <Card className="mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Product Image
@@ -221,7 +233,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       </Card>
 
       <div className="flex space-x-4">
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={submitting || categoriesLoading}>
           {submitting ? "Saving..." : "Save Product"}
         </Button>
         <Button

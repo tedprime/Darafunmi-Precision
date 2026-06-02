@@ -4,13 +4,22 @@ import Card from "../../components/common/Card";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Edit2, Trash2, Search, X, Check } from "lucide-react";
-import { getCategories, createCategory, updateCategory, deleteCategory } from "../../../services/categories";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "../../../services/categories";
 
 interface Category {
   id: number;
   name: string;
   status: "active" | "inactive" | string;
 }
+
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
 
 const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -46,7 +55,10 @@ const CategoriesPage: React.FC = () => {
     if (!newName.trim()) return;
     setAdding(true);
     try {
-      const res = await createCategory({ name: newName.trim(), status: newStatus });
+      const res = await createCategory({
+        name: newName.trim(),
+        status: newStatus,
+      });
       setCategories((prev) => [...prev, res.data]);
       setNewName("");
       setNewStatus("active");
@@ -69,7 +81,9 @@ const CategoriesPage: React.FC = () => {
     try {
       await updateCategory(id, { name: editName.trim(), status: editStatus });
       setCategories((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, name: editName.trim(), status: editStatus } : c))
+        prev.map((c) =>
+          c.id === id ? { ...c, name: editName.trim(), status: editStatus } : c,
+        ),
       );
       setEditingId(null);
     } catch (err) {
@@ -116,13 +130,50 @@ const CategoriesPage: React.FC = () => {
         />
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Loading categories...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* Loading Skeleton */}
+      {loading && (
+        <Card>
+          <div className="divide-y divide-gray-100">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between py-3 px-1"
+              >
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-7 w-7 rounded" />
+                  <Skeleton className="h-7 w-7 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {!loading && error && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-gray-700 font-medium">Failed to load categories</p>
+          <p className="text-sm text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Add form */}
       {showAdd && (
         <Card className="mb-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">New Category</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            New Category
+          </h3>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
@@ -143,7 +194,13 @@ const CategoriesPage: React.FC = () => {
               <Button onClick={handleAdd} disabled={adding || !newName.trim()}>
                 {adding ? "Saving..." : "Save"}
               </Button>
-              <Button variant="secondary" onClick={() => { setShowAdd(false); setNewName(""); }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowAdd(false);
+                  setNewName("");
+                }}
+              >
                 Cancel
               </Button>
             </div>
@@ -151,15 +208,20 @@ const CategoriesPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Category list */}
+      {/* Category List */}
       {!loading && !error && (
         <Card>
           {categories.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">No categories found.</p>
+            <p className="text-sm text-gray-500 text-center py-8">
+              No categories found.
+            </p>
           ) : (
             <div className="divide-y divide-gray-100">
               {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center justify-between py-3 px-1">
+                <div
+                  key={cat.id}
+                  className="flex items-center justify-between py-3 px-1"
+                >
                   {editingId === cat.id ? (
                     <div className="flex flex-1 items-center gap-3 mr-4">
                       <input
@@ -179,7 +241,9 @@ const CategoriesPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-800">{cat.name}</span>
+                      <span className="text-sm font-medium text-gray-800">
+                        {cat.name}
+                      </span>
                       <Badge color={cat.status === "active" ? "green" : "gray"}>
                         {cat.status}
                       </Badge>
@@ -233,4 +297,3 @@ const CategoriesPage: React.FC = () => {
 };
 
 export default CategoriesPage;
-

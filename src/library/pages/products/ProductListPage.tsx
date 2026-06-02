@@ -24,6 +24,10 @@ const STATUS_COLOR: Record<string, "green" | "gray" | "yellow"> = {
   "low-stock": "yellow",
 };
 
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
 const ProductListPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -131,9 +135,43 @@ const ProductListPage: React.FC = () => {
         </select>
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Loading products...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* Loading Skeleton */}
+      {loading && (
+        <Card>
+          <Skeleton className="h-5 w-32 mb-6" />
+          <div className="space-y-3">
+            <div className="grid grid-cols-6 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-4" />
+              ))}
+            </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-6 gap-4">
+                {Array.from({ length: 6 }).map((_, j) => (
+                  <Skeleton key={j} className="h-8" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
+      {/* Error State */}
+      {error && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-gray-700 font-medium">Failed to load products</p>
+          <p className="text-sm text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Products Table */}
       {!loading && !error && (
         <Card>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">

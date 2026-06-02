@@ -24,6 +24,10 @@ const STATUS_COLOR: Record<string, "yellow" | "green" | "red" | "gray"> = {
   rejected: "red",
 };
 
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
 const QuoteListPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -120,6 +124,7 @@ const QuoteListPage: React.FC = () => {
         </Button>
       }
     >
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -145,9 +150,42 @@ const QuoteListPage: React.FC = () => {
         </select>
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Loading quotes...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* Loading Skeleton */}
+      {loading && (
+        <Card>
+          <div className="space-y-3">
+            <div className="grid grid-cols-7 gap-4">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton key={i} className="h-4" />
+              ))}
+            </div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-7 gap-4">
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <Skeleton key={j} className="h-8" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
+      {/* Error State */}
+      {!loading && error && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-gray-700 font-medium">Failed to load quotes</p>
+          <p className="text-sm text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Quotes Table */}
       {!loading && !error && (
         <Card>
           {data.length === 0 ? (
