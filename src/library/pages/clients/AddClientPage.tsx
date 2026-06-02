@@ -21,7 +21,7 @@ const AddClientPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError(null); // clears error immediately on every attempt
 
     if (!name.trim()) {
       setError("Client name is required.");
@@ -39,9 +39,9 @@ const AddClientPage: React.FC = () => {
         status,
       });
       navigate("/clients");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to save client.";
-      setError(message);
+    } catch {
+      // only reaches here after all retries in apiFetch have failed
+      setError("Failed to save client. Please try again.");
     } finally {
       setSubmitting(false);
     }

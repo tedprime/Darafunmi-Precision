@@ -5,13 +5,19 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
       const response = await fetch(`${BASE_URL}${endpoint}`, {
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
         },
         ...options,
       });
+
+      clearTimeout(timeout);
 
       if (response.status === 401) {
         localStorage.removeItem("token");
@@ -23,8 +29,8 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
 
     } catch (err) {
       const isLast = attempt === retries;
-      if (isLast) throw err; // give up after 3 tries
-      await new Promise((res) => setTimeout(res, attempt * 1000)); // wait 1s, 2s, 3s
+      if (isLast) throw err; // all retries exhausted, let the component handle it
+      await new Promise((res) => setTimeout(res, attempt * 1000)); // wait 1s, 2s before retrying
     }
   }
 }
