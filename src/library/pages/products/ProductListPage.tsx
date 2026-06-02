@@ -63,10 +63,15 @@ const ProductListPage: React.FC = () => {
 
   const data = products.map((product) => [
     product.name,
-    product.category ?? "—",
+    typeof product.category === "object" && product.category !== null
+      ? (product.category as { name: string }).name
+      : ((product.category as string) ?? "—"),
     product.price !== undefined ? `$${Number(product.price).toFixed(2)}` : "—",
     product.stock ?? "—",
-    <Badge key={`status-${product.id}`} color={STATUS_COLOR[product.status] ?? "gray"}>
+    <Badge
+      key={`status-${product.id}`}
+      color={STATUS_COLOR[product.status] ?? "gray"}
+    >
       {product.status}
     </Badge>,
     <div key={`actions-${product.id}`} className="flex space-x-2">
@@ -92,7 +97,10 @@ const ProductListPage: React.FC = () => {
       pageTitle="Products"
       pageSubtitle={`Manage all your products and their details here.${count ? ` (${count} total)` : ""}`}
       action={
-        <Button className="flex items-center" onClick={() => navigate("/products/add")}>
+        <Button
+          className="flex items-center"
+          onClick={() => navigate("/products/add")}
+        >
           <Plus size={16} className="mr-2" /> Add Product
         </Button>
       }
@@ -128,9 +136,13 @@ const ProductListPage: React.FC = () => {
 
       {!loading && !error && (
         <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">All Products</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            All Products
+          </h3>
           {data.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">No products found.</p>
+            <p className="text-sm text-gray-500 text-center py-8">
+              No products found.
+            </p>
           ) : (
             <Table headers={headers} data={data} />
           )}

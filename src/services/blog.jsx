@@ -1,13 +1,54 @@
-import { apiFetch } from "./api";
+import { apiFetch } from "./api.jsx";
 
-export const getBlogs = () =>
-  apiFetch("/blog").then((res) => {
-    if (!res.success) throw new Error(res.message);
-    return res.data;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+/**
+ * Shared helper for multipart/form-data requests (file uploads).
+ * Does NOT set Content-Type — the browser sets it with the boundary automatically.
+ */
+async function apiFormData(endpoint, method, formData) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method,
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: formData,
   });
 
-export const deleteBlog = (id) => apiFetch(`/blog/${id}`, { method: "DELETE" });
+  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  return response.json();
+}
 
+// ─── GET /blog ────────────────────────────────────────────────────────────────
+// Supports: page, limit, search, status query params
+export async function getBlogs({
+  page = 1,
+  limit = 20,
+  search = "",
+  status = "",
+} = {}) {
+  const params = new URLSearchParams({ page, limit });
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+
+  const res = await apiFetch(`/blog?${params.toString()}`);
+  // res shape: { success: true, data: [...], pagination: {...} }
+  return {
+    data: res.data ?? [],
+    pagination: res.pagination ?? {},
+  };
+}
+
+// ─── GET /blog/{id} ───────────────────────────────────────────────────────────
+export async function getBlog(id) {
+  const res = await apiFetch(`/blog/${id}`);
+  return res.data;
+}
+
+// ─── POST /blog ───────────────────────────────────────────────────────────────
+// multipart/form-data — includes optional featuredImage file
 export async function createBlog({
   title,
   excerpt,
@@ -16,33 +57,54 @@ export async function createBlog({
   status,
   isFeatured,
   featuredImage,
+  tags,
 }) {
-  const token = localStorage.getItem("token");
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-  const formData = new FormData();
-  formData.append("title", title);
-  if (excerpt) formData.append("excerpt", excerpt);
-  if (content) formData.append("content", content);
-  if (category) formData.append("category", category);
-  if (status) formData.append("status", status);
-  formData.append("isFeatured", String(isFeatured));
-  formData.append("tags", "[]");
-  if (featuredImage) formData.append("featuredImage", featuredImage);
-
-  const response = await fetch(`${BASE_URL}/blog`, {
-    method: "POST",
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
-    console.log("API error body:", errBody);
-    throw new Error(errBody.message || `API error: ${response.status}`);
+  const form = new FormData();
+  form.append("title", title);
+  if (excerpt) form.append("excerpt", excerpt);
+  if (content) form.append("content", content);
+  if (category) form.append("category", category);
+  if (status) form.append("status", status);
+  form.append("isFeatured", String(isFeatured ?? false));
+  if (featuredImage) form.append("featuredImage", featuredImage);
+  if (tags && tags.length > 0) {
+    tags.forEach((tag) => form.append("tags[]", tag));
   }
 
-  return response.json();
+  return apiFormData("/blog", "POST", form);
+}
+
+// ─── PATCH /blog/{id} ─────────────────────────────────────────────────────────
+// multipart/form-data — same fields, all optional
+export async function updateBlog(
+  id,
+  {
+    title,
+    excerpt,
+    content,
+    category,
+    status,
+    isFeatured,
+    featuredImage,
+    tags,
+  },
+) {
+  const form = new FormData();
+  if (title !== undefined) form.append("title", title);
+  if (excerpt !== undefined) form.append("excerpt", excerpt);
+  if (content !== undefined) form.append("content", content);
+  if (category !== undefined) form.append("category", category);
+  if (status !== undefined) form.append("status", status);
+  if (isFeatured !== undefined) form.append("isFeatured", String(isFeatured));
+  if (featuredImage) form.append("featuredImage", featuredImage);
+  if (tags && tags.length > 0) {
+    tags.forEach((tag) => form.append("tags[]", tag));
+  }
+
+  return apiFormData(`/blog/${id}`, "PATCH", form);
+}
+
+// ─── DELETE /blog/{id} ────────────────────────────────────────────────────────
+export async function deleteBlog(id) {
+  return apiFetch(`/blog/${id}`, { method: "DELETE" });
 }

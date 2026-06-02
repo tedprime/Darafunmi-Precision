@@ -5,31 +5,23 @@ import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Edit2, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getBlogs, deleteBlog } from "../../../services/blog.jsx";
-
-interface Blog {
-  id: string | number;
-  title: string;
-  author: string;
-  date: string;
-  status: "published" | "draft" | string; // adjust based on your API
-}
+import { getBlogs, deleteBlog, BlogPost } from "../../../services/blog.jsx";
 
 const BlogListPage = () => {
   const navigate = useNavigate();
-  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     getBlogs()
-      .then(setBlogs)
+      .then(({ data }) => setBlogs(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     if (!confirm("Delete this post?")) return;
     try {
       await deleteBlog(id);
@@ -83,7 +75,7 @@ const BlogListPage = () => {
                 {blog.title}
               </h4>
               <p className="text-sm text-gray-500 mt-1">
-                By {blog.author} &nbsp;&nbsp; {blog.date}
+                By {blog.author ?? "Unknown"} &nbsp;&nbsp; {blog.date ?? blog.createdAt}
               </p>
             </div>
             <div className="flex items-center space-x-4">

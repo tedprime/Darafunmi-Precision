@@ -4,8 +4,8 @@ import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { Image as ImageIcon, Save, X, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createBlog } from "../../../services/blog";
+import { useNavigate, useParams } from "react-router-dom";
+import { getBlog, updateBlog } from "../../../services/blog";
 import { getCategories } from "../../../services/categories";
 
 interface Category {
@@ -13,39 +13,54 @@ interface Category {
   name: string;
 }
 
-const AddBlogPage: React.FC = () => {
+const EditBlogPage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("draft");
-
   const [isFeatured, setIsFeatured] = useState(false);
+
+  // Only set when the user picks a NEW image; existing image shown via URL
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Tags
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
-  // Categories from API
   const [categories, setCategories] = useState<Category[]>([]);
-
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Load blog post + categories in parallel
   useEffect(() => {
-    getCategories({ limit: 100 })
-      .then(({ data }) => {
-        setCategories(data);
-        if (data.length > 0) setCategory(data[0].name);
+    if (!id) return;
+
+    Promise.all([
+      getBlog(id),
+      getCategories({ limit: 100 }),
+    ])
+      .then(([blog, { data: cats }]) => {
+        setTitle(blog.title ?? "");
+        setExcerpt(blog.excerpt ?? "");
+        setContent(blog.content ?? "");
+        setCategory(blog.category ?? "");
+        setStatus(blog.status ?? "draft");
+        setIsFeatured(blog.isFeatured ?? false);
+        setTags(blog.tags ?? []);
+        // Show existing featured image if present
+        if (blog.featuredImage) setImagePreview(blog.featuredImage);
+        setCategories(cats);
       })
-      .catch(() => {});
-  }, []);
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,9 +77,7 @@ const AddBlogPage: React.FC = () => {
 
   const addTag = () => {
     const tag = tagInput.trim();
-    if (tag && !tags.includes(tag)) {
-      setTags((prev) => [...prev, tag]);
-    }
+    if (tag && !tags.includes(tag)) setTags((prev) => [...prev, tag]);
     setTagInput("");
   };
 
@@ -84,10 +97,11 @@ const AddBlogPage: React.FC = () => {
       setError("Blog title is required.");
       return;
     }
+    if (!id) return;
 
     setSubmitting(true);
     try {
-      await createBlog({
+      await updateBlog(id, {
         title: title.trim(),
         excerpt: excerpt.trim(),
         content: content.trim(),
@@ -99,18 +113,24 @@ const AddBlogPage: React.FC = () => {
       });
       navigate("/blog");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create blog post.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Failed to update blog post.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <Layout pageTitle="Edit Blog Post" pageSubtitle="Loading post...">
+        <p className="text-sm text-gray-500">Loading...</p>
+      </Layout>
+    );
+  }
+
   return (
     <Layout
-      pageTitle="Add Blog Post"
-      pageSubtitle="Write and publish a new blog post"
+      pageTitle="Edit Blog Post"
+      pageSubtitle="Update and republish your blog post"
     >
       {error && (
         <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
@@ -205,10 +225,7 @@ const AddBlogPage: React.FC = () => {
                     className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
                   >
                     {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-blue-900"
-                    >
+                    <button onClick={() => removeTag(tag)} className="hover:text-blue-900">
                       <X size={12} />
                     </button>
                   </span>
@@ -242,7 +259,7 @@ const AddBlogPage: React.FC = () => {
                   <X size={14} className="text-gray-600" />
                 </button>
                 <p className="text-xs text-gray-500 mt-2 truncate">
-                  {featuredImage?.name}
+                  {featuredImage?.name ?? "Current image"}
                 </p>
               </div>
             ) : (
@@ -254,9 +271,7 @@ const AddBlogPage: React.FC = () => {
                 <p className="text-sm font-medium text-gray-900">
                   Click to upload image
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPG up to 10MB
-                </p>
+                <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
               </div>
             )}
             <input
@@ -338,7 +353,7 @@ const AddBlogPage: React.FC = () => {
             disabled={submitting}
           >
             <Save size={16} className="mr-2" />
-            {submitting ? "Publishing..." : "Publish Blog Post"}
+            {submitting ? "Saving..." : "Save Changes"}
           </Button>
           <Button
             variant="secondary"
@@ -354,4 +369,4 @@ const AddBlogPage: React.FC = () => {
   );
 };
 
-export default AddBlogPage;
+export default EditBlogPage;

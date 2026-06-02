@@ -1,14 +1,70 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Eye, Search } from "lucide-react";
+import { Plus, Trash2, Search, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getQuotes, deleteQuote } from "../../../services/quote.jsx";
+
+interface Quote {
+  id: number;
+  quoteNumber: string;
+  client?: { name: string } | string;
+  amount: number;
+  status: "pending" | "accepted" | "rejected" | string;
+  date: string;
+  notes?: string;
+}
+
+const STATUS_COLOR: Record<string, "yellow" | "green" | "red" | "gray"> = {
+  pending: "yellow",
+  accepted: "green",
+  rejected: "red",
+};
 
 const QuoteListPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [count, setCount] = useState(0);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    getQuotes({ search, status })
+      .then(({ data, count }) => {
+        setQuotes(data);
+        setCount(count);
+        setError(null);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [search, status]);
+
+  const handleDelete = async (id: number, quoteNumber: string) => {
+    if (!confirm(`Delete quote "${quoteNumber}"?`)) return;
+    try {
+      setDeletingId(id);
+      await deleteQuote(id);
+      setQuotes((prev) => prev.filter((q) => q.id !== id));
+    } catch {
+      alert("Failed to delete quote.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const getClientName = (client: Quote["client"]) => {
+    if (!client) return "—";
+    if (typeof client === "object") return client.name;
+    return client;
+  };
+
   const headers = [
     "Quote No",
     "Client",
@@ -19,75 +75,90 @@ const QuoteListPage: React.FC = () => {
     "Actions",
   ];
 
-  const renderActions = () => (
-    <button className="text-gray-500 hover:text-gray-600">
-      <Eye size={16} />
-    </button>
-  );
-
-  const data = [
-    [
-      "QT-2025-001",
-      "Acme Corp",
-      "$5,000.00",
-      <Badge key="1" color="yellow">
-        pending
-      </Badge>,
-      "2025-04-20",
-      "Awaiting customer review",
-      renderActions(),
-    ],
-    [
-      "QT-2025-002",
-      "Tech Solutions",
-      "$8,500.00",
-      <Badge key="2" color="green">
-        accepted
-      </Badge>,
-      "2025-04-18",
-      "Customer accepted",
-      renderActions(),
-    ],
-    [
-      "QT-2025-003",
-      "Global Industries",
-      "$3,200.00",
-      <Badge key="3" color="red">
-        rejected
-      </Badge>,
-      "2025-04-15",
-      "Customer declined",
-      renderActions(),
-    ],
-  ];
+  const data = quotes.map((quote) => [
+    quote.quoteNumber,
+    getClientName(quote.client),
+    quote.amount !== undefined
+      ? `$${Number(quote.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
+      : "—",
+    <Badge
+      key={`status-${quote.id}`}
+      color={STATUS_COLOR[quote.status] ?? "gray"}
+    >
+      {quote.status}
+    </Badge>,
+    quote.date ? new Date(quote.date).toLocaleDateString() : "—",
+    quote.notes ?? "—",
+    <div key={`actions-${quote.id}`} className="flex space-x-2">
+      <button
+        className="p-1 border border-gray-200 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+        onClick={() => navigate(`/quotes/edit/${quote.id}`)}
+        disabled={deletingId === quote.id}
+      >
+        <Pencil size={15} />
+      </button>
+      <button
+        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
+        onClick={() => handleDelete(quote.id, quote.quoteNumber)}
+        disabled={deletingId === quote.id}
+      >
+        <Trash2 size={15} />
+      </button>
+    </div>,
+  ]);
 
   return (
     <Layout
       pageTitle="Quotes"
-      pageSubtitle="Manage all quotes and their details here."
+      pageSubtitle={`Manage all quotes and their details here.${count ? ` (${count} total)` : ""}`}
       action={
         <Button
           className="flex items-center"
           onClick={() => navigate("/quotes/add")}
         >
-          <Plus size={16} className="mr-2" /> Add Quotes
+          <Plus size={16} className="mr-2" /> Add Quote
         </Button>
       }
     >
-      <div className="mb-6 relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search size={18} className="text-gray-400" />
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={18} className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Search by quote number..."
+          />
         </div>
-        <input
-          type="text"
-          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          placeholder="Search quotations..."
-        />
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
 
-      <Card>
-        <Table headers={headers} data={data} />
-      </Card>
+      {loading && <p className="text-sm text-gray-500">Loading quotes...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {!loading && !error && (
+        <Card>
+          {data.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-8">
+              No quotes found.
+            </p>
+          ) : (
+            <Table headers={headers} data={data} />
+          )}
+        </Card>
+      )}
     </Layout>
   );
 };
