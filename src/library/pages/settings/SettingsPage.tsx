@@ -23,8 +23,6 @@ interface Settings {
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("general");
   const [settings, setSettings] = useState<Settings>({
@@ -126,7 +124,7 @@ const SettingsPage: React.FC = () => {
       )}
 
       {/* Tab bar */}
-      <div className="bg-gray-100 p-1 rounded-lg flex mb-6 max-w-3xl">
+      <div className="bg-gray-100 p-1 rounded-lg flex mb-6">
         {["general", "company", "notifications"].map((tab) => (
           <button
             key={tab}
