@@ -9,15 +9,26 @@ interface LayoutProps {
   action?: React.ReactNode;
 }
 
+const SIDEBAR_KEY = "sidebarOpen";
+
 const Layout: React.FC<LayoutProps> = ({
   children,
   pageTitle,
   pageSubtitle = "Welcome back. Here's your business overview.",
   action,
 }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem(SIDEBAR_KEY);
+    return saved ? JSON.parse(saved) : true;
+  });
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev: boolean) => {
+      const next = !prev;
+      localStorage.setItem(SIDEBAR_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
