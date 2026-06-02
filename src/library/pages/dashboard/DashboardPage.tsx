@@ -18,6 +18,11 @@ interface DashboardSummary {
   }[];
 }
 
+// Skeleton pulse placeholder
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
 const DashboardPage = () => {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,13 +36,50 @@ const DashboardPage = () => {
   }, []);
 
   if (loading)
-    return <p className="text-sm text-gray-500">Loading dashboard...</p>;
-  if (error) return <p className="text-sm text-red-500">{error}</p>;
+    return (
+      <Layout pageTitle="Dashboard" pageSubtitle="Welcome back. Here's your business overview.">
+        {/* KPI Skeleton Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-lg border border-gray-200 p-5">
+              <Skeleton className="h-4 w-24 mb-3" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+          ))}
+        </div>
 
-  // 1. Define table headers
+        {/* Activity Log Skeleton */}
+        <div>
+          <Skeleton className="h-5 w-32 mb-2" />
+          <Skeleton className="h-4 w-56 mb-4" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+
+  if (error)
+    return (
+      <Layout pageTitle="Dashboard" pageSubtitle="Welcome back. Here's your business overview.">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-gray-700 font-medium">Failed to load dashboard</p>
+          <p className="text-sm text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </Layout>
+    );
+
   const tableHeaders = ["Event", "Category", "Status", "User", "Date"];
 
-  // 2. Map data into the 2D array matrix required by the Table component
   const tableData = summary?.recentActivity
     ? summary.recentActivity.map((entry) => [
         entry.event,
@@ -56,23 +98,11 @@ const DashboardPage = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Total Clients" value={summary?.clients.total} />
-        <StatCard
-          label="Total Certificates"
-          value={summary?.certificates.total}
-        />
-        <StatCard
-          label="Expiring Soon"
-          value={summary?.certificates.expiringSoon}
-        />
+        <StatCard label="Total Certificates" value={summary?.certificates.total} />
+        <StatCard label="Expiring Soon" value={summary?.certificates.expiringSoon} />
         <StatCard label="Expired" value={summary?.certificates.expired} />
-        <StatCard
-          label="Total Calibrations"
-          value={summary?.calibrations.total}
-        />
-        <StatCard
-          label="Overdue Calibrations"
-          value={summary?.calibrations.overdue}
-        />
+        <StatCard label="Total Calibrations" value={summary?.calibrations.total} />
+        <StatCard label="Overdue Calibrations" value={summary?.calibrations.overdue} />
         <StatCard label="Quotes" value={summary?.quotes.total} />
         <StatCard label="Products" value={summary?.products.total} />
       </div>
@@ -96,7 +126,6 @@ const DashboardPage = () => {
   );
 };
 
-// Reusable stat card component
 const StatCard = ({ label, value }: { label: string; value?: number }) => (
   <div className="bg-white rounded-lg border border-gray-200 p-5">
     <p className="text-sm text-gray-500">{label}</p>
