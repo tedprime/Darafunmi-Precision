@@ -11,6 +11,11 @@ export async function apiFetch(endpoint, options = {}) {
     ...options,
   });
 
+  if (response.status === 401) {
+    localStorage.removeItem("token");
+    window.location.href = "/login"; // redirect to login if token expired
+  }
+
   if (!response.ok) throw new Error(`API error: ${response.status}`);
   return response.json();
 }
