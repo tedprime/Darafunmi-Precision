@@ -7,6 +7,10 @@ import { Plus, Eye, Edit2, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getBlogs, deleteBlog, type BlogPost } from "../../../services/blog.jsx";
 
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
 const BlogListPage = () => {
   const navigate = useNavigate();
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -48,6 +52,7 @@ const BlogListPage = () => {
         </Button>
       }
     >
+      {/* Search */}
       <div className="mb-6 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search size={18} className="text-gray-400" />
@@ -61,51 +66,95 @@ const BlogListPage = () => {
         />
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Loading posts...</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
-
-      <div className="space-y-4">
-        {filtered.map((blog) => (
-          <Card
-            key={blog.id}
-            className="flex justify-between items-center py-8 px-6"
-          >
-            <div>
-              <h4 className="text-base font-medium text-gray-900">
-                {blog.title}
-              </h4>
-              <p className="text-sm text-gray-500 mt-1">
-                By {blog.author ?? "Unknown"} &nbsp;&nbsp; {blog.date ?? blog.createdAt}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge color={blog.status === "published" ? "blue" : "gray"}>
-                {blog.status}
-              </Badge>
-              <div className="flex space-x-2 text-gray-400">
-                <button
-                  className="hover:text-gray-600"
-                  onClick={() => navigate(`/blog/${blog.id}`)}
-                >
-                  <Eye size={18} />
-                </button>
-                <button
-                  className="text-blue-500 hover:text-blue-600"
-                  onClick={() => navigate(`/blog/edit/${blog.id}`)}
-                >
-                  <Edit2 size={18} />
-                </button>
-                <button
-                  className="text-red-500 hover:text-red-600"
-                  onClick={() => handleDelete(blog.id)}
-                >
-                  <Trash2 size={18} />
-                </button>
+      {/* Loading Skeleton */}
+      {loading && (
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="flex justify-between items-center py-8 px-6">
+              <div className="flex-1">
+                <Skeleton className="h-5 w-64 mb-3" />
+                <Skeleton className="h-4 w-40" />
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <div className="flex space-x-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-5 rounded" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Error State */}
+      {!loading && error && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-gray-700 font-medium">Failed to load blog posts</p>
+          <p className="text-sm text-gray-400 mt-1">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Blog List */}
+      {!loading && !error && (
+        <div className="space-y-4">
+          {filtered.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-8">
+              No blog posts found.
+            </p>
+          ) : (
+            filtered.map((blog) => (
+              <Card
+                key={blog.id}
+                className="flex justify-between items-center py-8 px-6"
+              >
+                <div>
+                  <h4 className="text-base font-medium text-gray-900">
+                    {blog.title}
+                  </h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    By {blog.author ?? "Unknown"} &nbsp;&nbsp;{" "}
+                    {blog.date ?? blog.createdAt}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Badge color={blog.status === "published" ? "blue" : "gray"}>
+                    {blog.status}
+                  </Badge>
+                  <div className="flex space-x-2 text-gray-400">
+                    <button
+                      className="hover:text-gray-600"
+                      onClick={() => navigate(`/blog/${blog.id}`)}
+                    >
+                      <Eye size={18} />
+                    </button>
+                    <button
+                      className="text-blue-500 hover:text-blue-600"
+                      onClick={() => navigate(`/blog/edit/${blog.id}`)}
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => handleDelete(blog.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
     </Layout>
   );
 };
