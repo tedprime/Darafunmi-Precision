@@ -5,7 +5,7 @@ import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Edit2, Trash2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getBlogs, deleteBlog, BlogPost } from "../../../services/blog.jsx";
+import { getBlogs, deleteBlog, type BlogPost } from "../../../services/blog.jsx";
 
 const BlogListPage = () => {
   const navigate = useNavigate();
