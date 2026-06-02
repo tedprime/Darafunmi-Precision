@@ -55,30 +55,32 @@ const ClientListPage: React.FC = () => {
   const headers = ["Name", "Email", "Phone", "Location", "Status", "Actions"];
 
   const data = clients.map((client) => [
-    client.name,
-    client.email,
-    client.phone,
-    client.location,
+    <span key={`name-${client.id}`} className="font-medium text-gray-900">{client.name}</span>,
+    <span key={`email-${client.id}`} className="text-sm text-gray-600 break-all">{client.email}</span>,
+    <span key={`phone-${client.id}`} className="text-sm text-gray-600 whitespace-nowrap">{client.phone}</span>,
+    <span key={`loc-${client.id}`} className="text-sm text-gray-600">{client.location}</span>,
     <Badge
       key={`status-${client.id}`}
       color={client.status === "active" ? "green" : "gray"}
     >
       {client.status}
     </Badge>,
-    <div key={`actions-${client.id}`} className="flex space-x-2">
+    <div key={`actions-${client.id}`} className="flex items-center space-x-1 sm:space-x-2">
       <button
-        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
+        className="p-1.5 sm:p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
         onClick={() => navigate(`/clients/edit/${client.id}`)}
         disabled={deletingId === client.id}
+        title="Edit"
       >
-        <Edit2 size={15} />
+        <Edit2 size={14} className="sm:w-3.75 sm:h-3.75" />
       </button>
       <button
-        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
+        className="p-1.5 sm:p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
         onClick={() => handleDelete(client.id, client.name)}
         disabled={deletingId === client.id}
+        title="Delete"
       >
-        <Trash2 size={15} />
+        <Trash2 size={14} className="sm:w-3.75 sm:h-3.75" />
       </button>
     </div>,
   ]);
@@ -89,10 +91,12 @@ const ClientListPage: React.FC = () => {
       pageSubtitle={`Manage all your clients and their information here.${count ? ` (${count} total)` : ""}`}
       action={
         <Button
-          className="flex items-center"
+          className="flex items-center text-sm sm:text-base px-3 py-2 sm:px-4"
           onClick={() => navigate("/clients/add")}
         >
-          <Plus size={16} className="mr-2" /> Add Client
+          <Plus size={16} className="mr-1.5 sm:mr-2" /> 
+          <span className="hidden sm:inline">Add Client</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       }
     >
@@ -113,7 +117,7 @@ const ClientListPage: React.FC = () => {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
         >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
@@ -126,15 +130,24 @@ const ClientListPage: React.FC = () => {
 
       {!loading && !error && (
         <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            All Clients
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+              All Clients
+            </h3>
+            {count > 0 && (
+              <span className="text-xs sm:text-sm text-gray-500">{count} total</span>
+            )}
+          </div>
           {data.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
               No clients found.
             </p>
           ) : (
-            <Table headers={headers} data={data} />
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="min-w-180 sm:min-w-0 px-4 sm:px-0">
+                <Table headers={headers} data={data} />
+              </div>
+            </div>
           )}
         </Card>
       )}
