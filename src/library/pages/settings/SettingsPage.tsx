@@ -144,7 +144,7 @@ const SettingsPage: React.FC = () => {
         ))}
       </div>
 
-      <Card className="w-full max-w-3xl">
+      <Card className="w-full">
         {/* ── General ──────────────────────────────────────────────────────── */}
         {activeTab === "general" && (
           <div>
