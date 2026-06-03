@@ -70,7 +70,7 @@ const ProductListPage: React.FC = () => {
     typeof product.category === "object" && product.category !== null
       ? (product.category as { name: string }).name
       : ((product.category as string) ?? "—"),
-    product.price !== undefined ? `$${Number(product.price).toFixed(2)}` : "—",
+    product.price !== undefined ? `₦${Number(product.price).toFixed(2)}` : "—",
     product.stock ?? "—",
     <Badge
       key={`status-${product.id}`}
@@ -159,7 +159,9 @@ const ProductListPage: React.FC = () => {
       {/* Error State */}
       {error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
+          <p className="text-4xl mb-4">
+            <TriangleAlert className="w-8 h-8" />
+          </p>
           <p className="text-gray-700 font-medium">Failed to load products</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
