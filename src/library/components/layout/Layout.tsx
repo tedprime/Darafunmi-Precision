@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -17,51 +17,31 @@ const Layout: React.FC<LayoutProps> = ({
   pageSubtitle = "Welcome back. Here's your business overview.",
   action,
 }) => {
-  const isMobile = () => window.innerWidth < 768;
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    if (typeof window !== "undefined" && isMobile()) return false;
     const saved = localStorage.getItem(SIDEBAR_KEY);
     return saved ? JSON.parse(saved) : true;
   });
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (isMobile()) setIsSidebarOpen(false);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   const toggleSidebar = () => {
     setIsSidebarOpen((prev: boolean) => {
       const next = !prev;
-      if (!isMobile()) localStorage.setItem(SIDEBAR_KEY, JSON.stringify(next));
+      localStorage.setItem(SIDEBAR_KEY, JSON.stringify(next));
       return next;
     });
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Mobile overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black/40 md:hidden"
-          onClick={toggleSidebar}
-        />
-      )}
-
+    <div className="flex h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-      {/* Main content — on mobile takes full width; on desktop offset by sidebar */}
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300
-          ${isSidebarOpen ? "md:ml-72" : "md:ml-16"}`}
+          ${isSidebarOpen ? "ml-72" : "ml-16"}`}
       >
         <Header pageTitle={pageTitle} toggleSidebar={toggleSidebar} />
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {pageTitle}
