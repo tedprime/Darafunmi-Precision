@@ -17,7 +17,6 @@ const Layout: React.FC<LayoutProps> = ({
   pageSubtitle = "Welcome back. Here's your business overview.",
   action,
 }) => {
-  // On mobile, sidebar is always closed by default
   const isMobile = () => window.innerWidth < 768;
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -26,12 +25,9 @@ const Layout: React.FC<LayoutProps> = ({
     return saved ? JSON.parse(saved) : true;
   });
 
-  // Close sidebar automatically when resizing down to mobile
   useEffect(() => {
     const handleResize = () => {
-      if (isMobile()) {
-        setIsSidebarOpen(false);
-      }
+      if (isMobile()) setIsSidebarOpen(false);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -40,18 +36,15 @@ const Layout: React.FC<LayoutProps> = ({
   const toggleSidebar = () => {
     setIsSidebarOpen((prev: boolean) => {
       const next = !prev;
-      // Only persist on desktop
-      if (!isMobile()) {
-        localStorage.setItem(SIDEBAR_KEY, JSON.stringify(next));
-      }
+      if (!isMobile()) localStorage.setItem(SIDEBAR_KEY, JSON.stringify(next));
       return next;
     });
   };
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Mobile overlay — tapping outside closes sidebar */}
-      {isSidebarOpen && isMobile() && (
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/40 md:hidden"
           onClick={toggleSidebar}
@@ -60,14 +53,14 @@ const Layout: React.FC<LayoutProps> = ({
 
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
+      {/* Main content — on mobile takes full width; on desktop offset by sidebar */}
       <div
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300
-          ${isSidebarOpen ? "md:ml-72" : "md:ml-16"} ml-0`}
+          ${isSidebarOpen ? "md:ml-72" : "md:ml-16"}`}
       >
         <Header pageTitle={pageTitle} toggleSidebar={toggleSidebar} />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 md:p-8">
-          {/* Page title row — stacks on mobile if action is present */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
