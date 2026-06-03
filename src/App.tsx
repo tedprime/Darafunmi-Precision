@@ -7,7 +7,7 @@ import {
 import LoginPage from "./library/pages/auth/LoginPage";
 import DashboardPage from "./library/pages/dashboard/DashboardPage";
 import BookingListPage from "./library/pages/bookings/BookingListPage";
-import QuoteRequestListPage from "./library/pages/quotes/QuoteRequestsListPage.js";
+import QuoteRequestListPage from "./library/pages/quotes/QuoteRequestsListPage";
 import ClientListPage from "./library/pages/clients/ClientListPage";
 import AddClientPage from "./library/pages/clients/AddClientPage";
 import EditClientPage from "./library/pages/clients/EditClientPage";
