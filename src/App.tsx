@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import LoginPage from "./library/pages/auth/LoginPage";
 import DashboardPage from "./library/pages/dashboard/DashboardPage";
+import BookingListPage from "./library/pages/bookings/BookingListPage";
 import ClientListPage from "./library/pages/clients/ClientListPage";
 import AddClientPage from "./library/pages/clients/AddClientPage";
 import EditClientPage from "./library/pages/clients/EditClientPage";
@@ -39,165 +40,34 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
 
         {/* Protected */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
 
-        <Route
-          path="/clients"
-          element={
-            <ProtectedRoute>
-              <ClientListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients/add"
-          element={
-            <ProtectedRoute>
-              <AddClientPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditClientPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/bookings" element={<ProtectedRoute><BookingListPage /></ProtectedRoute>} />
 
-        <Route
-          path="/products"
-          element={
-            <ProtectedRoute>
-              <ProductListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/products/add"
-          element={
-            <ProtectedRoute>
-              <AddProductPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/products/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditProductPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/products/categories"
-          element={
-            <ProtectedRoute>
-              <CategoriesPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/clients" element={<ProtectedRoute><ClientListPage /></ProtectedRoute>} />
+        <Route path="/clients/add" element={<ProtectedRoute><AddClientPage /></ProtectedRoute>} />
+        <Route path="/clients/edit/:id" element={<ProtectedRoute><EditClientPage /></ProtectedRoute>} />
 
-        <Route
-          path="/quotes"
-          element={
-            <ProtectedRoute>
-              <QuoteListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/add"
-          element={
-            <ProtectedRoute>
-              <AddQuotePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditQuotePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/products" element={<ProtectedRoute><ProductListPage /></ProtectedRoute>} />
+        <Route path="/products/add" element={<ProtectedRoute><AddProductPage /></ProtectedRoute>} />
+        <Route path="/products/edit/:id" element={<ProtectedRoute><EditProductPage /></ProtectedRoute>} />
+        <Route path="/products/categories" element={<ProtectedRoute><CategoriesPage /></ProtectedRoute>} />
 
-        <Route
-          path="/calibrations/add"
-          element={
-            <ProtectedRoute>
-              <AddCalibrationPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/calibrations/history"
-          element={
-            <ProtectedRoute>
-              <CalibrationHistoryPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/quotes" element={<ProtectedRoute><QuoteListPage /></ProtectedRoute>} />
+        <Route path="/quotes/add" element={<ProtectedRoute><AddQuotePage /></ProtectedRoute>} />
+        <Route path="/quotes/edit/:id" element={<ProtectedRoute><EditQuotePage /></ProtectedRoute>} />
 
-        <Route
-          path="/certifications"
-          element={
-            <ProtectedRoute>
-              <CertificationListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/certifications/generate"
-          element={
-            <ProtectedRoute>
-              <GenerateCertificateFormPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/certifications/generate/preview"
-          element={
-            <ProtectedRoute>
-              <GenerateCertificatePreviewPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/calibrations/add" element={<ProtectedRoute><AddCalibrationPage /></ProtectedRoute>} />
+        <Route path="/calibrations/history" element={<ProtectedRoute><CalibrationHistoryPage /></ProtectedRoute>} />
 
-        <Route
-          path="/blog"
-          element={
-            <ProtectedRoute>
-              <BlogListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/blog/add"
-          element={
-            <ProtectedRoute>
-              <AddBlogPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/certifications" element={<ProtectedRoute><CertificationListPage /></ProtectedRoute>} />
+        <Route path="/certifications/generate" element={<ProtectedRoute><GenerateCertificateFormPage /></ProtectedRoute>} />
+        <Route path="/certifications/generate/preview" element={<ProtectedRoute><GenerateCertificatePreviewPage /></ProtectedRoute>} />
 
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/blog" element={<ProtectedRoute><BlogListPage /></ProtectedRoute>} />
+        <Route path="/blog/add" element={<ProtectedRoute><AddBlogPage /></ProtectedRoute>} />
+
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />

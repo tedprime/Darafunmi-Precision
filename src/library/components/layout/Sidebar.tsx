@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  CalendarCheck,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -23,6 +24,11 @@ interface SidebarProps {
 
 const navItems = [
   { name: "Dashboard", icon: Home, path: "/dashboard" },
+  {
+    name: "Bookings",
+    icon: CalendarCheck,
+    path: "/bookings",
+  },
   {
     name: "Clients",
     icon: Users,
@@ -88,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   }>({});
 
   const toggleSubmenu = (name: string) => {
-    setOpenSubmenus(prev => ({ ...prev, [name]: !prev[name] }));
+    setOpenSubmenus((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
   return (
@@ -118,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
       {/* Nav */}
       <nav className="mt-5 px-2">
-        {navItems.map(item => (
+        {navItems.map((item) => (
           <div key={item.name}>
             {item.subItems ? (
               <div>
@@ -129,9 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                     ${location.pathname.startsWith(item.path) ? "bg-blue-50 text-blue-500" : ""}
                     ${!isOpen ? "justify-center px-2" : "px-4"}`}
                 >
-                  <div
-                    className={`flex items-center ${!isOpen ? "justify-center" : ""}`}
-                  >
+                  <div className={`flex items-center ${!isOpen ? "justify-center" : ""}`}>
                     <item.icon size={20} className={isOpen ? "mr-3" : ""} />
                     {isOpen && <span>{item.name}</span>}
                   </div>
@@ -145,7 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
                 {isOpen && openSubmenus[item.name] && (
                   <div className="ml-6 mt-1 space-y-1">
-                    {item.subItems.map(subItem => (
+                    {item.subItems.map((subItem) => (
                       <Link
                         key={subItem.name}
                         to={subItem.path}
@@ -180,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           to="/login"
           title={!isOpen ? "Logout" : undefined}
           className={`flex items-center py-2 text-red-600 hover:bg-red-100 rounded-md transition-colors duration-200
-      ${!isOpen ? "justify-center px-2" : "px-4"}`}
+            ${!isOpen ? "justify-center px-2" : "px-4"}`}
         >
           <LogOut size={20} className={isOpen ? "mr-3" : ""} />
           {isOpen && <span>Logout</span>}
