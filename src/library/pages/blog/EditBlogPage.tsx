@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Image as ImageIcon, Save, X, Plus } from "lucide-react";
+import { Image as ImageIcon, Save, X, Plus, TriangleAlert } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBlog, updateBlog } from "../../../services/blog";
 import { getCategories } from "../../../services/categories";
@@ -174,7 +174,7 @@ const EditBlogPage: React.FC = () => {
       {/* Load Error State */}
       {!loading && loadError && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
           <p className="text-gray-700 font-medium">Failed to load blog post</p>
           <p className="text-sm text-gray-400 mt-1">{loadError}</p>
           <button

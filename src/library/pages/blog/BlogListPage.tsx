@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Eye, Edit2, Trash2, Search } from "lucide-react";
+import { Plus, Eye, Edit2, Trash2, Search, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getBlogs, deleteBlog, type BlogPost } from "../../../services/blog.jsx";
 
@@ -91,7 +91,7 @@ const BlogListPage = () => {
       {/* Error State */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
           <p className="text-gray-700 font-medium">Failed to load blog posts</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button

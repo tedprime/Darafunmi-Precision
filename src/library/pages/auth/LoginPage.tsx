@@ -159,7 +159,7 @@ const LoginPage: React.FC = () => {
           </form>
 
           <p className="text-xs text-gray-400 text-center mt-10">
-            Darafunmi Precision Technologies Ltd. &copy; 2025 All rights
+            Darafunmi Precision Technologies Ltd. &copy; {new Date().getFullYear()} All rights
             reserved
           </p>
         </div>

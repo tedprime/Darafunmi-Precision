@@ -6,6 +6,7 @@ import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { updateClient } from "../../../services/client.jsx";
 import { apiFetch } from "../../../services/api";
+import { TriangleAlert } from "lucide-react";
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
@@ -107,7 +108,7 @@ const EditClientPage: React.FC = () => {
       {/* Error State */}
       {!loading && error && !submitting && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
           <p className="text-gray-700 font-medium">Failed to load client</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button

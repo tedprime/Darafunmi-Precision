@@ -4,7 +4,7 @@ import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Search, Trash2, Edit2 } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getClients, deleteClient } from "../../../services/client.jsx";
 
@@ -151,7 +151,7 @@ const ClientListPage: React.FC = () => {
       {/* Error State */}
       {error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
           <p className="text-gray-700 font-medium">Failed to load clients</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button

@@ -4,6 +4,7 @@ import Layout from "../../components/layout/Layout";
 import ProductForm from "./ProductForm";
 import { updateProduct } from "../../../services/product.jsx";
 import { apiFetch } from "../../../services/api";
+import { TriangleAlert } from "lucide-react";
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
@@ -95,7 +96,7 @@ const EditProductPage: React.FC = () => {
       {/* Error State — only for load errors */}
       {!loading && !initial && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4">⚠️</p>
+          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
           <p className="text-gray-700 font-medium">Failed to load product</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
