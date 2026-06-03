@@ -142,7 +142,7 @@ function App() {
           }
         />
         <Route
-          path="/quote-requests"
+          path="/quotes/quote-requests"
           element={
             <ProtectedRoute>
               <QuoteRequestListPage />
