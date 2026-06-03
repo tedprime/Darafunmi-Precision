@@ -10,7 +10,7 @@ import {
   getCertifications,
   deleteCertification,
   generatePdf,
-  sendCertificateEmail,
+  sendCertificateEmailToClient,
 } from "../../../services/certification.jsx";
 
 interface Certificate {
@@ -33,6 +33,27 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+type ToastType = "success" | "error";
+interface Toast { id: number; message: string; type: ToastType }
+
+const ToastContainer = ({ toasts }: { toasts: Toast[] }) => (
+  <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+    {toasts.map((t) => (
+      <div
+        key={t.id}
+        className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white transition-all ${
+          t.type === "success" ? "bg-green-600" : "bg-red-600"
+        }`}
+      >
+        {t.message}
+      </div>
+    ))}
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const CertificationListPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -43,16 +64,35 @@ const CertificationListPage: React.FC = () => {
   const [status, setStatus] = useState("");
   const [count, setCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (message: string, type: ToastType) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  };
 
   useEffect(() => {
-    getCertifications({ search, status })
-      .then(({ data, count }) => {
+    let cancelled = false;
+
+    const fetchCerts = async () => {
+      try {
+        const { data, count: total } = await getCertifications({ search, status });
+        if (cancelled) return;
         setCerts(data);
-        setCount(count);
+        setCount(total);
         setError(null);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Failed to load certificates.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchCerts();
+
+    return () => { cancelled = true; };
   }, [search, status]);
 
   const handleDelete = async (id: number, certNo: string) => {
@@ -61,8 +101,9 @@ const CertificationListPage: React.FC = () => {
       setActionLoading(id);
       await deleteCertification(id);
       setCerts((prev) => prev.filter((c) => c.id !== id));
+      showToast("Certificate deleted.", "success");
     } catch {
-      alert("Failed to delete certificate.");
+      showToast("Failed to delete certificate.", "error");
     } finally {
       setActionLoading(null);
     }
@@ -79,21 +120,21 @@ const CertificationListPage: React.FC = () => {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert("Failed to generate PDF.");
+      showToast("Failed to generate PDF.", "error");
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleSendEmail = async (id: number) => {
-    const email = prompt("Enter recipient email address:");
-    if (!email) return;
+  const handleSendEmail = async (id: number, customerName: string) => {
+    if (!confirm(`Send certificate PDF to ${customerName}'s email on file?`)) return;
     try {
       setActionLoading(id);
-      await sendCertificateEmail(id, email);
-      alert("Email sent successfully!");
-    } catch {
-      alert("Failed to send email.");
+      await sendCertificateEmailToClient(id);
+      showToast(`Certificate sent to ${customerName} successfully!`, "success");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send email.";
+      showToast(message, "error");
     } finally {
       setActionLoading(null);
     }
@@ -118,6 +159,7 @@ const CertificationListPage: React.FC = () => {
     </Badge>,
     <div key={`actions-${cert.id}`} className="flex space-x-2">
       <button
+        title="Preview"
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
         onClick={() => navigate(`/certifications/generate/preview?id=${cert.id}`)}
         disabled={actionLoading === cert.id}
@@ -125,6 +167,7 @@ const CertificationListPage: React.FC = () => {
         <Eye size={16} />
       </button>
       <button
+        title="Download PDF"
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
         onClick={() => handleDownload(cert.id, cert.certificateNumber)}
         disabled={actionLoading === cert.id}
@@ -132,13 +175,22 @@ const CertificationListPage: React.FC = () => {
         <Download size={16} />
       </button>
       <button
-        className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => handleSendEmail(cert.id)}
+        title={`Email PDF to ${cert.customerName}`}
+        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
+        onClick={() => handleSendEmail(cert.id, cert.customerName)}
         disabled={actionLoading === cert.id}
       >
-        <Mail size={16} />
+        {actionLoading === cert.id ? (
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+        ) : (
+          <Mail size={16} />
+        )}
       </button>
       <button
+        title="Delete"
         className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
         onClick={() => handleDelete(cert.id, cert.certificateNumber)}
         disabled={actionLoading === cert.id}
@@ -224,7 +276,7 @@ const CertificationListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Certifications Table */}
+      {/* Table */}
       {!loading && !error && (
         <Card>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -239,6 +291,8 @@ const CertificationListPage: React.FC = () => {
           )}
         </Card>
       )}
+
+      <ToastContainer toasts={toasts} />
     </Layout>
   );
 };
