@@ -23,6 +23,7 @@ import CalibrationHistoryPage from "./library/pages/calibrations/CalibrationHist
 import CertificationListPage from "./library/pages/certifications/CertificationListPage";
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
 import GenerateCertificatePreviewPage from "./library/pages/certifications/GenerateCertificatePreviewPage";
+import ContactSubmissionsPage from "./library/pages/clients/ContactSubmissioinsPage";
 import BlogListPage from "./library/pages/blog/BlogListPage";
 import AddBlogPage from "./library/pages/blog/AddBlogPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
@@ -80,6 +81,14 @@ function App() {
           element={
             <ProtectedRoute>
               <EditClientPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clients/contact-submissions"
+          element={
+            <ProtectedRoute>
+              <ContactSubmissionsPage />
             </ProtectedRoute>
           }
         />

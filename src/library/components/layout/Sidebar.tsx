@@ -36,6 +36,7 @@ const navItems = [
     subItems: [
       { name: "Client List", path: "/clients" },
       { name: "Add Client", path: "/clients/add" },
+      { name: "Contact Submissions", path: "/clients/contact-submissions" },
     ],
   },
   {
