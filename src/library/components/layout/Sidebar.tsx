@@ -15,7 +15,6 @@ import {
   ChevronUp,
   X,
   CalendarCheck,
-  MessageSquare
 } from "lucide-react";
 
 interface SidebarProps {
@@ -30,11 +29,6 @@ const navItems = [
     icon: CalendarCheck,
     path: "/bookings",
   },
-  {
-  name: "Quote Requests",
-  icon: MessageSquare,   
-  path: "/quote-requests",
-},
   {
     name: "Clients",
     icon: Users,
@@ -61,6 +55,7 @@ const navItems = [
     subItems: [
       { name: "Quote List", path: "/quotes" },
       { name: "Add Quote", path: "/quotes/add" },
+      { name: "Quote Requests", path: "/quotes/quote-requests" },
     ],
   },
   {

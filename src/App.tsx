@@ -7,7 +7,7 @@ import {
 import LoginPage from "./library/pages/auth/LoginPage";
 import DashboardPage from "./library/pages/dashboard/DashboardPage";
 import BookingListPage from "./library/pages/bookings/BookingListPage";
-import QuoteRequestListPage from "./library/pages/quoteRequests/QuoteRequestsListPage";
+import QuoteRequestListPage from "./library/pages/quotes/QuoteRequestsListPage.js";
 import ClientListPage from "./library/pages/clients/ClientListPage";
 import AddClientPage from "./library/pages/clients/AddClientPage";
 import EditClientPage from "./library/pages/clients/EditClientPage";
@@ -55,15 +55,6 @@ function App() {
           element={
             <ProtectedRoute>
               <BookingListPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/quote-requests"
-          element={
-            <ProtectedRoute>
-              <QuoteRequestListPage />
             </ProtectedRoute>
           }
         />
@@ -147,6 +138,14 @@ function App() {
           element={
             <ProtectedRoute>
               <EditQuotePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quote-requests"
+          element={
+            <ProtectedRoute>
+              <QuoteRequestListPage />
             </ProtectedRoute>
           }
         />
