@@ -101,11 +101,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg overflow-y-auto transition-all duration-300
+      className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg flex flex-col h-screen transition-all duration-300
         ${isOpen ? "w-72" : "w-16"}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100 shrink-0">
         {isOpen && (
           <div className="flex items-center">
             <div className="bg-blue-600 text-white text-xl px-4 py-2 rounded-lg font-bold mr-2">
@@ -124,8 +124,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         </button>
       </div>
 
-      {/* Nav */}
-      <nav className="mt-5 px-2">
+      {/* Nav Container - Scrollable area */}
+      <nav className="flex-1 overflow-y-auto mt-5 px-2 space-y-1">
         {navItems.map((item) => (
           <div key={item.name}>
             {item.subItems ? (
@@ -180,8 +180,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="absolute bottom-0 left-0 w-full p-2 border-t border-gray-200">
+      {/* Logout Footer - Always stays at bottom without overlapping */}
+      <div className="p-2 border-t border-gray-200 shrink-0 bg-white">
         <Link
           to="/login"
           title={!isOpen ? "Logout" : undefined}
