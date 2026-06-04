@@ -6,7 +6,6 @@ import {
   Package,
   FileText,
   Settings,
-  Book,
   Award,
   Gauge,
   Menu,
@@ -15,6 +14,12 @@ import {
   ChevronUp,
   X,
   CalendarCheck,
+  ShoppingBag,
+  Wrench,
+  Building2,
+  BookOpen,
+  UserCog,
+  Newspaper,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -30,6 +35,15 @@ const navItems = [
     path: "/bookings",
   },
   {
+    name: "Orders",
+    icon: ShoppingBag,
+    path: "/orders",
+    subItems: [
+      { name: "Order List", path: "/orders" },
+      { name: "Active Carts", path: "/orders/carts" },
+    ],
+  },
+  {
     name: "Clients",
     icon: Users,
     path: "/clients",
@@ -38,6 +52,25 @@ const navItems = [
       { name: "Add Client", path: "/clients/add" },
       { name: "Contact Submissions", path: "/clients/contact-submissions" },
     ],
+  },
+  {
+    name: "Site Users",
+    icon: UserCog,
+    path: "/site-users",
+    subItems: [
+      { name: "User List", path: "/site-users" },
+      { name: "Auth Management", path: "/site-users/auth" },
+    ],
+  },
+  {
+    name: "Services",
+    icon: Wrench,
+    path: "/services",
+  },
+  {
+    name: "Industries",
+    icon: Building2,
+    path: "/industries",
   },
   {
     name: "Products",
@@ -75,16 +108,25 @@ const navItems = [
     subItems: [
       { name: "Certification List", path: "/certifications" },
       { name: "Generate Certificate", path: "/certifications/generate" },
+      { name: "Company Certifications", path: "/certifications/company" },
     ],
   },
   {
-    name: "Blogs",
-    icon: Book,
-    path: "/blog",
+    name: "Content",
+    icon: BookOpen,
+    path: "/content",
     subItems: [
       { name: "Blog List", path: "/blog" },
       { name: "Add Blog", path: "/blog/add" },
+      { name: "Case Studies", path: "/content/case-studies" },
+      { name: "Testimonials", path: "/content/testimonials" },
+      { name: "Resources", path: "/content/resources" },
     ],
+  },
+  {
+    name: "Newsletter",
+    icon: Newspaper,
+    path: "/newsletter",
   },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
@@ -180,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         ))}
       </nav>
 
-      {/* Logout Footer - Always stays at bottom without overlapping */}
+      {/* Logout Footer */}
       <div className="p-2 border-t border-gray-200 shrink-0 bg-white">
         <Link
           to="/login"

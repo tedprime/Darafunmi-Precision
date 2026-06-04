@@ -11,6 +11,7 @@ import QuoteRequestListPage from "./library/pages/quotes/QuoteRequestsListPage";
 import ClientListPage from "./library/pages/clients/ClientListPage";
 import AddClientPage from "./library/pages/clients/AddClientPage";
 import EditClientPage from "./library/pages/clients/EditClientPage";
+import ContactSubmissionsPage from "./library/pages/clients/ContactSubmissioinsPage";
 import ProductListPage from "./library/pages/products/ProductListPage";
 import AddProductPage from "./library/pages/products/AddProductPage";
 import EditProductPage from "./library/pages/products/EditProductPage";
@@ -23,10 +24,33 @@ import CalibrationHistoryPage from "./library/pages/calibrations/CalibrationHist
 import CertificationListPage from "./library/pages/certifications/CertificationListPage";
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
 import GenerateCertificatePreviewPage from "./library/pages/certifications/GenerateCertificatePreviewPage";
-import ContactSubmissionsPage from "./library/pages/clients/ContactSubmissioinsPage";
 import BlogListPage from "./library/pages/blog/BlogListPage";
 import AddBlogPage from "./library/pages/blog/AddBlogPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
+
+// New sections
+// import OrderListPage from "./library/pages/orders/OrderListPage";
+// import CartListPage from "./library/pages/orders/CartListPage";
+import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
+// import SiteUserAuthPage from "./library/pages/site-users/SiteUserAuthPage";
+// import ServiceListPage from "./library/pages/services/ServiceListPage";
+// import AddServicePage from "./library/pages/services/AddServicePage";
+// import EditServicePage from "./library/pages/services/EditServicePage";
+// import IndustryListPage from "./library/pages/industries/IndustryListPage";
+// import AddIndustryPage from "./library/pages/industries/AddIndustryPage";
+// import EditIndustryPage from "./library/pages/industries/EditIndustryPage";
+// import CompanyCertificationListPage from "./library/pages/certifications/CompanyCertificationListPage";
+// import CaseStudyListPage from "./library/pages/content/CaseStudyListPage";
+// import AddCaseStudyPage from "./library/pages/content/AddCaseStudyPage";
+// import EditCaseStudyPage from "./library/pages/content/EditCaseStudyPage";
+// import TestimonialListPage from "./library/pages/content/TestimonialListPage";
+// import AddTestimonialPage from "./library/pages/content/AddTestimonialPage";
+// import EditTestimonialPage from "./library/pages/content/EditTestimonialPage";
+// import ResourceListPage from "./library/pages/content/ResourceListPage";
+// import AddResourcePage from "./library/pages/content/AddResourcePage";
+// import EditResourcePage from "./library/pages/content/EditResourcePage";
+// import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
+
 import { isAuthenticated } from "./services/auth.jsx";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -41,7 +65,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected */}
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -51,6 +75,7 @@ function App() {
           }
         />
 
+        {/* Bookings */}
         <Route
           path="/bookings"
           element={
@@ -60,6 +85,25 @@ function App() {
           }
         />
 
+        {/* Orders */}
+        {/* <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <OrderListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/orders/carts"
+          element={
+            <ProtectedRoute>
+              <CartListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Clients */}
         <Route
           path="/clients"
           element={
@@ -93,6 +137,77 @@ function App() {
           }
         />
 
+        {/* Site Users */}
+        <Route
+          path="/site-users"
+          element={
+            <ProtectedRoute>
+              <SiteUserListPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* <Route
+          path="/site-users/auth"
+          element={
+            <ProtectedRoute>
+              <SiteUserAuthPage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Services */}
+        {/* <Route
+          path="/services"
+          element={
+            <ProtectedRoute>
+              <ServiceListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/services/add"
+          element={
+            <ProtectedRoute>
+              <AddServicePage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/services/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditServicePage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Industries */}
+        {/* <Route
+          path="/industries"
+          element={
+            <ProtectedRoute>
+              <IndustryListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/industries/add"
+          element={
+            <ProtectedRoute>
+              <AddIndustryPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/industries/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditIndustryPage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Products */}
         <Route
           path="/products"
           element={
@@ -126,6 +241,7 @@ function App() {
           }
         />
 
+        {/* Quotations */}
         <Route
           path="/quotes"
           element={
@@ -159,6 +275,7 @@ function App() {
           }
         />
 
+        {/* Calibrations */}
         <Route
           path="/calibrations/add"
           element={
@@ -176,6 +293,7 @@ function App() {
           }
         />
 
+        {/* Certifications */}
         <Route
           path="/certifications"
           element={
@@ -200,7 +318,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* <Route
+          path="/certifications/company"
+          element={
+            <ProtectedRoute>
+              <CompanyCertificationListPage />
+            </ProtectedRoute>
+          }
+        /> */}
 
+        {/* Content — Blog */}
         <Route
           path="/blog"
           element={
@@ -218,6 +345,95 @@ function App() {
           }
         />
 
+        {/* Content — Case Studies */}
+        {/* <Route
+          path="/content/case-studies"
+          element={
+            <ProtectedRoute>
+              <CaseStudyListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/content/case-studies/add"
+          element={
+            <ProtectedRoute>
+              <AddCaseStudyPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/content/case-studies/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditCaseStudyPage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Content — Testimonials */}
+        {/* <Route
+          path="/content/testimonials"
+          element={
+            <ProtectedRoute>
+              <TestimonialListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/content/testimonials/add"
+          element={
+            <ProtectedRoute>
+              <AddTestimonialPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/content/testimonials/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditTestimonialPage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Content — Resources */}
+        {/* <Route
+          path="/content/resources"
+          element={
+            <ProtectedRoute>
+              <ResourceListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/content/resources/add"
+          element={
+            <ProtectedRoute>
+              <AddResourcePage />
+            </ProtectedRoute>
+          }
+        /> */}
+        {/* <Route
+          path="/content/resources/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditResourcePage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Newsletter */}
+        {/* <Route
+          path="/newsletter"
+          element={
+            <ProtectedRoute>
+              <NewsletterListPage />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* Settings */}
         <Route
           path="/settings"
           element={
