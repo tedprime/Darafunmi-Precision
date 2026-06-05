@@ -1,28 +1,28 @@
 import { apiFetch } from "./api.jsx";
 
 /**
- * GET /services
- * List all services (public).
+ * GET /industries
+ * List all industries (public).
  */
-export async function getServices() {
-  return apiFetch("/services");
+export async function getIndustries() {
+  return apiFetch("/industries");
 }
 
 /**
- * GET /services/:slug
- * Get a single service by slug (public).
+ * GET /industries/:slug
+ * Get a single industry by slug (public).
  * @param {string} slug
  */
-export async function getServiceBySlug(slug) {
-  return apiFetch(`/services/${slug}`);
+export async function getIndustryBySlug(slug) {
+  return apiFetch(`/industries/${slug}`);
 }
 
 /**
- * POST /services
- * Create a new service (admin). multipart/form-data.
- * @param {{ title: string, slug?: string, description?: string, content?: string, icon?: string, image?: File|null, status?: string }} payload
+ * POST /industries
+ * Create a new industry (admin). multipart/form-data.
+ * @param {{ title: string, slug?: string, description?: string, content?: string, image?: File|null, status?: string }} payload
  */
-export async function createService({ title, slug, description, content, icon, image, status }) {
+export async function createIndustry({ title, slug, description, content, image, status }) {
   const token = localStorage.getItem("token");
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -31,11 +31,10 @@ export async function createService({ title, slug, description, content, icon, i
   if (slug) form.append("slug", slug);
   if (description) form.append("description", description);
   if (content) form.append("content", content);
-  if (icon) form.append("icon", icon);
   if (image) form.append("image", image);
   if (status) form.append("status", status);
 
-  const response = await fetch(`${BASE_URL}/services`, {
+  const response = await fetch(`${BASE_URL}/industries`, {
     method: "POST",
     headers: { ...(token && { Authorization: `Bearer ${token}` }) },
     body: form,
@@ -48,12 +47,12 @@ export async function createService({ title, slug, description, content, icon, i
 }
 
 /**
- * PATCH /services/:id
- * Update a service (admin). multipart/form-data.
+ * PATCH /industries/:id
+ * Update an industry (admin). multipart/form-data.
  * @param {number|string} id
  * @param {{ title?: string, description?: string, content?: string, image?: File|null, status?: string }} payload
  */
-export async function updateService(id, { title, description, content, image, status }) {
+export async function updateIndustry(id, { title, description, content, image, status }) {
   const token = localStorage.getItem("token");
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -64,7 +63,7 @@ export async function updateService(id, { title, description, content, image, st
   if (image) form.append("image", image);
   if (status) form.append("status", status);
 
-  const response = await fetch(`${BASE_URL}/services/${id}`, {
+  const response = await fetch(`${BASE_URL}/industries/${id}`, {
     method: "PATCH",
     headers: { ...(token && { Authorization: `Bearer ${token}` }) },
     body: form,
@@ -77,10 +76,10 @@ export async function updateService(id, { title, description, content, image, st
 }
 
 /**
- * DELETE /services/:id
- * Delete a service (admin).
+ * DELETE /industries/:id
+ * Delete an industry (admin).
  * @param {number|string} id
  */
-export async function deleteService(id) {
-  return apiFetch(`/services/${id}`, { method: "DELETE" });
+export async function deleteIndustry(id) {
+  return apiFetch(`/industries/${id}`, { method: "DELETE" });
 }
