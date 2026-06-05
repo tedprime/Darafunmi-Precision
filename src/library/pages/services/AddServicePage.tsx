@@ -10,16 +10,16 @@ const AddServicePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async ({
-    title, slug, description, content, icon, image, status,
+    name, slug, shortDescription, description, icon, image, status,
   }: {
-    title: string; slug: string; description: string;
-    content: string; icon: string; image: File | null; status: string;
+    name: string; slug: string; shortDescription: string;
+    description: string; icon: string; image: File | null; status: string;
   }) => {
     setError(null);
-    if (!title.trim()) { setError("Title is required."); return; }
+    if (!name.trim()) { setError("Name is required."); return; }
     setSubmitting(true);
     try {
-      await createService({ title: title.trim(), slug, description, content, icon, image, status });
+      await createService({ name: name.trim(), slug, shortDescription, description, icon, image, status });
       navigate("/services");
     } catch (err: unknown) {
       setError(
