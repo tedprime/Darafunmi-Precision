@@ -33,9 +33,9 @@ import SettingsPage from "./library/pages/settings/SettingsPage";
 // import CartListPage from "./library/pages/orders/CartListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
 import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
-// import ServiceListPage from "./library/pages/services/ServiceListPage";
-// import AddServicePage from "./library/pages/services/AddServicePage";
-// import EditServicePage from "./library/pages/servicesEditServicePage";
+import ServiceListPage from "./library/pages/services/ServicesListPage";
+import AddServicePage from "./library/pages/services/AddServicePage";
+import EditServicePage from "./library/pages/services/EditServicePage";
 // import IndustryListPage from "./library/pages/industries/IndustryListPage";
 // import AddIndustryPage from "./library/pages/industries/AddIndustryPage";
 // import EditIndustryPage from "./library/pages/industries/EditIndustryPage";
@@ -156,30 +156,30 @@ function App() {
         />
 
         {/* Services */}
-        {/* <Route
+        <Route
           path="/services"
           element={
             <ProtectedRoute>
               <ServiceListPage />
             </ProtectedRoute>
           }
-        /> */}
-        {/* <Route
+        />
+        <Route
           path="/services/add"
           element={
             <ProtectedRoute>
               <AddServicePage />
             </ProtectedRoute>
           }
-        /> */}
-        {/* <Route
+        />
+        <Route
           path="/services/edit/:id"
           element={
             <ProtectedRoute>
               <EditServicePage />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         {/* Industries */}
         {/* <Route
