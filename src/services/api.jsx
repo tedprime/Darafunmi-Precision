@@ -20,6 +20,7 @@ const getFriendlyErrorMessage = (status) => {
 
 export async function apiFetch(endpoint, options = {}, retries = 3) {
   const token = localStorage.getItem("token");
+  const isFormData = options.body instanceof FormData;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -29,8 +30,13 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
       const response = await fetch(`${BASE_URL}${endpoint}`, {
         signal: controller.signal,
         headers: {
-          "Content-Type": "application/json",
+          // Only set Content-Type for JSON — let the browser set it for FormData
+          // so it includes the correct multipart boundary
+          ...(!isFormData && { "Content-Type": "application/json" }),
           ...(token && { Authorization: `Bearer ${token}` }),
+          // Caller-supplied headers last so they can override if needed,
+          // but strip any explicit Content-Type the caller passed for FormData
+          ...(options.headers && !isFormData ? options.headers : {}),
         },
         ...options,
       });
@@ -41,7 +47,7 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
       if (response.status === 401) {
         localStorage.removeItem("token");
         window.location.href = "/login";
-        return; 
+        return;
       }
 
       // If response is not 2xx, throw a structured error object
@@ -56,7 +62,7 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
 
     } catch (err) {
       const isTimeout = err.name === "AbortError";
-      
+
       // Standardize the error structure whether it's an API, network, or timeout failure
       const cleanError = isTimeout
         ? { status: 408, message: "Connection timed out. Please check your internet link." }
