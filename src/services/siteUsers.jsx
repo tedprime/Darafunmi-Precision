@@ -27,11 +27,26 @@ export async function getSiteUser(id) {
 
 /**
  * PATCH /site-users/:id/toggle-active
- Toggle a site user's active status (admin).
+ * Toggle a site user's active status (admin).
  * @param {number|string} id
  */
 export async function toggleSiteUserActive(id) {
   return apiFetch(`/site-users/${id}/toggle-active`, {
     method: "PATCH",
+  });
+}
+
+
+// ─── Site User Auth (customer-facing, called on behalf of users) ───────────
+
+/**
+ * POST /user/auth/register
+ * Register a new site user (admin can use to create accounts on behalf of customers).
+ * @param {{ name: string, email: string, password: string, phone: string, company: string }} payload
+ */
+export async function registerSiteUser({ name, email, password, phone, company }) {
+  return apiFetch("/user/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password, phone, company }),
   });
 }

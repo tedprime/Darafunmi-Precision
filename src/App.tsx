@@ -32,10 +32,10 @@ import SettingsPage from "./library/pages/settings/SettingsPage";
 // import OrderListPage from "./library/pages/orders/OrderListPage";
 // import CartListPage from "./library/pages/orders/CartListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
-// import SiteUserAuthPage from "./library/pages/site-users/SiteUserAuthPage";
+import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
 // import ServiceListPage from "./library/pages/services/ServiceListPage";
 // import AddServicePage from "./library/pages/services/AddServicePage";
-// import EditServicePage from "./library/pages/services/EditServicePage";
+// import EditServicePage from "./library/pages/servicesEditServicePage";
 // import IndustryListPage from "./library/pages/industries/IndustryListPage";
 // import AddIndustryPage from "./library/pages/industries/AddIndustryPage";
 // import EditIndustryPage from "./library/pages/industries/EditIndustryPage";
@@ -146,14 +146,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* <Route
+        <Route
           path="/site-users/auth"
           element={
             <ProtectedRoute>
               <SiteUserAuthPage />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         {/* Services */}
         {/* <Route
