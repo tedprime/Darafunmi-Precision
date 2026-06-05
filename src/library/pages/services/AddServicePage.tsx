@@ -9,31 +9,30 @@ const AddServicePage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async ({
-    name, slug, shortDescription, description, icon, image, status,
-  }: {
-    name: string; slug: string; shortDescription: string;
-    description: string; icon: string; image: File | null; status: string;
-  }) => {
+  const handleSubmit = async (fields: { name: string; description: string; image: File | null }) => {
     setError(null);
-    if (!name.trim()) { setError("Name is required."); return; }
+    if (!fields.name.trim()) {
+      setError("Service name is required.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await createService({ name: name.trim(), slug, shortDescription, description, icon, image, status });
+      await createService({
+        name: fields.name.trim(),
+        description: fields.description.trim(),
+        image: fields.image,
+      });
       navigate("/services");
-    } catch (err: unknown) {
-      setError(
-        err && typeof err === "object" && "message" in err
-          ? (err as { message: string }).message
-          : "Failed to create service."
-      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create service.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Layout pageTitle="Add Service" pageSubtitle="Create a new service offering.">
+    <Layout pageTitle="Add Service" pageSubtitle="Populate fields to display a new core business service offering.">
       <ServiceForm submitting={submitting} error={error} onSubmit={handleSubmit} />
     </Layout>
   );
