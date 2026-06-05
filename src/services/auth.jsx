@@ -62,11 +62,12 @@ export async function register({ name, email, password, role = "admin" }) {
 }
 
 /**
- * Clears auth state (client-side logout).
+ * Clears auth state and redirects to login.
  */
 export function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  window.location.href = "/login";
 }
 
 /**

@@ -38,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300
           ${isSidebarOpen ? "ml-72" : "ml-16"}`}
       >
-        <Header pageTitle={pageTitle} toggleSidebar={toggleSidebar} />
+        <Header />
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-8">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
