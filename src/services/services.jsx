@@ -18,9 +18,9 @@ async function apiFormData(endpoint, method, formData) {
 // ─── GET /services ────────────────────────────────────────────────────────────
 export async function getServices() {
   const res = await apiFetch("/services");
-  return {
-    data: res.data ?? res ?? [],
-  };
+  // Handle both { data: [...] } and direct array responses
+  const data = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
+  return { data };
 }
 
 // ─── POST /services ───────────────────────────────────────────────────────────

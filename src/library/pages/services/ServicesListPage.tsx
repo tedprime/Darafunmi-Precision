@@ -54,7 +54,7 @@ const ServiceListPage: React.FC = () => {
   };
 
   const filtered = services.filter((s) =>
-    s.title.toLowerCase().includes(search.toLowerCase())
+    s.title?.toLowerCase().includes(search.toLowerCase()) ?? true
   );
 
   const headers = ["Title", "Slug", "Featured", "Status", "Actions"];
