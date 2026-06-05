@@ -3,24 +3,33 @@ import { useNavigate } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Upload, X } from "lucide-react";
+import { Upload, X, TriangleAlert } from "lucide-react";
 
 interface ServiceFormProps {
-  initialName?: string;
+  initialTitle?: string;
+  initialSlug?: string;
   initialDescription?: string;
+  initialContent?: string;
+  initialStatus?: string;
   initialImageUrl?: string;
   submitting: boolean;
   error: string | null;
   onSubmit: (fields: {
-    name: string;
+    title: string;
+    slug: string;
     description: string;
+    content: string;
+    status: string;
     image: File | null;
   }) => void;
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({
-  initialName = "",
+  initialTitle = "",
+  initialSlug = "",
   initialDescription = "",
+  initialContent = "",
+  initialStatus = "active",
   initialImageUrl = "",
   submitting,
   error,
@@ -29,71 +38,122 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [name, setName] = useState(initialName);
+  const [title, setTitle] = useState(initialTitle);
+  const [slug, setSlug] = useState(initialSlug);
   const [description, setDescription] = useState(initialDescription);
+  const [content, setContent] = useState(initialContent);
+  const [status, setStatus] = useState(initialStatus);
   const [image, setImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImageUrl || null);
+  const [imagePreview, setImagePreview] = useState<string>(initialImageUrl);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const removeImage = () => {
     setImage(null);
-    setPreviewUrl(null);
+    setImagePreview("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      name,
-      description,
-      image,
-    });
+    onSubmit({ title, slug, description, content, status, image });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
+    <form onSubmit={handleSubmit}>
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">
-          {error}
+        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600 flex items-center gap-2">
+          <TriangleAlert size={16} />
+          <span>{error}</span>
         </div>
       )}
 
-      <Card className="space-y-4">
-        <Input
-          id="name"
-          label="Service Name"
-          placeholder="e.g., Temperature Calibration"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
+      {/* Service Details Card */}
+      <Card className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Service Details
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+          <Input
+            id="serviceTitle"
+            label="Service Title"
+            placeholder="Enter service title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+
+          <Input
+            id="serviceSlug"
+            label="Slug"
+            placeholder="enter-service-slug"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+          />
+
+          <div>
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Status
+            </label>
+            <select
+              id="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <Input
             id="description"
-            rows={4}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
-            placeholder="Provide a comprehensive operational breakdown..."
+            label="Short Description"
+            placeholder="Enter brief service summary"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="content"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Detailed Content
+          </label>
+          <textarea
+            id="content"
+            rows={5}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Enter comprehensive service description and specifications"
+          />
+        </div>
       </Card>
 
-      <Card>
-        <h4 className="text-sm font-medium text-gray-700 mb-2">Service Banner Image</h4>
-        {previewUrl ? (
-          <div className="relative w-full max-h-64 rounded-lg overflow-hidden border border-gray-200">
-            <img src={previewUrl} alt="Preview" className="w-full h-full object-contain bg-gray-50" />
+      {/* Service Cover Image Card */}
+      <Card className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Service Image
+        </h3>
+        {imagePreview ? (
+          <div className="relative">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-full h-48 object-cover rounded-lg"
+            />
             <button
               type="button"
               onClick={removeImage}
@@ -108,18 +168,22 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
             className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-sm text-gray-600">Click or drop here to upload service artwork</p>
+            <p className="text-sm text-gray-600">
+              Drag and drop your image here
+            </p>
+            <p className="text-xs text-gray-500 mt-1">or click to browse</p>
           </div>
         )}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp"
           className="hidden"
           onChange={handleImageChange}
         />
       </Card>
 
+      {/* Action Buttons */}
       <div className="flex space-x-4">
         <Button type="submit" disabled={submitting}>
           {submitting ? "Saving..." : "Save Service"}

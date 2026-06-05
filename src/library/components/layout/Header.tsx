@@ -9,9 +9,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  userName = "John Doe",
-  userEmail = "johndoe@gmail.com",
-  userInitial = "JD",
+  userName = "Funminiyi Daranijo",
+  userEmail = "admin@dpt.com",
+  userInitial = "FD",
 }) => {
   return (
     <header className="flex items-center justify-end px-8 h-16 bg-white border-b border-gray-100">
