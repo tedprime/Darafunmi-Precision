@@ -5,7 +5,7 @@ import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Edit2, Trash2, Search, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getBlogs, deleteBlog, type BlogPost } from "../../../services/blog.jsx";
+import { getBlogs, deleteBlog, type BlogPost } from "../../../services/blog";
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
@@ -18,12 +18,29 @@ const BlogListPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
+  // Fetch blogs from server when component mounts or search query changes
   useEffect(() => {
-    getBlogs()
-      .then(({ data }) => setBlogs(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+    let isMounted = true;
+    setLoading(true);
+
+    getBlogs({ search, limit: 50 }) // Handing the search state to the API directly
+      .then(({ data }) => {
+        if (isMounted) {
+          setBlogs(data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) setError(err.message);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [search]); // Re-runs fetch whenever user types in the search box
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this post?")) return;
@@ -34,10 +51,6 @@ const BlogListPage = () => {
       alert("Failed to delete post.");
     }
   };
-
-  const filtered = blogs.filter((b) =>
-    b.title.toLowerCase().includes(search.toLowerCase()),
-  );
 
   return (
     <Layout
@@ -52,7 +65,7 @@ const BlogListPage = () => {
         </Button>
       }
     >
-      {/* Search */}
+      {/* Search Input Bar */}
       <div className="mb-6 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search size={18} className="text-gray-400" />
@@ -66,7 +79,7 @@ const BlogListPage = () => {
         />
       </div>
 
-      {/* Loading Skeleton */}
+      {/* Loading Skeleton State */}
       {loading && (
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -88,7 +101,7 @@ const BlogListPage = () => {
         </div>
       )}
 
-      {/* Error State */}
+      {/* Error View State */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
@@ -103,15 +116,15 @@ const BlogListPage = () => {
         </div>
       )}
 
-      {/* Blog List */}
+      {/* Main Blog List Content */}
       {!loading && !error && (
         <div className="space-y-4">
-          {filtered.length === 0 ? (
+          {blogs.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
               No blog posts found.
             </p>
           ) : (
-            filtered.map((blog) => (
+            blogs.map((blog) => (
               <Card
                 key={blog.id}
                 className="flex justify-between items-center py-8 px-6"
@@ -127,7 +140,7 @@ const BlogListPage = () => {
                 </div>
                 <div className="flex items-center space-x-4">
                   <Badge color={blog.status === "published" ? "blue" : "gray"}>
-                    {blog.status}
+                    {blog.status ?? "draft"}
                   </Badge>
                   <div className="flex space-x-2 text-gray-400">
                     <button
