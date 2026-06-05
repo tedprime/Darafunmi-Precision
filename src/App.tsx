@@ -29,8 +29,8 @@ import AddBlogPage from "./library/pages/blog/AddBlogPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
 
 // New sections
-// import OrderListPage from "./library/pages/orders/OrderListPage";
-// import CartListPage from "./library/pages/orders/CartListPage";
+import OrderListPage from "./library/pages/orders/OrderListPage";
+import CartPage from "./library/pages/orders/CartPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
 import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
 import ServiceListPage from "./library/pages/services/ServicesListPage";
@@ -86,22 +86,22 @@ function App() {
         />
 
         {/* Orders */}
-        {/* <Route
+        <Route
           path="/orders"
           element={
             <ProtectedRoute>
               <OrderListPage />
             </ProtectedRoute>
           }
-        /> */}
-        {/* <Route
+        />
+        <Route
           path="/orders/carts"
           element={
             <ProtectedRoute>
-              <CartListPage />
+              <CartPage />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         {/* Clients */}
         <Route
