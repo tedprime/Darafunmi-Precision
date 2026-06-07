@@ -1,11 +1,15 @@
 import { apiFetch } from "./api";
 
-export const getQuoteRequests = ({ page = 1, status = "" } = {}) => {
+export const getQuoteRequests = async ({ page = 1, status = "" } = {}) => {
   const params = new URLSearchParams();
-  if (page) params.set("page", page);
+  if (page) params.set("page", String(page));
   if (status) params.set("status", status);
   const query = params.toString();
-  return apiFetch(`/quote-requests${query ? `?${query}` : ""}`);
+  const res = await apiFetch(`/quote-requests${query ? `?${query}` : ""}`);
+  return {
+    data: res?.data ?? [],
+    hasMore: res?.pagination?.hasMore ?? false,
+  };
 };
 
 export const getQuoteRequest = (id) => apiFetch(`/quote-requests/${id}`);

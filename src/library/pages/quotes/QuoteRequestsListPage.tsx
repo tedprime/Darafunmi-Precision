@@ -13,11 +13,16 @@ import {
 
 interface QuoteRequest {
   id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
+  quoteNumber?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  companyName?: string;
   serviceType?: string;
+  industry?: string;
+  equipmentType?: string;
+  quantity?: number;
+  budget?: string;
   description?: string;
   urgency?: string;
   status: "pending" | "reviewed" | "quoted" | "closed" | string;
@@ -100,8 +105,8 @@ const QuoteRequestListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete quote request from "${name}"?`)) return;
+  const handleDelete = async (id: number, customerName: string) => {
+    if (!confirm(`Delete quote request from "${customerName}"?`)) return;
     setDeletingId(id);
     try {
       await deleteQuoteRequest(id);
@@ -116,17 +121,17 @@ const QuoteRequestListPage: React.FC = () => {
   // Client-side search filter
   const filtered = requests.filter(
     (r) =>
-      r.name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.email?.toLowerCase().includes(search.toLowerCase()) ||
-      r.company?.toLowerCase().includes(search.toLowerCase())
+      r.customerName?.toLowerCase().includes(search.toLowerCase()) ||
+      r.customerEmail?.toLowerCase().includes(search.toLowerCase()) ||
+      r.companyName?.toLowerCase().includes(search.toLowerCase())
   );
 
   const headers = ["Name", "Email", "Company", "Service Type", "Urgency", "Status", "Actions"];
 
   const data = filtered.map((r) => [
-    r.name,
-    r.email,
-    r.company ?? "—",
+    r.customerName,
+    r.customerEmail,
+    r.companyName ?? "—",
     r.serviceType ?? "—",
     r.urgency ?? "—",
     <Badge key={`status-${r.id}`} color={STATUS_COLOR[r.status] ?? "gray"}>
@@ -153,7 +158,7 @@ const QuoteRequestListPage: React.FC = () => {
       </button>
       <button
         className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(r.id, r.name)}
+        onClick={() => handleDelete(r.id, r.customerName)}
         disabled={deletingId === r.id || updatingId === r.id}
       >
         <Trash2 size={15} />
@@ -283,12 +288,16 @@ const QuoteRequestListPage: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Quote Request Details</h2>
                 <dl className="space-y-3 text-sm">
                   {[
-                    ["Name", viewItem.name],
-                    ["Email", viewItem.email],
-                    ["Phone", viewItem.phone ?? "—"],
-                    ["Company", viewItem.company ?? "—"],
-                    ["Service Type", viewItem.serviceType ?? "—"],
-                    ["Urgency", viewItem.urgency ?? "—"],
+                    ["Name",           viewItem.customerName],
+                    ["Email",          viewItem.customerEmail],
+                    ["Phone",          viewItem.customerPhone  ?? "—"],
+                    ["Company",        viewItem.companyName    ?? "—"],
+                    ["Service Type",   viewItem.serviceType    ?? "—"],
+                    ["Industry",       viewItem.industry       ?? "—"],
+                    ["Equipment Type", viewItem.equipmentType  ?? "—"],
+                    ["Quantity",       viewItem.quantity != null ? String(viewItem.quantity) : "—"],
+                    ["Budget",         viewItem.budget         ?? "—"],
+                    ["Urgency",        viewItem.urgency        ?? "—"],
                   ].map(([label, value]) => (
                     <div key={label} className="flex gap-2">
                       <dt className="w-28 shrink-0 font-medium text-gray-500">{label}</dt>

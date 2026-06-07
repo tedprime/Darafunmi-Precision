@@ -11,6 +11,23 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
 
+// Type guard helpers for nested structures
+const getAuthorName = (author: BlogPost["author"]): string => {
+  if (author && typeof author === "object" && "name" in author) {
+    return (author as { name: string }).name;
+  }
+  if (typeof author === "string") return author;
+  return "Unknown";
+};
+
+const getStatusName = (status: BlogPost["status"]): string => {
+  if (status && typeof status === "object" && "name" in status) {
+    return (status as { name: string }).name;
+  }
+  if (typeof status === "string") return status;
+  return "draft";
+};
+
 const BlogListPage = () => {
   const navigate = useNavigate();
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -18,12 +35,11 @@ const BlogListPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Fetch blogs from server when component mounts or search query changes
+  // Fetch blogs when component mounts or search query changes
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
-    getBlogs({ search, limit: 50 }) // Handing the search state to the API directly
+    getBlogs({ search, limit: 50 })
       .then(({ data }) => {
         if (isMounted) {
           setBlogs(data);
@@ -40,7 +56,13 @@ const BlogListPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [search]); // Re-runs fetch whenever user types in the search box
+  }, [search]);
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setLoading(true); // Set loading here instead of in effect
+  };
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this post?")) return;
@@ -73,7 +95,7 @@ const BlogListPage = () => {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
           className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           placeholder="Search posts..."
         />
@@ -124,47 +146,52 @@ const BlogListPage = () => {
               No blog posts found.
             </p>
           ) : (
-            blogs.map((blog) => (
-              <Card
-                key={blog.id}
-                className="flex justify-between items-center py-8 px-6"
-              >
-                <div>
-                  <h4 className="text-base font-medium text-gray-900">
-                    {blog.title}
-                  </h4>
-                  <p className="text-sm text-gray-500 mt-1">
-                    By {blog.author ?? "Unknown"} &nbsp;&nbsp;{" "}
-                    {blog.date ?? blog.createdAt}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Badge color={blog.status === "published" ? "blue" : "gray"}>
-                    {blog.status ?? "draft"}
-                  </Badge>
-                  <div className="flex space-x-2 text-gray-400">
-                    <button
-                      className="hover:text-gray-600"
-                      onClick={() => navigate(`/blog/${blog.id}`)}
-                    >
-                      <Eye size={18} />
-                    </button>
-                    <button
-                      className="text-blue-500 hover:text-blue-600"
-                      onClick={() => navigate(`/blog/edit/${blog.id}`)}
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      className="text-red-500 hover:text-red-600"
-                      onClick={() => handleDelete(blog.id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
+            blogs.map((blog) => {
+              const authorName = getAuthorName(blog.author);
+              const statusText = getStatusName(blog.status);
+
+              return (
+                <Card
+                  key={blog.id}
+                  className="flex justify-between items-center py-8 px-6"
+                >
+                  <div>
+                    <h4 className="text-base font-medium text-gray-900">
+                      {blog.title}
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      By {authorName} &nbsp;&nbsp;{" "}
+                      {blog.date ?? blog.createdAt}
+                    </p>
                   </div>
-                </div>
-              </Card>
-            ))
+                  <div className="flex items-center space-x-4">
+                    <Badge color={statusText === "published" ? "blue" : "gray"}>
+                      {statusText}
+                    </Badge>
+                    <div className="flex space-x-2 text-gray-400">
+                      <button
+                        className="hover:text-gray-600"
+                        onClick={() => navigate(`/blog/${blog.id}`)}
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        className="text-blue-500 hover:text-blue-600"
+                        onClick={() => navigate(`/blog/edit/${blog.id}`)}
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button
+                        className="text-red-500 hover:text-red-600"
+                        onClick={() => handleDelete(blog.id)}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
           )}
         </div>
       )}
