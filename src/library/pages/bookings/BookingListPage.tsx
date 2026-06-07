@@ -8,12 +8,21 @@ import { getBookings, updateBookingStatus, deleteBooking } from "../../../servic
 interface Booking {
   id: number;
   bookingNumber?: string;
-  name: string;
-  email: string;
-  phone: string;
+  // Support both old field names and new ones from backend
+  name?: string;
+  customerName?: string;
+  email?: string;
+  customerEmail?: string;
+  phone?: string;
+  customerPhone?: string;
   company?: string;
-  serviceType: string;
-  preferredDate: string;
+  companyName?: string;
+  serviceType?: string;
+  preferredDate?: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  serviceLocation?: string;
+  equipmentDetails?: string;
   notes?: string;
   status: "pending" | "confirmed" | "completed" | "cancelled" | string;
 }
@@ -56,8 +65,8 @@ const BookingListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete booking from "${name}"?`)) return;
+  const handleDelete = async (id: number) => {
+    if (!confirm(`Delete this booking?`)) return;
     setDeletingId(id);
     try {
       await deleteBooking(id);
@@ -81,18 +90,18 @@ const BookingListPage: React.FC = () => {
 
   const data = bookings.map((b) => [
     <div key={`name-${b.id}`}>
-      <p className="font-medium text-gray-800 text-sm">{b.name}</p>
+      <p className="font-medium text-gray-800 text-sm">{b.customerName ?? b.name ?? "—"}</p>
       {b.bookingNumber && (
         <p className="text-xs text-gray-400">{b.bookingNumber}</p>
       )}
     </div>,
     <div key={`contact-${b.id}`}>
-      <p className="text-sm text-gray-700">{b.email}</p>
-      <p className="text-xs text-gray-500">{b.phone}</p>
+      <p className="text-sm text-gray-700">{b.customerEmail ?? b.email ?? "—"}</p>
+      <p className="text-xs text-gray-500">{b.customerPhone ?? b.phone ?? "—"}</p>
     </div>,
-    b.serviceType,
-    b.preferredDate ? new Date(b.preferredDate).toLocaleDateString() : "—",
-    b.company ?? "—",
+    b.serviceType ?? "—",
+    (() => { const d = b.scheduledDate ?? b.preferredDate; return d ? new Date(d).toLocaleDateString() : "—"; })(),
+    b.companyName ?? b.company ?? "—",
     <select
       key={`status-${b.id}`}
       value={b.status}
@@ -108,7 +117,7 @@ const BookingListPage: React.FC = () => {
     <button
       key={`del-${b.id}`}
       className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-      onClick={() => handleDelete(b.id, b.name)}
+      onClick={() => handleDelete(b.id)}
       disabled={deletingId === b.id || updatingId === b.id}
     >
       <Trash2 size={15} />
