@@ -4,13 +4,13 @@ import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Eye, Download, Mail, Search, Trash2, TriangleAlert } from "lucide-react";
+import { Plus, Eye, Download, Mail, Search, Trash2, TriangleAlert, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   getCertifications,
   deleteCertification,
   generatePdf,
-  sendCertificateEmailToClient,
+  sendCertificateEmail,
 } from "../../../services/certification.jsx";
 
 interface Certificate {
@@ -65,6 +65,11 @@ const CertificationListPage: React.FC = () => {
   const [count, setCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // Email modal state
+  const [emailModal, setEmailModal] = useState<{ id: number; customerName: string } | null>(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [sending, setSending] = useState(false);
 
   const showToast = (message: string, type: ToastType) => {
     const id = Date.now();
@@ -126,17 +131,24 @@ const CertificationListPage: React.FC = () => {
     }
   };
 
-  const handleSendEmail = async (id: number, customerName: string) => {
-    if (!confirm(`Send certificate PDF to ${customerName}'s email on file?`)) return;
+  const handleOpenEmailModal = (id: number, customerName: string) => {
+    setEmailTo("");
+    setEmailModal({ id, customerName });
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailModal) return;
+    if (!emailTo.trim()) return;
+    setSending(true);
     try {
-      setActionLoading(id);
-      await sendCertificateEmailToClient(id);
-      showToast(`Certificate sent to ${customerName} successfully!`, "success");
+      await sendCertificateEmail(emailModal.id, emailTo.trim());
+      showToast(`Certificate sent to ${emailTo} successfully!`, "success");
+      setEmailModal(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send email.";
       showToast(message, "error");
     } finally {
-      setActionLoading(null);
+      setSending(false);
     }
   };
 
@@ -177,7 +189,7 @@ const CertificationListPage: React.FC = () => {
       <button
         title={`Email PDF to ${cert.customerName}`}
         className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => handleSendEmail(cert.id, cert.customerName)}
+        onClick={() => handleOpenEmailModal(cert.id, cert.customerName)}
         disabled={actionLoading === cert.id}
       >
         {actionLoading === cert.id ? (
@@ -290,6 +302,51 @@ const CertificationListPage: React.FC = () => {
             <Table headers={headers} data={data} />
           )}
         </Card>
+      )}
+
+      {/* Email Modal */}
+      {emailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-800">Send Certificate</h2>
+              <button onClick={() => setEmailModal(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Enter the recipient email address for <span className="font-medium">{emailModal.customerName}</span>'s certificate.
+              </p>
+              <input
+                type="email"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendEmail()}
+                placeholder="client@example.com"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 mb-4"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSendEmail}
+                  disabled={sending || !emailTo.trim()}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-40 flex items-center justify-center gap-2"
+                >
+                  <Mail size={14} />
+                  {sending ? "Sending..." : "Send Certificate"}
+                </button>
+                <button
+                  onClick={() => setEmailModal(null)}
+                  disabled={sending}
+                  className="px-4 py-2 border border-gray-300 text-sm rounded-md hover:bg-gray-50 disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <ToastContainer toasts={toasts} />

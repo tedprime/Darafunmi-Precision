@@ -1,47 +1,49 @@
-import { apiFetch } from "./api";
+import { apiFetch } from "./api.jsx";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export const getCertifications = ({
-  page = 1,
-  limit = 20,
-  search = "",
-  status = "",
-} = {}) => {
+// ─── GET /certifications ──────────────────────────────────────────────────────
+export async function getCertifications({ page = 1, limit = 20, search = "", status = "" } = {}) {
   const params = new URLSearchParams({ page, limit });
-  if (search) params.append("search", search);
-  if (status) params.append("status", status);
-  return apiFetch(`/certifications?${params.toString()}`).then((res) => {
-    if (!res.success) throw new Error(res.message);
-    return { data: res.data, count: res.count };
-  });
-};
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+  const res = await apiFetch(`/certifications?${params.toString()}`);
+  return {
+    data: res.data ?? [],
+    count: res.count ?? 0,
+  };
+}
 
-export const getCertification = (id) =>
-  apiFetch(`/certifications/${id}`).then((res) => {
-    if (!res.success) throw new Error(res.message);
-    return res.data;
-  });
+// ─── GET /certifications/{id} ─────────────────────────────────────────────────
+export async function getCertification(id) {
+  const res = await apiFetch(`/certifications/${id}`);
+  return res.data ?? res;
+}
 
-export const createCertification = async (body) => {
-  const token = localStorage.getItem("token");
-  const response = await fetch(`${BASE_URL}/certifications`, {
+// ─── POST /certifications ─────────────────────────────────────────────────────
+export async function createCertification(payload) {
+  return apiFetch("/certifications", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || `API error: ${response.status}`);
-  return data;
-};
+}
 
-export const deleteCertification = (id) =>
-  apiFetch(`/certifications/${id}`, { method: "DELETE" });
+// ─── PATCH /certifications/{id} ───────────────────────────────────────────────
+export async function updateCertification(id, payload) {
+  return apiFetch(`/certifications/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
 
-export const generatePdf = async (id) => {
+// ─── DELETE /certifications/{id} ──────────────────────────────────────────────
+export async function deleteCertification(id) {
+  return apiFetch(`/certifications/${id}`, { method: "DELETE" });
+}
+
+// ─── POST /certifications/{id}/generate-pdf ───────────────────────────────────
+// Streams application/pdf — must use fetch + blob(), NOT apiFetch which calls .json()
+export async function generatePdf(id) {
   const token = localStorage.getItem("token");
   const response = await fetch(`${BASE_URL}/certifications/${id}/generate-pdf`, {
     method: "POST",
@@ -49,34 +51,24 @@ export const generatePdf = async (id) => {
       ...(token && { Authorization: `Bearer ${token}` }),
     },
   });
-  if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to generate PDF: ${response.status}`);
+  }
+
+  // Returns a Blob — caller creates an object URL and triggers download
   return response.blob();
-};
+}
 
-// Sends to a manually provided email address
-export const sendCertificateEmail = (id, to) =>
-  apiFetch(`/certifications/${id}/send-email`, {
+// ─── POST /certifications/{id}/send-email ─────────────────────────────────────
+// Requires { to: "email@example.com" } in body
+// Generates the PDF if it doesn't exist, then sends via SMTP
+export async function sendCertificateEmail(id, toEmail) {
+  return apiFetch(`/certifications/${id}/send-email`, {
     method: "POST",
-    body: JSON.stringify({ to }),
+    body: JSON.stringify({ to: toEmail }),
   });
+}
 
-export const sendCertificateEmailToClient = async (certId) => {
-  // Step 1: get the certificate to find clientId
-  const cert = await getCertification(certId);
-
-  if (!cert.clientId) {
-    throw new Error("This certificate has no linked client.");
-  }
-
-  // Step 2: get the client to find their email
-  const clientRes = await apiFetch(`/clients/${cert.clientId}`);
-  if (!clientRes.success) throw new Error("Client not found.");
-
-  const email = clientRes.data?.email;
-  if (!email) {
-    throw new Error(`Client "${cert.customerName}" has no email address on file.`);
-  }
-
-  // Step 3: send the email
-  return sendCertificateEmail(certId, email);
-};
+// Legacy alias — kept so existing imports don't break
+export const sendCertificateEmailToClient = sendCertificateEmail;
