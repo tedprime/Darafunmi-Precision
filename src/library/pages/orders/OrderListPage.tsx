@@ -107,12 +107,13 @@ const OrderDetailModal = ({
     // Overlay — covers full viewport but centres content within the
     // remaining space to the right of the sidebar
     <div
-      className="fixed inset-0 z-200 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      style={{ paddingLeft: sidebarWidth }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-        style={{ marginLeft: sidebarWidth }}
+        className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15)" }}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
