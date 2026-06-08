@@ -117,13 +117,15 @@ const CertificationListPage: React.FC = () => {
   const handleDownload = async (id: number, certNo: string) => {
     try {
       setActionLoading(id);
-      const blob = await generatePdf(id);
-      const url = URL.createObjectURL(blob);
+      // API returns { success: true, pdfUrl: "https://res.cloudinary.com/..." }
+      const result = await generatePdf(id);
+      const pdfUrl = result?.pdfUrl ?? result;
+      if (!pdfUrl) throw new Error("No PDF URL returned");
       const a = document.createElement("a");
-      a.href = url;
+      a.href = pdfUrl;
       a.download = `${certNo}.pdf`;
+      a.target = "_blank";
       a.click();
-      URL.revokeObjectURL(url);
     } catch {
       showToast("Failed to generate PDF.", "error");
     } finally {

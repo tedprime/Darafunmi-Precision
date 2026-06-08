@@ -42,22 +42,15 @@ export async function deleteCertification(id) {
 }
 
 // ─── POST /certifications/{id}/generate-pdf ───────────────────────────────────
-// Streams application/pdf — must use fetch + blob(), NOT apiFetch which calls .json()
+// Returns { success: true, pdfUrl: "https://res.cloudinary.com/..." }
 export async function generatePdf(id) {
-  const token = localStorage.getItem("token");
-  const response = await fetch(`${BASE_URL}/certifications/${id}/generate-pdf`, {
+  const res = await apiFetch(`/certifications/${id}/generate-pdf`, {
     method: "POST",
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to generate PDF: ${response.status}`);
+  if (!res.success && !res.pdfUrl) {
+    throw new Error(res.message || "Failed to generate PDF");
   }
-
-  // Returns a Blob — caller creates an object URL and triggers download
-  return response.blob();
+  return res; // { success, pdfUrl }
 }
 
 // ─── POST /certifications/{id}/send-email ─────────────────────────────────────

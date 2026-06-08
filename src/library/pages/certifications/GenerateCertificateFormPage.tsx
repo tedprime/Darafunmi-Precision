@@ -1,161 +1,262 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Plus, Trash2, Download, Eye } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { createCertification } from "../../../services/certification.jsx";
+import { Download } from "lucide-react";
+import { generatePdf } from "../../../services/certification.jsx";
+import { apiFetch } from "../../../services/api";
 
 type TableType = "3col" | "4col";
 
-interface CalibrationRow {
-  standardValue: string;
-  measuredValue: string;
-  asFoundValue: string;
-  asLeftValue: string;
-  deviation: string;
+interface CertData {
+  id: number;
+  certificateNumber: string;
+  calibrationDate: string;
+  recommendedRecalibDate: string;
+  customerName: string;
+  customerAddress: string;
+  equipmentCalibrated: string;
+  equipmentLocation: string;
+  identificationNo: string;
+  scale: string;
+  scaleRange: string;
+  scaleDivision: string;
+  maxScaleError: string;
+  referenceInstrument: string;
+  referenceInstrumentSN: string;
+  temperature: string;
+  humidity: string;
+  physicalExamText: string;
+  tableType: TableType;
+  tableUnit: string;
+  calibrationResults: {
+    standardValue: string;
+    measuredValue: string;
+    asFoundValue: string;
+    asLeftValue: string;
+    deviation: string;
+  }[];
+  comments: string;
+  sonLabRef: string;
+  wmvCertNo: string;
+  performedBy: string;
+  performedByTitle: string;
 }
 
-const emptyRow = (): CalibrationRow => ({
-  standardValue: "",
-  measuredValue: "",
-  asFoundValue: "",
-  asLeftValue: "",
-  deviation: "",
-});
+/* ── Shared style tokens ── */
+const BLACK = "#111111";
+const MAROON = "#8B3A3A";
+const FONT = "Arial, Helvetica, sans-serif";
 
-const GenerateCertificateFormPage: React.FC = () => {
+const s = {
+  page: {
+    maxWidth: 760,
+    margin: "0 auto",
+    background: "#fff",
+    border: "1px solid #d8d8d8",
+    boxShadow: "0 2px 12px rgba(0,0,0,.15)",
+    fontFamily: FONT,
+    fontSize: 12.5,
+    color: BLACK,
+    lineHeight: 1.3,
+  } as React.CSSProperties,
+  header: { padding: "14px 18px 6px" } as React.CSSProperties,
+  headerInner: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+  } as React.CSSProperties,
+  logoWrap: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+    flexShrink: 0,
+  } as React.CSSProperties,
+  logoImage: {
+    display: "block",
+    width: 525,
+    maxWidth: "100%",
+    height: "auto",
+  } as React.CSSProperties,
+  addrBlock: {
+    textAlign: "left" as const,
+    fontSize: 8,
+    fontWeight: 800,
+    color: BLACK,
+    lineHeight: 1.55,
+    flexShrink: 0,
+    paddingTop: 4,
+  },
+  contentFrame: {
+    margin: "4px 18px 0",
+    border: "1.5px solid #8B3A3A",
+  } as React.CSSProperties,
+  titleBox: {
+    padding: "10px 10px 84px",
+    textAlign: "center" as const,
+  } as React.CSSProperties,
+  titleText: {
+    fontFamily: "'Brush Script MT', 'Segoe Script', 'URW Chancery L', cursive",
+    fontSize: 28,
+    color: MAROON,
+    fontWeight: "normal" as const,
+    borderBottom: "1.5px solid #8B3A3A",
+    padding: "0 42px 2px",
+  } as React.CSSProperties,
+  body: { padding: "0 44px 18px" } as React.CSSProperties,
+  section: { marginBottom: 9 },
+  sectionHead: {
+    fontWeight: 700,
+    textDecoration: "underline",
+    color: BLACK,
+    fontSize: 15,
+    margin: "0 0 2px",
+  } as React.CSSProperties,
+  bold: { fontWeight: 700, color: BLACK } as React.CSSProperties,
+  eqRow: {
+    display: "flex",
+    alignItems: "baseline",
+    marginBottom: 6,
+  } as React.CSSProperties,
+  eqLabel: {
+    fontWeight: 700,
+    color: BLACK,
+    minWidth: 250,
+    flexShrink: 0,
+    fontSize: 15,
+  } as React.CSSProperties,
+  eqValue: {
+    fontWeight: 700,
+    color: BLACK,
+    fontSize: 15,
+  } as React.CSSProperties,
+  inlineRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 22,
+    marginBottom: 7,
+    fontSize: 14,
+  } as React.CSSProperties,
+  table: {
+    width: "100%",
+    borderCollapse: "collapse" as const,
+    border: "1.5px solid #222",
+    marginTop: 8,
+  } as React.CSSProperties,
+  th: {
+    border: "1.5px solid #222",
+    padding: "8px 8px",
+    textAlign: "center" as const,
+    fontWeight: 700,
+    fontSize: 15,
+    backgroundColor: "#fff",
+    color: BLACK,
+  } as React.CSSProperties,
+  td: {
+    border: "1.5px solid #222",
+    padding: "8px 8px",
+    textAlign: "center" as const,
+    fontWeight: 700,
+    fontSize: 15,
+    backgroundColor: "#fff",
+    color: BLACK,
+  } as React.CSSProperties,
+  bulletWrap: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 6,
+    alignItems: "flex-start",
+  } as React.CSSProperties,
+  bulletArrow: {
+    flexShrink: 0,
+    fontWeight: 700,
+    fontSize: 15,
+    color: BLACK,
+    lineHeight: 1.4,
+  },
+  bulletText: {
+    margin: 0,
+    textAlign: "justify" as const,
+    lineHeight: 1.4,
+    fontWeight: 700,
+  } as React.CSSProperties,
+  bottomRow: {
+    paddingTop: 16,
+    marginTop: 8,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: 16,
+  } as React.CSSProperties,
+  stampBox: {
+    textAlign: "center" as const,
+    minWidth: 240,
+  } as React.CSSProperties,
+  stampImage: {
+    display: "block",
+    width: 240,
+    maxWidth: "100%",
+    height: "auto",
+    margin: "0 auto",
+  } as React.CSSProperties,
+  footer: {
+    backgroundColor: "#fff",
+    padding: "6px 18px 10px",
+    textAlign: "center" as const,
+    fontSize: 9,
+    fontWeight: 700,
+    color: BLACK,
+    lineHeight: 1.7,
+  } as React.CSSProperties,
+};
+
+const GenerateCertificatePreviewPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Certificate Info
-  const [certNo, setCertNo] = useState("");
-  const [calDate, setCalDate] = useState("");
+  const certId = new URLSearchParams(location.search).get("id");
 
-  // Customer Info
-  const [custName, setCustName] = useState("");
-  const [custAddress, setCustAddress] = useState("");
-
-  // Instrument Description
-  const [equipCalibrated, setEquipCalibrated] = useState("");
-  const [equipLocation, setEquipLocation] = useState("");
-  const [idNo, setIdNo] = useState("");
-  const [scale, setScale] = useState("");
-  const [scaleRange, setScaleRange] = useState("");
-  const [scaleDiv, setScaleDiv] = useState("");
-  const [maxError, setMaxError] = useState("");
-  const [refInst, setRefInst] = useState("");
-  const [refInstSn, setRefInstSn] = useState("");
-
-  // Environmental Conditions
-  const [temp, setTemp] = useState("");
-  const [humidity, setHumidity] = useState("");
-
-  // Physical Examination
-  const [physExam, setPhysExam] = useState(
-    "An examination of this Measuring Instrument mentioned above showed no visually apparent flaw and it was suitable for calibration.",
-  );
-
-  // Calibration Results Table
-  const [tableType, setTableType] = useState<TableType>("3col");
-  const [tableUnit, setTableUnit] = useState("cm");
-  const [rows, setRows] = useState<CalibrationRow[]>([
-    emptyRow(),
-    emptyRow(),
-    emptyRow(),
-  ]);
-
-  // Additional Info
-  const [comments, setComments] = useState("Certified Okay");
-  const [sonLabRef, setSonLabRef] = useState("");
-  const [wmvCertNo, setWmvCertNo] = useState("WMV25054");
-  const [perfBy, setPerfBy] = useState("Daranijo Funminiyi A.");
-  const [perfTitle, setPerfTitle] = useState("Chief Engineer");
-  const [recDate, setRecDate] = useState("");
-  const [expDate, setExpDate] = useState("");
-  const [status, setStatus] = useState("draft");
-  const [clientId, setClientId] = useState("");
-
-  const [submitting, setSubmitting] = useState(false);
+  const [data, setData] = useState<CertData | null>(null);
+  const [loading, setLoading] = useState(!!certId);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const addRow = () => setRows((r) => [...r, emptyRow()]);
-  const removeRow = (i: number) =>
-    setRows((r) => r.filter((_, idx) => idx !== i));
-  const updateRow = (i: number, field: keyof CalibrationRow, val: string) =>
-    setRows((r) =>
-      r.map((row, idx) => (idx === i ? { ...row, [field]: val } : row)),
-    );
+  useEffect(() => {
+    if (!certId) return;
+    apiFetch(`/certifications/${certId}`)
+      .then((res: { data: CertData }) => setData(res.data))
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [certId]);
 
-  const tab = (p: string) =>
-    `font-medium pb-1 cursor-pointer mr-4 ${
-      location.pathname === p
-        ? "text-gray-800 border-b-2 border-blue-600"
-        : "text-gray-500 hover:text-gray-700"
-    }`;
-
-  const buildCalibrationResults = () =>
-    rows
-      .filter((r) => r.standardValue || r.measuredValue || r.deviation)
-      .map((r) => ({
-        standardValue: r.standardValue,
-        measuredValue: r.measuredValue,
-        asFoundValue: r.asFoundValue,
-        asLeftValue: r.asLeftValue,
-        deviation: r.deviation,
-      }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!certNo.trim()) {
-      setError("Certificate number is required.");
-      return;
-    }
-
-    setSubmitting(true);
+  const handleDownload = async () => {
+    if (!data) return;
+    setDownloading(true);
     try {
-      await createCertification({
-        certificateNumber: certNo.trim(),
-        ...(clientId && { clientId: Number(clientId) }),
-        customerName: custName.trim(),
-        customerAddress: custAddress.trim(),
-        equipmentCalibrated: equipCalibrated.trim(),
-        equipmentLocation: equipLocation.trim(),
-        identificationNo: idNo.trim(),
-        scale: scale.trim(),
-        scaleRange: scaleRange.trim(),
-        scaleDivision: scaleDiv.trim(),
-        maxScaleError: maxError.trim(),
-        referenceInstrument: refInst.trim(),
-        referenceInstrumentSN: refInstSn.trim(),
-        temperature: temp.trim(),
-        humidity: humidity.trim(),
-        tableType,
-        tableUnit,
-        physicalExamText: physExam.trim(),
-        sonLabRef: sonLabRef.trim(),
-        wmvCertNo: wmvCertNo.trim(),
-        comments: comments.trim(),
-        performedBy: perfBy.trim(),
-        performedByTitle: perfTitle.trim(),
-        calibrationDate: calDate,
-        recommendedRecalibDate: recDate,
-        expiryDate: expDate,
-        status,
-        calibrationResults: buildCalibrationResults(),
-      });
-      navigate("/certifications");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create certificate.";
-      setError(message);
+      // API returns { success: true, pdfUrl: "https://res.cloudinary.com/..." }
+      const result = await generatePdf(data.id);
+      const pdfUrl = result?.pdfUrl ?? result;
+      if (!pdfUrl) throw new Error("No PDF URL returned");
+      const a = document.createElement("a");
+      a.href = pdfUrl;
+      a.download = `${data.certificateNumber}.pdf`;
+      a.target = "_blank";
+      a.click();
+    } catch {
+      alert("Failed to generate PDF.");
     } finally {
-      setSubmitting(false);
+      setDownloading(false);
     }
   };
+
+  const tab = (p: string) =>
+    `font-medium pb-1 cursor-pointer mr-4 ${location.pathname === p ? "text-gray-800 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700"}`;
+
+  const d = data;
+  const is4 = d?.tableType === "4col";
+  const unit = d?.tableUnit ?? "cm";
+  const addressLines = d?.customerAddress?.split("\n") ?? [];
 
   return (
     <Layout
@@ -177,461 +278,329 @@ const GenerateCertificateFormPage: React.FC = () => {
         </span>
       </div>
 
+      {loading && (
+        <p className="text-sm text-gray-500 text-center py-12">
+          Loading certificate...
+        </p>
+      )}
       {error && (
-        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
-          {error}
-        </div>
+        <p className="text-sm text-red-500 text-center py-12">{error}</p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Certificate Information */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Certificate Information
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              id="certNo"
-              label="Certificate Number"
-              placeholder="e.g., DPT/CAL/2025/001"
-              value={certNo}
-              onChange={(e) => setCertNo(e.target.value)}
-            />
-            <Input
-              id="calDate"
-              label="Calibration Date"
-              type="date"
-              value={calDate}
-              onChange={(e) => setCalDate(e.target.value)}
-            />
-            <div>
-              <label
-                htmlFor="status"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Status
-              </label>
-              <select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-              </select>
-            </div>
-            <Input
-              id="clientId"
-              label="Client ID"
-              placeholder="Enter client ID"
-              type="number"
-              value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-            />
-          </div>
-        </Card>
+      {!loading && !error && !d && (
+        <p className="text-sm text-gray-500 text-center py-12">
+          No certificate to preview.{" "}
+          <span
+            className="text-blue-600 cursor-pointer"
+            onClick={() => navigate("/certifications/generate")}
+          >
+            Go to form
+          </span>
+        </p>
+      )}
 
-        {/* Customer Information */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Customer Information
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              id="custName"
-              label="Customer Name"
-              placeholder="Enter company name"
-              value={custName}
-              onChange={(e) => setCustName(e.target.value)}
-            />
-            <div>
-              <label
-                htmlFor="custAddress"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Customer Address
-              </label>
-              <textarea
-                id="custAddress"
-                rows={3}
-                value={custAddress}
-                onChange={(e) => setCustAddress(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="KM 1, Ijoko Road, Sango - Otta, Ogun State, Nigeria."
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Instrument Description */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Instrument Description
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              id="equipCalibrated"
-              label="Equipment Calibrated"
-              placeholder="e.g., STAINLESS STEEL RULER"
-              value={equipCalibrated}
-              onChange={(e) => setEquipCalibrated(e.target.value)}
-            />
-            <Input
-              id="equipLocation"
-              label="Equipment Location"
-              placeholder="e.g., LABORATORY"
-              value={equipLocation}
-              onChange={(e) => setEquipLocation(e.target.value)}
-            />
-            <Input
-              id="idNo"
-              label="Identification No."
-              placeholder="e.g., N/A"
-              value={idNo}
-              onChange={(e) => setIdNo(e.target.value)}
-            />
-            <Input
-              id="scale"
-              label="Scale"
-              placeholder="e.g., cm/Inch or Kilogramme (Kg)"
-              value={scale}
-              onChange={(e) => setScale(e.target.value)}
-            />
-            <Input
-              id="scaleRange"
-              label="Scale Range"
-              placeholder="e.g., 30cm or 2tons"
-              value={scaleRange}
-              onChange={(e) => setScaleRange(e.target.value)}
-            />
-            <Input
-              id="scaleDiv"
-              label="Scale Division"
-              placeholder="e.g., 1mm or 350kg"
-              value={scaleDiv}
-              onChange={(e) => setScaleDiv(e.target.value)}
-            />
-            <Input
-              id="maxError"
-              label="Maximum Scale Error Permitted"
-              placeholder="e.g., 0.1mm or 200g"
-              value={maxError}
-              onChange={(e) => setMaxError(e.target.value)}
-            />
-            <Input
-              id="refInst"
-              label="Reference Instrument Used"
-              placeholder="e.g., STANDARD METER RULE"
-              value={refInst}
-              onChange={(e) => setRefInst(e.target.value)}
-            />
-            <Input
-              id="refInstSn"
-              label="Reference Instrument S/N"
-              placeholder="e.g., 22708"
-              value={refInstSn}
-              onChange={(e) => setRefInstSn(e.target.value)}
-            />
-          </div>
-        </Card>
-
-        {/* Environmental Conditions */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Laboratory Environmental Conditions
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              id="temp"
-              label="Temperature"
-              placeholder="e.g., 23°C ± 2°C"
-              value={temp}
-              onChange={(e) => setTemp(e.target.value)}
-            />
-            <Input
-              id="humidity"
-              label="Relative Humidity"
-              placeholder="e.g., 50% ± 10%"
-              value={humidity}
-              onChange={(e) => setHumidity(e.target.value)}
-            />
-          </div>
-        </Card>
-
-        {/* Physical Examination */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Results of Physical Examination
-          </h3>
-          <textarea
-            id="physExam"
-            rows={3}
-            value={physExam}
-            onChange={(e) => setPhysExam(e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          />
-        </Card>
-
-        {/* Calibration Results */}
-        <Card>
-          <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Results of Calibration
-            </h3>
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Columns:
-                </label>
-                <select
-                  value={tableType}
-                  onChange={(e) => setTableType(e.target.value as TableType)}
-                  className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="3col">
-                    3-col (Standard / Measured / Deviation)
-                  </option>
-                  <option value="4col">
-                    4-col (Standard / As Found / As Left / Deviation)
-                  </option>
-                </select>
+      {!loading && !error && d && (
+        <>
+          <div id="cert-preview" style={s.page}>
+            {/* HEADER */}
+            <div style={s.header}>
+              <div style={s.headerInner}>
+                <div style={s.logoWrap}>
+                  <img
+                    src="/certification/logo.png"
+                    alt="Darafunmi Precision Technologies Ltd."
+                    style={s.logoImage}
+                  />
+                </div>
+                <div style={s.addrBlock}>
+                  <div>17, Isherl Road, Suite 9,</div>
+                  <div>Avis Bus-Stop, Aguda-Ogba,</div>
+                  <div>Lagos State.</div>
+                  <div>Tel: 08034680544, 09095260378</div>
+                  <div>E-mail: darafunmi2013@yahoo.com</div>
+                  <div>darafunmlprecision@gmail.com</div>
+                  <div>website: darafunmlprecise.com</div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Unit:
-                </label>
-                <input
-                  type="text"
-                  value={tableUnit}
-                  onChange={(e) => setTableUnit(e.target.value)}
-                  className="border border-gray-300 rounded-md px-2 py-1.5 text-sm w-20 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="cm"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                className="text-xs py-1 px-3 flex items-center"
-                onClick={addRow}
-              >
-                <Plus size={14} className="mr-1" /> Add Row
-              </Button>
             </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-300 rounded-md text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">
-                    Standard Value ({tableUnit})
-                  </th>
-                  {tableType === "3col" ? (
-                    <th className="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">
-                      Measured Value ({tableUnit})
-                    </th>
-                  ) : (
-                    <>
-                      <th className="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">
-                        As Found Value ({tableUnit})
-                      </th>
-                      <th className="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">
-                        As Left Value ({tableUnit})
-                      </th>
-                    </>
+            {/* TITLE BOX */}
+            <div style={s.contentFrame}>
+              <div style={s.titleBox}>
+                <span style={s.titleText}>Certificate of Calibration</span>
+              </div>
+
+              {/* BODY */}
+              <div style={s.body}>
+                {/* Customer Information */}
+                <div style={s.section}>
+                  <p style={s.sectionHead}>CUSTOMER INFORMATION:</p>
+                  <p style={{ ...s.bold, margin: "1px 0" }}>{d.customerName}</p>
+                  {addressLines.map((line, i) => (
+                    <p key={i} style={{ ...s.bold, margin: "1px 0" }}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Certificate No */}
+                <div style={s.section}>
+                  <p style={{ ...s.bold, margin: "0 0 2px" }}>
+                    CERTIFICATE NO.: {d.certificateNumber}
+                  </p>
+                  <p style={s.sectionHead}>INSTRUMENT DESCRIPTION:</p>
+                </div>
+
+                {/* Equipment */}
+                <div style={s.section}>
+                  <div style={s.eqRow}>
+                    <span style={s.eqLabel}>EQUIPMENT CALIBRATED:</span>
+                    <span style={s.eqValue}>{d.equipmentCalibrated}</span>
+                  </div>
+                  <div style={s.eqRow}>
+                    <span style={s.eqLabel}>EQUIPMENT LOCATION:</span>
+                    <span style={s.eqValue}>{d.equipmentLocation}</span>
+                  </div>
+                  <div style={s.inlineRow}>
+                    <span>
+                      <strong>Identification No:</strong> {d.identificationNo}
+                    </span>
+                    <span>
+                      <strong>Scale:</strong> {d.scale}
+                    </span>
+                    <span>
+                      <strong>Scale Range:</strong> {d.scaleRange}
+                    </span>
+                  </div>
+                  <div style={s.inlineRow}>
+                    <span>
+                      <strong>Scale Division:</strong> {d.scaleDivision}
+                    </span>
+                    <span>
+                      <strong>Maximum Scale Error permitted:</strong>{" "}
+                      {d.maxScaleError}
+                    </span>
+                  </div>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong style={{ textDecoration: "underline" }}>
+                      REFERENCE INSTRUMENT USED:
+                    </strong>{" "}
+                    <strong>{d.referenceInstrument}</strong>
+                  </p>
+                  {d.referenceInstrumentSN && (
+                    <p style={{ margin: "2px 0" }}>
+                      <strong style={{ textDecoration: "underline" }}>
+                        REFERENCE INSTRUMENT S/N:
+                      </strong>{" "}
+                      {d.referenceInstrumentSN}
+                    </p>
                   )}
-                  <th className="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">
-                    Deviation ({tableUnit})
-                  </th>
-                  <th className="px-4 py-2 w-10 border border-gray-300"></th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {rows.map((row, i) => (
-                  <tr
-                    key={i}
-                    className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                </div>
+
+                {/* Environmental Conditions */}
+                <div style={s.section}>
+                  <p style={s.sectionHead}>
+                    LABORATORY ENVIRONMENTAL CONDITIONS
+                  </p>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Temperature {d.temperature}</strong>
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <strong>Relative Humidity {d.humidity}</strong>
+                  </p>
+                </div>
+
+                {/* Physical Examination */}
+                <div style={s.section}>
+                  <p style={s.sectionHead}>RESULTS OF PHYSICAL EXAMINATION</p>
+                  <p style={{ margin: "2px 0", textAlign: "justify" }}>
+                    {d.physicalExamText}
+                  </p>
+                </div>
+
+                {/* Calibration Results */}
+                <div style={s.section}>
+                  <p
+                    style={{
+                      fontWeight: 700,
+                      textDecoration: "underline",
+                      margin: "0 0 4px",
+                      color: BLACK,
+                    }}
                   >
-                    <td className="px-3 py-2 border border-gray-200">
-                      <input
-                        type="text"
-                        value={row.standardValue}
-                        onChange={(e) =>
-                          updateRow(i, "standardValue", e.target.value)
-                        }
-                        className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
-                      />
-                    </td>
-                    {tableType === "3col" ? (
-                      <td className="px-3 py-2 border border-gray-200">
-                        <input
-                          type="text"
-                          value={row.measuredValue}
-                          onChange={(e) =>
-                            updateRow(i, "measuredValue", e.target.value)
-                          }
-                          className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="0.00"
-                        />
-                      </td>
-                    ) : (
-                      <>
-                        <td className="px-3 py-2 border border-gray-200">
-                          <input
-                            type="text"
-                            value={row.asFoundValue}
-                            onChange={(e) =>
-                              updateRow(i, "asFoundValue", e.target.value)
-                            }
-                            className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="0.00"
-                          />
-                        </td>
-                        <td className="px-3 py-2 border border-gray-200">
-                          <input
-                            type="text"
-                            value={row.asLeftValue}
-                            onChange={(e) =>
-                              updateRow(i, "asLeftValue", e.target.value)
-                            }
-                            className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="0.00"
-                          />
-                        </td>
-                      </>
-                    )}
-                    <td className="px-3 py-2 border border-gray-200">
-                      <input
-                        type="text"
-                        value={row.deviation}
-                        onChange={(e) =>
-                          updateRow(i, "deviation", e.target.value)
-                        }
-                        className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-center border border-gray-200">
-                      <button
-                        type="button"
-                        onClick={() => removeRow(i)}
-                        className="text-red-400 hover:text-red-600"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                    Results of Calibration
+                  </p>
+                  <table style={s.table}>
+                    <thead>
+                      <tr>
+                        <th style={s.th}>
+                          Standard Value
+                          <br />({unit})
+                        </th>
+                        {is4 ? (
+                          <>
+                            <th style={s.th}>
+                              As Found Value
+                              <br />({unit})
+                            </th>
+                            <th style={s.th}>
+                              As Left Value
+                              <br />({unit})
+                            </th>
+                          </>
+                        ) : (
+                          <th style={s.th}>
+                            Measured Value
+                            <br />({unit})
+                          </th>
+                        )}
+                        <th style={s.th}>
+                          Deviation
+                          <br />({unit})
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(d.calibrationResults ?? []).map((r, i) => (
+                        <tr key={i}>
+                          <td style={s.td}>{r.standardValue}</td>
+                          {is4 ? (
+                            <>
+                              <td style={s.td}>{r.asFoundValue}</td>
+                              <td style={s.td}>{r.asLeftValue}</td>
+                            </>
+                          ) : (
+                            <td style={s.td}>{r.measuredValue}</td>
+                          )}
+                          <td style={s.td}>{r.deviation}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-        {/* Additional Information */}
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Additional Information
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="comments"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Comments
-              </label>
-              <input
-                type="text"
-                id="comments"
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="e.g., Certified Okay"
-              />
+                {/* Comments */}
+                <p style={{ margin: "4px 0 8px", color: BLACK }}>
+                  <strong style={{ textDecoration: "underline" }}>
+                    Comments:-
+                  </strong>{" "}
+                  {d.comments}
+                </p>
+
+                {/* Legal bullets */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={s.bulletWrap}>
+                    <span style={s.bulletArrow}>&#9658;</span>
+                    <p style={s.bulletText}>
+                      This is to certify that the instrument described above has
+                      been calibrated against Physical Laboratory Standards,
+                      which is traceable to Standard Organization of Nigeria
+                      (SON) at National Physical Laboratory Ref:{" "}
+                      <strong>{d.sonLabRef}</strong>
+                    </p>
+                  </div>
+                  <div style={s.bulletWrap}>
+                    <span style={s.bulletArrow}>&#9658;</span>
+                    <p style={s.bulletText}>
+                      The Reference Instruments used was verified by Weight and
+                      Measure under the ACT. 1990 CAP467 of Federal Republic of
+                      Nigeria with Certificate No:{" "}
+                      <strong>{d.wmvCertNo}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dates + Signature */}
+                <div style={s.bottomRow}>
+                  <div>
+                    <p style={{ margin: "0 0 4px", color: BLACK }}>
+                      <strong>Calibration Date:</strong>{" "}
+                      <span style={{ textDecoration: "underline" }}>
+                        {d.calibrationDate
+                          ? new Date(d.calibrationDate).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              },
+                            )
+                          : "—"}
+                      </span>
+                    </p>
+                    <p style={{ margin: "20px 0 0", color: BLACK }}>
+                      This calibration was performed by
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 11,
+                        margin: "0 0 6px",
+                        color: BLACK,
+                        textAlign: "center",
+                      }}
+                    >
+                      Recommended Recalibration Date:{" "}
+                      <span style={{ textDecoration: "underline" }}>
+                        {d.recommendedRecalibDate
+                          ? new Date(
+                              d.recommendedRecalibDate,
+                            ).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </span>
+                    </p>
+                    <div style={s.stampBox}>
+                      <img
+                        src="/certification/stamp.png"
+                        alt="Darafunmi Precision stamp and signature"
+                        style={s.stampImage}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                id="sonLabRef"
-                label="SON Lab Reference No."
-                placeholder="e.g., SON/NMI/L/2019/002"
-                value={sonLabRef}
-                onChange={(e) => setSonLabRef(e.target.value)}
-              />
-              <Input
-                id="wmvCertNo"
-                label="WMV Certificate No."
-                placeholder="e.g., WMV25054"
-                value={wmvCertNo}
-                onChange={(e) => setWmvCertNo(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                id="perfBy"
-                label="Performed By"
-                placeholder="Engineer name"
-                value={perfBy}
-                onChange={(e) => setPerfBy(e.target.value)}
-              />
-              <Input
-                id="perfTitle"
-                label="Title"
-                placeholder="e.g., Chief Engineer"
-                value={perfTitle}
-                onChange={(e) => setPerfTitle(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                id="recDate"
-                label="Recommended Recalibration Date"
-                type="date"
-                value={recDate}
-                onChange={(e) => setRecDate(e.target.value)}
-              />
-              <Input
-                id="expDate"
-                label="Expiry Date"
-                type="date"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
-              />
+
+            {/* FOOTER */}
+            <div style={s.footer}>
+              <p style={{ margin: 0 }}>
+                Calibration, Laboratory/Medical Equipment, Process Analytical
+                Instrument Services, Repairs, Maintenance, Training &amp; Sales
+              </p>
+              <p style={{ margin: 0 }}>
+                CAL LAB: Suite D4 &amp; D5, Beside Tantalizer, Opp. Queen Esther
+                Hall, Km 46, Lagos-Ibadab Express Way, Redemption Camp, Ogun
+                State
+              </p>
             </div>
           </div>
-        </Card>
 
-        <div className="flex space-x-4">
-          <Button
-            type="submit"
-            className="flex items-center"
-            disabled={submitting}
-          >
-            <Download size={16} className="mr-2" />
-            {submitting ? "Saving..." : "Save Certificate"}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="flex items-center"
-            onClick={() => navigate("/certifications/generate/preview")}
-            disabled={submitting}
-          >
-            <Eye size={16} className="mr-2" /> Preview
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate("/certifications")}
-            disabled={submitting}
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
+          {/* Action buttons */}
+          <div className="flex justify-center mt-6 space-x-4">
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/certifications")}
+            >
+              Back to List
+            </Button>
+            <Button
+              className="flex items-center"
+              onClick={handleDownload}
+              disabled={downloading}
+            >
+              <Download size={16} className="mr-2" />
+              {downloading ? "Generating..." : "Generate & Download PDF"}
+            </Button>
+          </div>
+        </>
+      )}
     </Layout>
   );
 };
 
-export default GenerateCertificateFormPage;
+export default GenerateCertificatePreviewPage;
