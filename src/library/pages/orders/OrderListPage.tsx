@@ -108,10 +108,12 @@ const OrderDetailModal = ({
     // remaining space to the right of the sidebar
     <div
       className="fixed inset-0 z-200 flex items-center justify-center bg-black/40 p-4"
-      style={{ paddingLeft: sidebarWidth }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ marginLeft: sidebarWidth }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
