@@ -103,9 +103,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/orders/:id" element={<ProtectedRoute>
+
+        <Route
+          path="/orders/:orderNumber"
+          element={
+            <ProtectedRoute>
               <OrderDetailPage />
-            </ProtectedRoute>} />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Clients */}
         <Route

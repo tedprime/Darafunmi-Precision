@@ -109,7 +109,7 @@ const OrderListPage: React.FC = () => {
     <button
       key={`num-${o.id}`}
       className="text-blue-600 hover:underline font-mono text-xs font-medium"
-      onClick={() => navigate(`/orders/${o.id}`)}
+      onClick={() => navigate(`/orders/${o.orderNumber}`)}
     >
       {o.orderNumber}
     </button>,
@@ -127,8 +127,8 @@ const OrderListPage: React.FC = () => {
     o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "—",
     <div key={`actions-${o.id}`} className="flex space-x-2">
       <button
-        className="p-1 border border-gray-200 rounded text-gray-500 hover:bg-gray-50"
-        onClick={() => navigate(`/orders/${o.id}`)}
+        className="p-1 border border-blue-200 rounded text-white bg-blue-600 hover:bg-blue-700"
+        onClick={() => navigate(`/orders/${o.orderNumber}`)}
         title="View"
       >
         <Eye size={15} />

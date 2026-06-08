@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
@@ -44,26 +44,30 @@ const ALL_STATUSES: OrderStatus[] = ["pending", "processing", "shipped", "delive
 
 const OrderDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { orderNumber } = useParams<{ orderNumber: string }>();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const isFirstRender = useRef(true);
 
-  const fetchOrder = () => {
-    if (!id) return;
+  useEffect(() => {
+    if (!orderNumber) return;
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    getOrder(id)
+    getOrder(orderNumber)
       .then(setOrder)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchOrder();
-  }, [id]);
+  }, [orderNumber, retryCount]);
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (!order) return;
@@ -123,7 +127,7 @@ const OrderDetailPage: React.FC = () => {
           <p className="text-gray-700 font-medium">Failed to load order</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
-            onClick={fetchOrder}
+            onClick={() => setRetryCount((c) => c + 1)}
             className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1.5"
           >
             <RefreshCw size={14} /> Retry
