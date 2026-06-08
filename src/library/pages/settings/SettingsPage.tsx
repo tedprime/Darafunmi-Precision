@@ -269,7 +269,7 @@ const SettingsPage: React.FC = () => {
                   <form className="space-y-4 max-w-md" onSubmit={handleProfileSave}>
                     <Input id="profileName" label="Full Name" value={profileName} onChange={(e) => setProfileName(e.target.value)} />
                     <Input id="profileEmail" label="Email Address" type="email" value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} />
-                    <Button type="submit" disabled={profileStatus === "saving"} className={`flex items-center ${saveButtonClass(profileStatus)}`}>
+                    <Button type="submit" disabled={profileStatus === "saving"} className={`flex items-center mb-4${saveButtonClass(profileStatus)}`}>
                       <Save size={16} className="mr-2" /> {saveLabel(profileStatus)}
                     </Button>
                   </form>

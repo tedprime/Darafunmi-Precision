@@ -1,57 +1,94 @@
 import { apiFetch } from "./api.jsx";
 
-// ─── GET /orders ──────────────────────────────────────────────────────────────
-// Admin: page, limit, status filter
+// ─── Orders ───────────────────────────────────────────────────────
+
+/**
+ * GET /orders?page=1&limit=20&status=pending
+ * Returns { data: Order[], pagination: { page, total, totalPages } }
+ */
 export async function getOrders({ page = 1, limit = 20, status = "" } = {}) {
   const params = new URLSearchParams({ page, limit });
   if (status) params.set("status", status);
-  const res = await apiFetch(`/orders?${params.toString()}`);
+
+  const res = await apiFetch(`/orders?${params}`);
+
+  // Normalise — backend returns { success, count, data: [] }
+  const data = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+  const total = res?.count ?? res?.total ?? data.length;
+  const totalPages = Math.ceil(total / limit) || 1;
+
   return {
-    data: res.data ?? [],
-    pagination: res.pagination ?? {},
+    data,
+    pagination: { page: Number(page), total, totalPages },
   };
 }
 
-// ─── GET /orders/{orderNumber} ────────────────────────────────────────────────
+/**
+ * GET /orders/:orderNumber
+ * Returns the order object directly
+ */
 export async function getOrder(orderNumber) {
   const res = await apiFetch(`/orders/${orderNumber}`);
-  return res.data ?? res;
+  return res?.data ?? res;
 }
 
-// ─── PATCH /orders/{id}/status ────────────────────────────────────────────────
-// status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
+/**
+ * PATCH /orders/:id/status  —  { status }
+ */
 export async function updateOrderStatus(id, status) {
-  return apiFetch(`/orders/${id}/status`, {
+  const res = await apiFetch(`/orders/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
+  return res?.data ?? res;
 }
 
-// ─── DELETE /orders/{id} ──────────────────────────────────────────────────────
+/**
+ * DELETE /orders/:id
+ */
 export async function deleteOrder(id) {
-  return apiFetch(`/orders/${id}`, { method: "DELETE" });
+  const res = await apiFetch(`/orders/${id}`, { method: "DELETE" });
+  return res?.data ?? res;
 }
 
-// ─── GET /cart (admin views a user's cart — session-based) ───────────────────
+// ─── Cart ─────────────────────────────────────────────────────────
+
+/**
+ * GET /cart
+ * Returns { items: CartItem[] } or CartItem[]
+ */
 export async function getCart() {
   const res = await apiFetch("/cart");
-  return res.data ?? res;
+  // Normalise: backend may return { success, data: [...] } or the array directly
+  if (Array.isArray(res)) return { items: res };
+  if (Array.isArray(res?.data)) return { items: res.data };
+  if (Array.isArray(res?.items)) return res;
+  return { items: [] };
 }
 
-// ─── DELETE /cart (clear entire cart) ────────────────────────────────────────
-export async function clearCart() {
-  return apiFetch("/cart", { method: "DELETE" });
-}
-
-// ─── PATCH /cart/{id} (update item quantity) ─────────────────────────────────
+/**
+ * PATCH /cart/:id  —  { quantity }
+ */
 export async function updateCartItem(id, quantity) {
-  return apiFetch(`/cart/${id}`, {
+  const res = await apiFetch(`/cart/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ quantity }),
   });
+  return res?.data ?? res;
 }
 
-// ─── DELETE /cart/{id} (remove single item) ───────────────────────────────────
+/**
+ * DELETE /cart/:id
+ */
 export async function removeCartItem(id) {
-  return apiFetch(`/cart/${id}`, { method: "DELETE" });
+  const res = await apiFetch(`/cart/${id}`, { method: "DELETE" });
+  return res?.data ?? res;
+}
+
+/**
+ * DELETE /cart
+ */
+export async function clearCart() {
+  const res = await apiFetch("/cart", { method: "DELETE" });
+  return res?.data ?? res;
 }

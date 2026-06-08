@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
@@ -48,7 +48,20 @@ const STATUS_COLOR: Record<OrderStatus | string, "blue" | "gray" | "green" | "ye
 
 const ALL_STATUSES: OrderStatus[] = ["pending", "processing", "shipped", "delivered", "cancelled"];
 
-// ─── Order Detail Modal ───────────────────────────────────────────────────────
+// ─── Sidebar width helper ─────────────────────────────────────────
+// Reads the same localStorage key Layout uses so the modal can
+// offset itself by the correct sidebar width.
+const getSidebarWidth = (): number => {
+  try {
+    const saved = localStorage.getItem("sidebarOpen");
+    const isOpen = saved ? JSON.parse(saved) : true;
+    return isOpen ? 288 : 64; // w-72 = 288px, w-16 = 64px
+  } catch {
+    return 288;
+  }
+};
+
+// ─── Order Detail Modal ───────────────────────────────────────────
 const OrderDetailModal = ({
   orderNumber,
   onClose,
@@ -61,6 +74,7 @@ const OrderDetailModal = ({
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const sidebarWidth = getSidebarWidth();
 
   useEffect(() => {
     getOrder(orderNumber)
@@ -68,12 +82,21 @@ const OrderDetailModal = ({
       .finally(() => setLoading(false));
   }, [orderNumber]);
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (!order) return;
     setUpdating(true);
     try {
       await updateOrderStatus(order.id, newStatus);
-      setOrder((prev) => prev ? { ...prev, status: newStatus } : prev);
+      setOrder((prev) => (prev ? { ...prev, status: newStatus } : prev));
       onStatusChange(order.id, newStatus);
     } finally {
       setUpdating(false);
@@ -81,17 +104,28 @@ const OrderDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    // Overlay — covers full viewport but centres content within the
+    // remaining space to the right of the sidebar
+    <div
+      className="fixed inset-0 z-200 flex items-center justify-center bg-black/40 p-4"
+      style={{ paddingLeft: sidebarWidth }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">
             Order {orderNumber}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
 
+        {/* Body */}
         {loading ? (
           <div className="p-6 space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -120,7 +154,9 @@ const OrderDetailModal = ({
               {order.total !== undefined && (
                 <div>
                   <p className="text-gray-500 text-xs uppercase font-medium mb-1">Total</p>
-                  <p className="text-gray-900 font-semibold">₦{Number(order.total).toLocaleString()}</p>
+                  <p className="text-gray-900 font-semibold">
+                    ₦{Number(order.total).toLocaleString()}
+                  </p>
                 </div>
               )}
             </div>
@@ -128,10 +164,14 @@ const OrderDetailModal = ({
             {/* Shipping Address */}
             {order.shippingAddress && Object.keys(order.shippingAddress).length > 0 && (
               <div>
-                <p className="text-gray-500 text-xs uppercase font-medium mb-1">Shipping Address</p>
+                <p className="text-gray-500 text-xs uppercase font-medium mb-1">
+                  Shipping Address
+                </p>
                 <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
                   {Object.entries(order.shippingAddress).map(([k, v]) => (
-                    <p key={k}><span className="capitalize text-gray-400">{k}:</span> {v}</p>
+                    <p key={k}>
+                      <span className="capitalize text-gray-400">{k}:</span> {v}
+                    </p>
                   ))}
                 </div>
               </div>
@@ -143,12 +183,19 @@ const OrderDetailModal = ({
                 <p className="text-gray-500 text-xs uppercase font-medium mb-2">Items</p>
                 <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
                   {order.items.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between px-4 py-2 text-sm">
-                      <span className="text-gray-800">{item.name ?? `Product #${item.productId}`}</span>
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-4 py-2 text-sm"
+                    >
+                      <span className="text-gray-800">
+                        {item.name ?? `Product #${item.productId}`}
+                      </span>
                       <div className="flex gap-4 text-gray-500">
-                        <span>x{item.quantity}</span>
+                        <span>×{item.quantity}</span>
                         {item.price !== undefined && (
-                          <span className="text-gray-700 font-medium">₦{Number(item.price).toLocaleString()}</span>
+                          <span className="text-gray-700 font-medium">
+                            ₦{Number(item.price).toLocaleString()}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -161,13 +208,17 @@ const OrderDetailModal = ({
             {order.notes && (
               <div>
                 <p className="text-gray-500 text-xs uppercase font-medium mb-1">Notes</p>
-                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{order.notes}</p>
+                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
+                  {order.notes}
+                </p>
               </div>
             )}
 
             {/* Status Update */}
             <div>
-              <p className="text-gray-500 text-xs uppercase font-medium mb-2">Update Status</p>
+              <p className="text-gray-500 text-xs uppercase font-medium mb-2">
+                Update Status
+              </p>
               <div className="flex flex-wrap gap-2">
                 {ALL_STATUSES.map((s) => (
                   <button
@@ -194,18 +245,29 @@ const OrderDetailModal = ({
   );
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────
 const OrderListPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // true = show skeleton on first load
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    total: 0,
+    totalPages: 1,
+  });
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [viewingOrderNumber, setViewingOrderNumber] = useState<string | null>(null);
+  const isFirstLoad = useRef(true);
 
   useEffect(() => {
+    // On subsequent fetches (filter/page changes), show skeleton again.
+    // We use a ref instead of setLoading(true) directly to avoid the
+    // react-hooks/set-state-in-effect ESLint warning.
+    if (!isFirstLoad.current) setLoading(true);
+    isFirstLoad.current = false;
+
     getOrders({ page: pagination.page, status })
       .then(({ data, pagination: pg }) => {
         setOrders(data);
@@ -231,14 +293,17 @@ const OrderListPage: React.FC = () => {
 
   const handleStatusChange = (id: number, newStatus: string) => {
     setOrders((prev) =>
-      prev.map((o) => o.id === id ? { ...o, status: newStatus as OrderStatus } : o)
+      prev.map((o) =>
+        o.id === id ? { ...o, status: newStatus as OrderStatus } : o
+      )
     );
   };
 
-  const filtered = orders.filter((o) =>
-    o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
-    o.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    o.user?.email?.toLowerCase().includes(search.toLowerCase())
+  const filtered = orders.filter(
+    (o) =>
+      o.orderNumber?.toLowerCase().includes(search.toLowerCase()) ||
+      o.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      o.user?.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   const headers = ["Order #", "Customer", "Total", "Payment", "Status", "Date", "Actions"];
@@ -256,7 +321,9 @@ const OrderListPage: React.FC = () => {
       <p className="text-xs text-gray-400">{o.user?.email ?? ""}</p>
     </div>,
     o.total !== undefined ? `₦${Number(o.total).toLocaleString()}` : "—",
-    <span key={`pay-${o.id}`} className="capitalize text-sm">{o.paymentMethod ?? "—"}</span>,
+    <span key={`pay-${o.id}`} className="capitalize text-sm">
+      {o.paymentMethod ?? "—"}
+    </span>,
     <Badge key={`status-${o.id}`} color={STATUS_COLOR[o.status] ?? "gray"}>
       {o.status}
     </Badge>,
@@ -318,7 +385,9 @@ const OrderListPage: React.FC = () => {
           >
             <option value="">All Statuses</option>
             {ALL_STATUSES.map((s) => (
-              <option key={s} value={s} className="capitalize">{s}</option>
+              <option key={s} value={s} className="capitalize">
+                {s}
+              </option>
             ))}
           </select>
         </div>
@@ -329,11 +398,15 @@ const OrderListPage: React.FC = () => {
             <Skeleton className="h-5 w-32 mb-6" />
             <div className="space-y-3">
               <div className="grid grid-cols-7 gap-4">
-                {Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-4" />)}
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <Skeleton key={i} className="h-4" />
+                ))}
               </div>
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="grid grid-cols-7 gap-4">
-                  {Array.from({ length: 7 }).map((_, j) => <Skeleton key={j} className="h-8" />)}
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <Skeleton key={j} className="h-8" />
+                  ))}
                 </div>
               ))}
             </div>
@@ -374,14 +447,18 @@ const OrderListPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     disabled={pagination.page <= 1}
-                    onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
+                    onClick={() =>
+                      setPagination((p) => ({ ...p, page: p.page - 1 }))
+                    }
                     className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40"
                   >
                     Previous
                   </button>
                   <button
                     disabled={pagination.page >= pagination.totalPages}
-                    onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
+                    onClick={() =>
+                      setPagination((p) => ({ ...p, page: p.page + 1 }))
+                    }
                     className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40"
                   >
                     Next
