@@ -234,15 +234,13 @@ const GenerateCertificatePreviewPage: React.FC = () => {
     if (!data) return;
     setDownloading(true);
     try {
-      // API returns { success: true, pdfUrl: "https://res.cloudinary.com/..." }
-      const result = await generatePdf(data.id);
-      const pdfUrl = result?.pdfUrl ?? result;
-      if (!pdfUrl) throw new Error("No PDF URL returned");
+      const blob = await generatePdf(data.id);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = pdfUrl;
+      a.href = url;
       a.download = `${data.certificateNumber}.pdf`;
-      a.target = "_blank";
       a.click();
+      URL.revokeObjectURL(url);
     } catch {
       alert("Failed to generate PDF.");
     } finally {

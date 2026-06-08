@@ -117,15 +117,19 @@ const CertificationListPage: React.FC = () => {
   const handleDownload = async (id: number, certNo: string) => {
     try {
       setActionLoading(id);
-      // API returns { success: true, pdfUrl: "https://res.cloudinary.com/..." }
       const result = await generatePdf(id);
       const pdfUrl = result?.pdfUrl ?? result;
       if (!pdfUrl) throw new Error("No PDF URL returned");
+      // Fetch the file as a blob so the browser downloads it
+      // instead of opening it (cross-origin URLs ignore the download attribute)
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = pdfUrl;
+      a.href = blobUrl;
       a.download = `${certNo}.pdf`;
-      a.target = "_blank";
       a.click();
+      URL.revokeObjectURL(blobUrl);
     } catch {
       showToast("Failed to generate PDF.", "error");
     } finally {
