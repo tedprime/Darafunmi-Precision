@@ -30,7 +30,6 @@ import SettingsPage from "./library/pages/settings/SettingsPage";
 
 // New sections
 import OrderListPage from "./library/pages/orders/OrderListPage";
-import OrderDetailPage from "./library/pages/orders/OrderDetailPage";
 import CartPage from "./library/pages/orders/CartPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
 import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
@@ -100,15 +99,6 @@ function App() {
           element={
             <ProtectedRoute>
               <CartPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/orders/:orderNumber"
-          element={
-            <ProtectedRoute>
-              <OrderDetailPage />
             </ProtectedRoute>
           }
         />
