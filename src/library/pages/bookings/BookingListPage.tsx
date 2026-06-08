@@ -83,7 +83,11 @@ const BookingListPage: React.FC = () => {
     "Contact",
     "Service",
     "Preferred Date",
+    "Time",
+    "Location",
+    "Equipment",
     "Company",
+    "Notes",
     "Status",
     "Actions",
   ];
@@ -101,7 +105,11 @@ const BookingListPage: React.FC = () => {
     </div>,
     b.serviceType ?? "—",
     (() => { const d = b.scheduledDate ?? b.preferredDate; return d ? new Date(d).toLocaleDateString() : "—"; })(),
+    b.scheduledTime ?? "—",
+    b.serviceLocation ?? "—",
+    b.equipmentDetails ? <span key={`eq-${b.id}`} title={b.equipmentDetails} className="max-w-[120px] truncate block text-sm">{b.equipmentDetails}</span> : "—",
     b.companyName ?? b.company ?? "—",
+    b.notes ? <span key={`notes-${b.id}`} title={b.notes} className="max-w-[120px] truncate block text-sm">{b.notes}</span> : "—",
     <select
       key={`status-${b.id}`}
       value={b.status}
@@ -148,13 +156,13 @@ const BookingListPage: React.FC = () => {
       {loading && (
         <Card>
           <div className="space-y-3">
-            <div className="grid grid-cols-7 gap-4">
+            <div className="grid grid-cols-11 gap-4">
               {Array.from({ length: 7 }).map((_, i) => (
                 <Skeleton key={i} className="h-4" />
               ))}
             </div>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-7 gap-4">
+              <div key={i} className="grid grid-cols-11 gap-4">
                 {Array.from({ length: 7 }).map((_, j) => (
                   <Skeleton key={j} className="h-8" />
                 ))}
