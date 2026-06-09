@@ -168,17 +168,19 @@ const CertificationListPage: React.FC = () => {
     </Badge>,
     <div key={`actions-${cert.id}`} className="flex space-x-2">
       <button
+        type="button"
         title="Preview"
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => navigate(`/certifications/generate?id=${cert.id}&tab=preview`)}
+        onClick={(e) => { e.stopPropagation(); navigate(`/certifications/generate?id=${cert.id}&tab=preview`); }}
         disabled={actionLoading === cert.id}
       >
         <Eye size={16} />
       </button>
       <button
+        type="button"
         title="Download PDF"
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => handleDownload(cert.id)}
+        onClick={(e) => { e.stopPropagation(); handleDownload(cert.id); }}
         disabled={actionLoading === cert.id}
       >
         {actionLoading === cert.id ? (
@@ -191,17 +193,19 @@ const CertificationListPage: React.FC = () => {
         )}
       </button>
       <button
+        type="button"
         title={`Email PDF to ${cert.customerName}`}
         className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => handleOpenEmailModal(cert.id, cert.customerName)}
+        onClick={(e) => { e.stopPropagation(); handleOpenEmailModal(cert.id, cert.customerName); }}
         disabled={actionLoading === cert.id}
       >
         <Mail size={16} />
       </button>
       <button
+        type="button"
         title="Delete"
         className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(cert.id, cert.certificateNumber)}
+        onClick={(e) => { e.stopPropagation(); handleDelete(cert.id, cert.certificateNumber); }}
         disabled={actionLoading === cert.id}
       >
         <Trash2 size={16} />
@@ -210,6 +214,7 @@ const CertificationListPage: React.FC = () => {
   ]);
 
   return (
+    <>
     <Layout
       pageTitle="Certifications"
       pageSubtitle={`Manage all issued certificates${count ? ` (${count} total)` : ""}`}
@@ -290,72 +295,75 @@ const CertificationListPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Email Modal — rendered via portal so it escapes any Layout overflow/transform */}
-      {emailModal && createPortal(
-        <div
-          className="fixed inset-0 z-9999 flex items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
-        >
-          <div
-            className="bg-white rounded-lg shadow-2xl w-full mx-4"
-            style={{ maxWidth: 480 }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Send Certificate</h2>
-              <button
-                onClick={() => setEmailModal(null)}
-                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
-                aria-label="Close"
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="px-6 py-5">
-              <p className="text-sm text-gray-600 mb-5">
-                Enter the recipient email address for{" "}
-                <span className="font-semibold">{emailModal.customerName}</span>'s certificate.
-              </p>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={emailTo}
-                onChange={(e) => setEmailTo(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendEmail()}
-                placeholder="client@example.com"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                autoFocus
-              />
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
-              <button
-                onClick={() => setEmailModal(null)}
-                disabled={sending}
-                className="px-4 py-2 border border-gray-300 text-sm rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleSendEmail}
-                disabled={sending || !emailTo.trim()}
-                className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-40 flex items-center gap-2"
-              >
-                <Mail size={14} />
-                {sending ? "Sending..." : "Send Certificate"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
       <ToastContainer toasts={toasts} />
     </Layout>
-  );
+    {emailModal && createPortal(
+      <div
+        className="fixed inset-0 z-9999 flex items-center justify-center"
+        style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+        onClick={() => setEmailModal(null)}
+      >
+        <div
+          className="bg-white rounded-lg shadow-2xl w-full mx-4"
+          style={{ maxWidth: 480 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800">Send Certificate</h2>
+            <button
+              type="button"
+              onClick={() => setEmailModal(null)}
+              className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 py-5">
+            <p className="text-sm text-gray-600 mb-5">
+              Enter the recipient email address for{" "}
+              <span className="font-semibold">{emailModal.customerName}</span>'s certificate.
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSendEmail()}
+              placeholder="client@example.com"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              autoFocus
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setEmailModal(null)}
+              disabled={sending}
+              className="px-4 py-2 border border-gray-300 text-sm rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handleSendEmail}
+              disabled={sending || !emailTo.trim()}
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-40 flex items-center gap-2"
+            >
+              <Mail size={14} />
+              {sending ? "Sending..." : "Send Certificate"}
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+  </>);
 };
 
 export default CertificationListPage;
