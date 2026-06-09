@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
@@ -196,7 +195,7 @@ const CertificationListPage: React.FC = () => {
         type="button"
         title={`Email PDF to ${cert.customerName}`}
         className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={(e) => { e.stopPropagation(); handleOpenEmailModal(cert.id, cert.customerName); }}
+        onClick={() => handleOpenEmailModal(cert.id, cert.customerName)}
         disabled={actionLoading === cert.id}
       >
         <Mail size={16} />
@@ -296,14 +295,14 @@ const CertificationListPage: React.FC = () => {
 
       <ToastContainer toasts={toasts} />
 
-      {/* Modal moved inside Layout context block & background fixed with Tailwind */}
-      {emailModal && createPortal(
+      {/* Inline Modal fallback: eliminates createPortal clipping completely */}
+      {emailModal && (
         <div
-          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/45"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
           onClick={() => setEmailModal(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-120"
+            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-[480px] z-[10000]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -358,8 +357,7 @@ const CertificationListPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </Layout>
   );
