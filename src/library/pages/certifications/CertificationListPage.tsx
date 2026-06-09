@@ -302,7 +302,7 @@ const CertificationListPage: React.FC = () => {
         <div
           // FIXED: Reverted to bulletproof fallback utilities & absolute window positioning configurations
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-          style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 99999 }}
+          style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 99999, backgroundColor: "rgba(0, 0, 0, 0.5)" }}
           onClick={() => setEmailModal(null)}
         >
           <div
