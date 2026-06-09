@@ -5,7 +5,7 @@ import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Eye, Download, Mail, Search, Trash2, TriangleAlert, X } from "lucide-react";
+import { Plus, Eye, Download, Mail, Search, Trash2, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   getCertifications,
@@ -292,45 +292,61 @@ const CertificationListPage: React.FC = () => {
 
       {/* Email Modal — rendered via portal so it escapes any Layout overflow/transform */}
       {emailModal && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-base font-semibold text-gray-800">Send Certificate</h2>
-              <button onClick={() => setEmailModal(null)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
+        <div
+          className="fixed inset-0 z-9999 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-2xl w-full mx-4"
+            style={{ maxWidth: 480 }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-800">Send Certificate</h2>
+              <button
+                onClick={() => setEmailModal(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                aria-label="Close"
+              >
+                &times;
               </button>
             </div>
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-4">
+
+            {/* Body */}
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600 mb-5">
                 Enter the recipient email address for{" "}
-                <span className="font-medium">{emailModal.customerName}</span>'s certificate.
+                <span className="font-semibold">{emailModal.customerName}</span>'s certificate.
               </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 value={emailTo}
                 onChange={(e) => setEmailTo(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendEmail()}
                 placeholder="client@example.com"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 mb-4"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 autoFocus
               />
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSendEmail}
-                  disabled={sending || !emailTo.trim()}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-40 flex items-center justify-center gap-2"
-                >
-                  <Mail size={14} />
-                  {sending ? "Sending..." : "Send Certificate"}
-                </button>
-                <button
-                  onClick={() => setEmailModal(null)}
-                  disabled={sending}
-                  className="px-4 py-2 border border-gray-300 text-sm rounded-md hover:bg-gray-50 disabled:opacity-40"
-                >
-                  Cancel
-                </button>
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+              <button
+                onClick={() => setEmailModal(null)}
+                disabled={sending}
+                className="px-4 py-2 border border-gray-300 text-sm rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleSendEmail}
+                disabled={sending || !emailTo.trim()}
+                className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-40 flex items-center gap-2"
+              >
+                <Mail size={14} />
+                {sending ? "Sending..." : "Send Certificate"}
+              </button>
             </div>
           </div>
         </div>,

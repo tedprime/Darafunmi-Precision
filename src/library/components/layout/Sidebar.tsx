@@ -40,7 +40,7 @@ const navItems = [
     path: "/orders",
     subItems: [
       { name: "Order List", path: "/orders" },
-      { name: "Active Carts", path: "/orders/carts" },
+      // { name: "Active Carts", path: "/orders/carts" },
     ],
   },
   {
