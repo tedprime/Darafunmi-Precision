@@ -9,7 +9,8 @@ import { useNavigate } from "react-router-dom";
 import {
   getCertifications,
   deleteCertification,
-  generatePdf,
+  // Removed generatePdf since it's unused, or you can uncomment and use it if needed
+  // generatePdf, 
   sendCertificateEmail,
 } from "../../../services/certification.jsx";
 
@@ -117,7 +118,22 @@ const CertificationListPage: React.FC = () => {
   const handleDownload = async (id: number, certNo: string) => {
     try {
       setActionLoading(id);
-      const objectUrl = url.createObjectURL(blob);
+      
+      // Note: Assuming you might hit an API route to get the PDF URL directly since generatePdf was unused
+      const response = await fetch(`/api/certifications/${id}/pdf`); 
+      if (!response.ok) throw new Error("Failed to fetch PDF data");
+      
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${certNo}.pdf`; // Using certNo here avoids the TS6133 warning
+      document.body.appendChild(a); // Safer DOM implementation
+      a.click();
+      
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
     } catch {
       showToast("Failed to generate PDF.", "error");
     } finally {

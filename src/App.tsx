@@ -23,7 +23,7 @@ import AddCalibrationPage from "./library/pages/calibrations/AddCalibrationPage"
 import CalibrationHistoryPage from "./library/pages/calibrations/CalibrationHistoryPage";
 import CertificationListPage from "./library/pages/certifications/CertificationListPage";
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
-import GenerateCertificatePreviewPage from "./library/pages/certifications/GenerateCertificatePreviewPage";
+// import GenerateCertificatePreviewPage from "./library/pages/certifications/GenerateCertificatePreviewPage";
 import BlogListPage from "./library/pages/blog/BlogListPage";
 import AddBlogPage from "./library/pages/blog/AddBlogPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
@@ -302,22 +302,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/certifications/generate"
-          element={
-            <ProtectedRoute>
-              <GenerateCertificateFormPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/certifications/generate/preview"
-          element={
-            <ProtectedRoute>
-              <GenerateCertificatePreviewPage />
-            </ProtectedRoute>
-          }
-        />
+       <Route
+  path="/certifications/generate"
+  element={
+    <ProtectedRoute>
+      <GenerateCertificateFormPage />
+    </ProtectedRoute>
+  }
+/>
         {/* <Route
           path="/certifications/company"
           element={
@@ -444,7 +436,7 @@ function App() {
         />
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );
