@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
@@ -295,14 +296,14 @@ const CertificationListPage: React.FC = () => {
 
       <ToastContainer toasts={toasts} />
 
-      {/* Inline Modal fallback: eliminates createPortal clipping completely */}
-      {emailModal && (
+      {/* Email Modal rendered via Portal to escape Layout stacking context */}
+      {emailModal && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => setEmailModal(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-[480px] z-[10000]"
+            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-[480px]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -357,7 +358,8 @@ const CertificationListPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </Layout>
   );
