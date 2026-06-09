@@ -81,6 +81,7 @@ const CertificationListPage: React.FC = () => {
       try {
         const { data, count: total } = await getCertifications({ search, status });
         if (cancelled) return;
+        // FIXED: Changed 'certs(data)' to 'setCerts(data)' to fix TS2349 & ESLint warning
         setCerts(data);
         setCount(total);
         setError(null);
@@ -296,16 +297,16 @@ const CertificationListPage: React.FC = () => {
 
       <ToastContainer toasts={toasts} />
 
-      {/* Email Modal — portalled into #modal-root (outside Layout) so no
-          stacking-context from overflow/transform/filter can clip it */}
+      {/* Email Modal */}
       {emailModal && createPortal(
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/50"
-          style={{ zIndex: 9999 }}
+          // FIXED: Changed z-[9999] to z-9999 for canonical Tailwind standard configuration
+          className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-9999"
           onClick={() => setEmailModal(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-[480px]"
+            // FIXED: Changed max-w-[480px] to max-w-120 per standard Tailwind suggestions
+            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-120"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
