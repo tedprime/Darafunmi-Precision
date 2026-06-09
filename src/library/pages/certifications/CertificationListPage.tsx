@@ -307,7 +307,7 @@ const CertificationListPage: React.FC = () => {
         >
           <div
             // FIXED: Standardized safe width layout configurations to eliminate configuration compilation misses
-            className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-md"
+            className="bg-white rounded-lg shadow-3xl w-full mx-4 max-w-xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -355,7 +355,7 @@ const CertificationListPage: React.FC = () => {
                 type="button"
                 onClick={handleSendEmail}
                 disabled={sending || !emailTo.trim()}
-                className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-40 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-white text-sm rounded-md hover:bg-primary-700 disabled:opacity-40 flex items-center gap-2"
               >
                 <Mail size={14} />
                 {sending ? "Sending..." : "Send Certificate"}
