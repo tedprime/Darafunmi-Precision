@@ -29,15 +29,10 @@ const GenerateCertificateFormPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Certificate Info
   const [certNo, setCertNo] = useState("");
   const [calDate, setCalDate] = useState("");
-
-  // Customer Info
   const [custName, setCustName] = useState("");
   const [custAddress, setCustAddress] = useState("");
-
-  // Instrument Description
   const [equipCalibrated, setEquipCalibrated] = useState("");
   const [equipLocation, setEquipLocation] = useState("");
   const [idNo, setIdNo] = useState("");
@@ -47,17 +42,11 @@ const GenerateCertificateFormPage: React.FC = () => {
   const [maxError, setMaxError] = useState("");
   const [refInst, setRefInst] = useState("");
   const [refInstSn, setRefInstSn] = useState("");
-
-  // Environmental Conditions
   const [temp, setTemp] = useState("");
   const [humidity, setHumidity] = useState("");
-
-  // Physical Examination
   const [physExam, setPhysExam] = useState(
     "An examination of this Measuring Instrument mentioned above showed no visually apparent flaw and it was suitable for calibration.",
   );
-
-  // Calibration Results Table
   const [tableType, setTableType] = useState<TableType>("3col");
   const [tableUnit, setTableUnit] = useState("cm");
   const [rows, setRows] = useState<CalibrationRow[]>([
@@ -65,8 +54,6 @@ const GenerateCertificateFormPage: React.FC = () => {
     emptyRow(),
     emptyRow(),
   ]);
-
-  // Additional Info
   const [comments, setComments] = useState("Certified Okay");
   const [sonLabRef, setSonLabRef] = useState("");
   const [wmvCertNo, setWmvCertNo] = useState("WMV25054");
@@ -76,7 +63,6 @@ const GenerateCertificateFormPage: React.FC = () => {
   const [expDate, setExpDate] = useState("");
   const [status, setStatus] = useState("draft");
   const [clientId, setClientId] = useState("");
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,6 +91,43 @@ const GenerateCertificateFormPage: React.FC = () => {
         asLeftValue: r.asLeftValue,
         deviation: r.deviation,
       }));
+
+  // Collect all current form values into a preview-ready object
+  const buildPreviewData = () => ({
+    certificateNumber: certNo,
+    calibrationDate: calDate,
+    recommendedRecalibDate: recDate,
+    customerName: custName,
+    customerAddress: custAddress,
+    equipCalibrated,
+    equipmentLocation: equipLocation,
+    identificationNo: idNo,
+    scale,
+    scaleRange,
+    scaleDivision: scaleDiv,
+    maxScaleError: maxError,
+    referenceInstrument: refInst,
+    referenceInstrumentSN: refInstSn,
+    temperature: temp,
+    humidity,
+    physicalExamText: physExam,
+    tableType,
+    tableUnit,
+    calibrationResults: buildCalibrationResults(),
+    comments,
+    sonLabRef,
+    wmvCertNo,
+    performedBy: perfBy,
+    performedByTitle: perfTitle,
+    expiryDate: expDate,
+    status,
+  });
+
+  const handlePreview = () => {
+    navigate("/certifications/generate/preview", {
+      state: { previewData: buildPreviewData() },
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,7 +194,7 @@ const GenerateCertificateFormPage: React.FC = () => {
         </span>
         <span
           className={tab("/certifications/generate/preview")}
-          onClick={() => navigate("/certifications/generate/preview")}
+          onClick={handlePreview}
         >
           Preview
         </span>
@@ -223,9 +246,8 @@ const GenerateCertificateFormPage: React.FC = () => {
             </div>
             <Input
               id="clientId"
-              label="Client ID"
-              placeholder="Enter client ID"
-              type="number"
+              label="Client ID (optional)"
+              placeholder="e.g., 12"
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
             />
@@ -241,26 +263,17 @@ const GenerateCertificateFormPage: React.FC = () => {
             <Input
               id="custName"
               label="Customer Name"
-              placeholder="Enter company name"
+              placeholder="Enter customer name"
               value={custName}
               onChange={(e) => setCustName(e.target.value)}
             />
-            <div>
-              <label
-                htmlFor="custAddress"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Customer Address
-              </label>
-              <textarea
-                id="custAddress"
-                rows={3}
-                value={custAddress}
-                onChange={(e) => setCustAddress(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="KM 1, Ijoko Road, Sango - Otta, Ogun State, Nigeria."
-              />
-            </div>
+            <Input
+              id="custAddress"
+              label="Customer Address"
+              placeholder="Enter customer address"
+              value={custAddress}
+              onChange={(e) => setCustAddress(e.target.value)}
+            />
           </div>
         </Card>
 
@@ -273,63 +286,63 @@ const GenerateCertificateFormPage: React.FC = () => {
             <Input
               id="equipCalibrated"
               label="Equipment Calibrated"
-              placeholder="e.g., STAINLESS STEEL RULER"
+              placeholder="e.g., Vernier Caliper"
               value={equipCalibrated}
               onChange={(e) => setEquipCalibrated(e.target.value)}
             />
             <Input
               id="equipLocation"
               label="Equipment Location"
-              placeholder="e.g., LABORATORY"
+              placeholder="e.g., Lab A"
               value={equipLocation}
               onChange={(e) => setEquipLocation(e.target.value)}
             />
             <Input
               id="idNo"
-              label="Identification No."
-              placeholder="e.g., N/A"
+              label="ID No."
+              placeholder="e.g., DPT-001"
               value={idNo}
               onChange={(e) => setIdNo(e.target.value)}
             />
             <Input
               id="scale"
               label="Scale"
-              placeholder="e.g., cm/Inch or Kilogramme (Kg)"
+              placeholder="e.g., Metric"
               value={scale}
               onChange={(e) => setScale(e.target.value)}
             />
             <Input
               id="scaleRange"
               label="Scale Range"
-              placeholder="e.g., 30cm or 2tons"
+              placeholder="e.g., 0 - 150mm"
               value={scaleRange}
               onChange={(e) => setScaleRange(e.target.value)}
             />
             <Input
               id="scaleDiv"
               label="Scale Division"
-              placeholder="e.g., 1mm or 350kg"
+              placeholder="e.g., 0.02mm"
               value={scaleDiv}
               onChange={(e) => setScaleDiv(e.target.value)}
             />
             <Input
               id="maxError"
-              label="Maximum Scale Error Permitted"
-              placeholder="e.g., 0.1mm or 200g"
+              label="Max Scale Error Permitted"
+              placeholder="e.g., ±0.05mm"
               value={maxError}
               onChange={(e) => setMaxError(e.target.value)}
             />
             <Input
               id="refInst"
-              label="Reference Instrument Used"
-              placeholder="e.g., STANDARD METER RULE"
+              label="Reference Instrument"
+              placeholder="e.g., Gauge Block Set"
               value={refInst}
               onChange={(e) => setRefInst(e.target.value)}
             />
             <Input
               id="refInstSn"
               label="Reference Instrument S/N"
-              placeholder="e.g., 22708"
+              placeholder="e.g., SN-20210045"
               value={refInstSn}
               onChange={(e) => setRefInstSn(e.target.value)}
             />
@@ -339,20 +352,20 @@ const GenerateCertificateFormPage: React.FC = () => {
         {/* Environmental Conditions */}
         <Card>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Laboratory Environmental Conditions
+            Environmental Conditions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input
               id="temp"
               label="Temperature"
-              placeholder="e.g., 23°C ± 2°C"
+              placeholder="e.g., 25°C"
               value={temp}
               onChange={(e) => setTemp(e.target.value)}
             />
             <Input
               id="humidity"
               label="Relative Humidity"
-              placeholder="e.g., 50% ± 10%"
+              placeholder="e.g., 60%"
               value={humidity}
               onChange={(e) => setHumidity(e.target.value)}
             />
@@ -362,66 +375,51 @@ const GenerateCertificateFormPage: React.FC = () => {
         {/* Physical Examination */}
         <Card>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Results of Physical Examination
+            Physical Examination
           </h3>
           <textarea
             id="physExam"
             rows={3}
             value={physExam}
             onChange={(e) => setPhysExam(e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           />
         </Card>
 
-        {/* Calibration Results */}
+        {/* Calibration Results Table */}
         <Card>
-          <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Results of Calibration
-            </h3>
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Columns:
-                </label>
-                <select
-                  value={tableType}
-                  onChange={(e) => setTableType(e.target.value as TableType)}
-                  className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="3col">
-                    3-col (Standard / Measured / Deviation)
-                  </option>
-                  <option value="4col">
-                    4-col (Standard / As Found / As Left / Deviation)
-                  </option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Unit:
-                </label>
-                <input
-                  type="text"
-                  value={tableUnit}
-                  onChange={(e) => setTableUnit(e.target.value)}
-                  className="border border-gray-300 rounded-md px-2 py-1.5 text-sm w-20 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="cm"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                className="text-xs py-1 px-3 flex items-center"
-                onClick={addRow}
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Calibration Results
+          </h3>
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Table Type
+              </label>
+              <select
+                value={tableType}
+                onChange={(e) => setTableType(e.target.value as TableType)}
+                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <Plus size={14} className="mr-1" /> Add Row
-              </Button>
+                <option value="3col">3 Column</option>
+                <option value="4col">4 Column</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Unit
+              </label>
+              <input
+                type="text"
+                value={tableUnit}
+                onChange={(e) => setTableUnit(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-24"
+                placeholder="cm"
+              />
             </div>
           </div>
-
           <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-300 rounded-md text-sm">
+            <table className="w-full border-collapse border border-gray-300 text-sm">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">
@@ -449,17 +447,12 @@ const GenerateCertificateFormPage: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {rows.map((row, i) => (
-                  <tr
-                    key={i}
-                    className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
+                  <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="px-3 py-2 border border-gray-200">
                       <input
                         type="text"
                         value={row.standardValue}
-                        onChange={(e) =>
-                          updateRow(i, "standardValue", e.target.value)
-                        }
+                        onChange={(e) => updateRow(i, "standardValue", e.target.value)}
                         className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
                         placeholder="0.00"
                       />
@@ -469,9 +462,7 @@ const GenerateCertificateFormPage: React.FC = () => {
                         <input
                           type="text"
                           value={row.measuredValue}
-                          onChange={(e) =>
-                            updateRow(i, "measuredValue", e.target.value)
-                          }
+                          onChange={(e) => updateRow(i, "measuredValue", e.target.value)}
                           className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
                           placeholder="0.00"
                         />
@@ -482,9 +473,7 @@ const GenerateCertificateFormPage: React.FC = () => {
                           <input
                             type="text"
                             value={row.asFoundValue}
-                            onChange={(e) =>
-                              updateRow(i, "asFoundValue", e.target.value)
-                            }
+                            onChange={(e) => updateRow(i, "asFoundValue", e.target.value)}
                             className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
                             placeholder="0.00"
                           />
@@ -493,9 +482,7 @@ const GenerateCertificateFormPage: React.FC = () => {
                           <input
                             type="text"
                             value={row.asLeftValue}
-                            onChange={(e) =>
-                              updateRow(i, "asLeftValue", e.target.value)
-                            }
+                            onChange={(e) => updateRow(i, "asLeftValue", e.target.value)}
                             className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
                             placeholder="0.00"
                           />
@@ -506,9 +493,7 @@ const GenerateCertificateFormPage: React.FC = () => {
                       <input
                         type="text"
                         value={row.deviation}
-                        onChange={(e) =>
-                          updateRow(i, "deviation", e.target.value)
-                        }
+                        onChange={(e) => updateRow(i, "deviation", e.target.value)}
                         className="w-full border border-gray-200 rounded px-2 py-1 text-center focus:ring-blue-500 focus:border-blue-500"
                         placeholder="0.00"
                       />
@@ -527,6 +512,13 @@ const GenerateCertificateFormPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <button
+            type="button"
+            onClick={addRow}
+            className="mt-3 flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+          >
+            <Plus size={15} /> Add Row
+          </button>
         </Card>
 
         {/* Additional Information */}
@@ -603,11 +595,7 @@ const GenerateCertificateFormPage: React.FC = () => {
         </Card>
 
         <div className="flex space-x-4">
-          <Button
-            type="submit"
-            className="flex items-center"
-            disabled={submitting}
-          >
+          <Button type="submit" className="flex items-center" disabled={submitting}>
             <Download size={16} className="mr-2" />
             {submitting ? "Saving..." : "Save Certificate"}
           </Button>
@@ -615,7 +603,7 @@ const GenerateCertificateFormPage: React.FC = () => {
             type="button"
             variant="secondary"
             className="flex items-center"
-            onClick={() => navigate("/certifications/generate/preview")}
+            onClick={handlePreview}
             disabled={submitting}
           >
             <Eye size={16} className="mr-2" /> Preview
