@@ -15,11 +15,11 @@ import {
   X,
   CalendarCheck,
   ShoppingBag,
-  Wrench,
-  Building2,
+  // Wrench,
+  // Building2,
   BookOpen,
   UserCog,
-  Newspaper,
+  // Newspaper,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -62,16 +62,16 @@ const navItems = [
       { name: "Auth Management", path: "/site-users/auth" },
     ],
   },
-  {
-    name: "Services",
-    icon: Wrench,
-    path: "/services",
-  },
-  {
-    name: "Industries",
-    icon: Building2,
-    path: "/industries",
-  },
+  // {
+  //   name: "Services",
+  //   icon: Wrench,
+  //   path: "/services",
+  // },
+  // {
+  //   name: "Industries",
+  //   icon: Building2,
+  //   path: "/industries",
+  // },
   {
     name: "Products",
     icon: Package,
@@ -108,7 +108,7 @@ const navItems = [
     subItems: [
       { name: "Certification List", path: "/certifications" },
       { name: "Generate Certificate", path: "/certifications/generate" },
-      { name: "Company Certifications", path: "/certifications/company" },
+      // { name: "Company Certifications", path: "/certifications/company" },
     ],
   },
   {
@@ -119,15 +119,15 @@ const navItems = [
       { name: "Blog List", path: "/blog" },
       { name: "Add Blog", path: "/blog/add" },
       { name: "Case Studies", path: "/content/case-studies" },
-      { name: "Testimonials", path: "/content/testimonials" },
-      { name: "Resources", path: "/content/resources" },
+      // { name: "Testimonials", path: "/content/testimonials" },
+      // { name: "Resources", path: "/content/resources" },
     ],
   },
-  {
-    name: "Newsletter",
-    icon: Newspaper,
-    path: "/newsletter",
-  },
+  // {
+  //   name: "Newsletter",
+  //   icon: Newspaper,
+  //   path: "/newsletter",
+  // },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
