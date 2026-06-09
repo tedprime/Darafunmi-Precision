@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { Plus, Trash2, Download, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createCertification, generatePdf } from "../../../services/certification.jsx";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { createCertification, generatePdf, getCertification } from "../../../services/certification.jsx";
 
 type TableType = "3col" | "4col";
 type ActiveTab = "form" | "preview";
@@ -63,7 +63,10 @@ const s = {
 
 const GenerateCertificateFormPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<ActiveTab>("form");
+  // Initialised as true when ?id= is present so the effect never calls setLoadingCert synchronously
+  const [loadingCert, setLoadingCert] = useState(() => !!new URLSearchParams(window.location.search).get("id"));
 
   // Form fields
   const [certNo, setCertNo] = useState("");
@@ -100,6 +103,70 @@ const GenerateCertificateFormPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load existing cert when navigated with ?id=X&tab=preview
+  useEffect(() => {
+    const id = searchParams.get("id");
+    const tab = searchParams.get("tab");
+    if (!id) return;
+
+    let cancelled = false;
+    getCertification(Number(id))
+      .then((cert: { data?: Record<string, unknown> } & Record<string, unknown>) => {
+        if (cancelled) return;
+        const d = (cert?.data ?? cert) as Record<string, unknown>;
+        const str = (v: unknown) => (v != null ? String(v) : "");
+        setCertNo(str(d.certificateNumber));
+        setCalDate(d.calibrationDate ? str(d.calibrationDate).slice(0, 10) : "");
+        setCustName(str(d.customerName));
+        setCustAddress(str(d.customerAddress));
+        setEquipCalibrated(str(d.equipmentCalibrated));
+        setEquipLocation(str(d.equipmentLocation));
+        setIdNo(str(d.identificationNo));
+        setScale(str(d.scale));
+        setScaleRange(str(d.scaleRange));
+        setScaleDiv(str(d.scaleDivision));
+        setMaxError(str(d.maxScaleError));
+        setRefInst(str(d.referenceInstrument));
+        setRefInstSn(str(d.referenceInstrumentSN));
+        setTemp(str(d.temperature));
+        setHumidity(str(d.humidity));
+        setPhysExam(str(d.physicalExamText));
+        setTableType((d.tableType as TableType) ?? "3col");
+        setTableUnit(str(d.tableUnit) || "cm");
+        const rawRows = d.calibrationResults;
+        setRows(
+          Array.isArray(rawRows) && rawRows.length > 0
+            ? rawRows.map((r: Record<string, unknown>) => ({
+                standardValue: str(r.standardValue),
+                measuredValue: str(r.measuredValue),
+                asFoundValue: str(r.asFoundValue),
+                asLeftValue: str(r.asLeftValue),
+                deviation: str(r.deviation),
+              }))
+            : [emptyRow(), emptyRow(), emptyRow()]
+        );
+        setComments(str(d.comments) || "Certified Okay");
+        setSonLabRef(str(d.sonLabRef));
+        setWmvCertNo(str(d.wmvCertNo) || "WMV25054");
+        setPerfBy(str(d.performedBy) || "Daranijo Funminiyi A.");
+        setPerfTitle(str(d.performedByTitle) || "Chief Engineer");
+        setRecDate(d.recommendedRecalibDate ? str(d.recommendedRecalibDate).slice(0, 10) : "");
+        setExpDate(d.expiryDate ? str(d.expiryDate).slice(0, 10) : "");
+        setStatus(str(d.status) || "draft");
+        setClientId(d.clientId ? str(d.clientId) : "");
+        setSavedId(typeof d.id === "number" ? d.id : Number(id));
+        if (tab === "preview") setActiveTab("preview");
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to load certificate for preview.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCert(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [searchParams]);
 
   const addRow = () => setRows((r) => [...r, emptyRow()]);
   const removeRow = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
@@ -222,6 +289,12 @@ const GenerateCertificateFormPage: React.FC = () => {
 
   return (
     <Layout pageTitle="Generate Certificate" pageSubtitle="Create a new calibration certificate.">
+      {loadingCert ? (
+        <div className="flex items-center justify-center py-24 text-sm text-gray-400">
+          Loading certificate…
+        </div>
+      ) : (
+      <>
       {/* Tabs */}
       <div className="flex items-center mb-6">
         <span className={tab("form")} onClick={() => setActiveTab("form")}>Form</span>
@@ -581,6 +654,8 @@ const GenerateCertificateFormPage: React.FC = () => {
             </>
           )}
         </>
+      )}
+      </>
       )}
     </Layout>
   );

@@ -118,7 +118,7 @@ const navItems = [
     subItems: [
       { name: "Blog List", path: "/blog" },
       { name: "Add Blog", path: "/blog/add" },
-      { name: "Case Studies", path: "/content/case-studies" },
+      // { name: "Case Studies", path: "/content/case-studies" },
       // { name: "Testimonials", path: "/content/testimonials" },
       // { name: "Resources", path: "/content/resources" },
     ],

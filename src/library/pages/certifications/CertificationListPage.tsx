@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
@@ -107,7 +108,7 @@ const CertificationListPage: React.FC = () => {
     }
   };
 
-  // Calls generate-pdf → gets pdfUrl from Cloudinary → auto-downloads
+  // Calls generate-pdf → gets pdfUrl from Cloudinary → auto-downloads as file
   const handleDownload = async (id: number) => {
     const cert = certs.find((c) => c.id === id);
     try {
@@ -115,7 +116,6 @@ const CertificationListPage: React.FC = () => {
       const result = await generatePdf(id);
       const pdfUrl = result?.pdfUrl;
       if (!pdfUrl) throw new Error("No PDF URL returned from server.");
-      // Fetch as blob so browser triggers a file download instead of navigation
       const response = await fetch(pdfUrl);
       if (!response.ok) throw new Error("Failed to fetch PDF from server.");
       const blob = await response.blob();
@@ -170,7 +170,7 @@ const CertificationListPage: React.FC = () => {
       <button
         title="Preview"
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => navigate(`/certifications/generate/preview?id=${cert.id}`)}
+        onClick={() => navigate(`/certifications/generate?id=${cert.id}&tab=preview`)}
         disabled={actionLoading === cert.id}
       >
         <Eye size={16} />
@@ -290,8 +290,9 @@ const CertificationListPage: React.FC = () => {
         </Card>
       )}
 
-      {emailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      {/* Email Modal — rendered via portal so it escapes any Layout overflow/transform */}
+      {emailModal && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-base font-semibold text-gray-800">Send Certificate</h2>
@@ -332,7 +333,8 @@ const CertificationListPage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ToastContainer toasts={toasts} />
