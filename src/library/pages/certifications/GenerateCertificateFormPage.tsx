@@ -213,11 +213,20 @@ const GenerateCertificateFormPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     if (!certNo.trim()) { setError("Certificate number is required."); return; }
+
+    const calibrationResults = buildCalibrationResults();
+    if (calibrationResults.length === 0) {
+      setError("Please add at least one calibration result row with a standard value.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await createCertification({
         certificateNumber: certNo.trim(),
-        ...(clientId && { clientId: Number(clientId) }),
+        // Always send clientId — null when empty so the server gets an explicit
+        // value rather than a missing key that may trip a NOT NULL constraint.
+        clientId: clientId ? Number(clientId) : null,
         customerName: custName.trim(),
         customerAddress: custAddress.trim(),
         equipmentCalibrated: equipCalibrated.trim(),
@@ -239,11 +248,12 @@ const GenerateCertificateFormPage: React.FC = () => {
         comments: comments.trim(),
         performedBy: perfBy.trim(),
         performedByTitle: perfTitle.trim(),
-        calibrationDate: calDate,
-        recommendedRecalibDate: recDate,
-        expiryDate: expDate,
+        // Send null instead of "" so the server receives a proper nullable date
+        calibrationDate: calDate || null,
+        recommendedRecalibDate: recDate || null,
+        expiryDate: expDate || null,
         status,
-        calibrationResults: buildCalibrationResults(),
+        calibrationResults,
       });
       setSavedId(res?.data?.id ?? null);
       navigate("/certifications");

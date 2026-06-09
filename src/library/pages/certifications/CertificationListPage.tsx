@@ -196,7 +196,7 @@ const CertificationListPage: React.FC = () => {
         type="button"
         title={`Email PDF to ${cert.customerName}`}
         className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => handleOpenEmailModal(cert.id, cert.customerName)}
+        onClick={(e) => { e.stopPropagation(); handleOpenEmailModal(cert.id, cert.customerName); }}
         disabled={actionLoading === cert.id}
       >
         <Mail size={16} />
@@ -296,10 +296,12 @@ const CertificationListPage: React.FC = () => {
 
       <ToastContainer toasts={toasts} />
 
-      {/* Email Modal rendered via Portal to escape Layout stacking context */}
+      {/* Email Modal — portalled into #modal-root (outside Layout) so no
+          stacking-context from overflow/transform/filter can clip it */}
       {emailModal && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 flex items-center justify-center bg-black/50"
+          style={{ zIndex: 9999 }}
           onClick={() => setEmailModal(null)}
         >
           <div
@@ -359,7 +361,7 @@ const CertificationListPage: React.FC = () => {
             </div>
           </div>
         </div>,
-        document.body
+        document.getElementById("modal-root") ?? document.body
       )}
     </Layout>
   );
