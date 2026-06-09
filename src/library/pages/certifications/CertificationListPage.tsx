@@ -9,8 +9,7 @@ import { useNavigate } from "react-router-dom";
 import {
   getCertifications,
   deleteCertification,
-  // Removed generatePdf since it's unused, or you can uncomment and use it if needed
-  // generatePdf, 
+  generatePdf,
   sendCertificateEmail,
 } from "../../../services/certification.jsx";
 
@@ -34,7 +33,6 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 type ToastType = "success" | "error";
 interface Toast { id: number; message: string; type: ToastType }
 
@@ -53,8 +51,6 @@ const ToastContainer = ({ toasts }: { toasts: Toast[] }) => (
   </div>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 const CertificationListPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -66,11 +62,25 @@ const CertificationListPage: React.FC = () => {
   const [count, setCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem("sidebarOpen");
+    return saved ? JSON.parse(saved) : true;
+  });
 
   // Email modal state
   const [emailModal, setEmailModal] = useState<{ id: number; customerName: string } | null>(null);
   const [emailTo, setEmailTo] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Keep sidebar state in sync for modal centering
+  useEffect(() => {
+    const onStorage = () => {
+      const saved = localStorage.getItem("sidebarOpen");
+      if (saved !== null) setSidebarOpen(JSON.parse(saved));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const showToast = (message: string, type: ToastType) => {
     const id = Date.now();
@@ -80,7 +90,6 @@ const CertificationListPage: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-
     const fetchCerts = async () => {
       try {
         const { data, count: total } = await getCertifications({ search, status });
@@ -95,9 +104,7 @@ const CertificationListPage: React.FC = () => {
         if (!cancelled) setLoading(false);
       }
     };
-
     fetchCerts();
-
     return () => { cancelled = true; };
   }, [search, status]);
 
@@ -115,27 +122,19 @@ const CertificationListPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (id: number, certNo: string) => {
+  // Calls generate-pdf → gets pdfUrl from Cloudinary → opens in new tab
+  const handleDownload = async (id: number) => {
     try {
       setActionLoading(id);
-      
-      // Note: Assuming you might hit an API route to get the PDF URL directly since generatePdf was unused
-      const response = await fetch(`/api/certifications/${id}/pdf`); 
-      if (!response.ok) throw new Error("Failed to fetch PDF data");
-      
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `${certNo}.pdf`; // Using certNo here avoids the TS6133 warning
-      document.body.appendChild(a); // Safer DOM implementation
-      a.click();
-      
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-    } catch {
-      showToast("Failed to generate PDF.", "error");
+      const result = await generatePdf(id);
+      const pdfUrl = result?.pdfUrl;
+      if (!pdfUrl) throw new Error("No PDF URL returned from server.");
+      // Cloudinary URLs are cross-origin — open directly instead of blob fetch
+      window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      showToast("PDF opened in new tab.", "success");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to generate PDF.";
+      showToast(message, "error");
     } finally {
       setActionLoading(null);
     }
@@ -147,8 +146,7 @@ const CertificationListPage: React.FC = () => {
   };
 
   const handleSendEmail = async () => {
-    if (!emailModal) return;
-    if (!emailTo.trim()) return;
+    if (!emailModal || !emailTo.trim()) return;
     setSending(true);
     try {
       await sendCertificateEmail(emailModal.id, emailTo.trim());
@@ -162,14 +160,7 @@ const CertificationListPage: React.FC = () => {
     }
   };
 
-  const headers = [
-    "Certificate No",
-    "Client",
-    "Equipment",
-    "Expiry Date",
-    "Status",
-    "Actions",
-  ];
+  const headers = ["Certificate No", "Client", "Equipment", "Expiry Date", "Status", "Actions"];
 
   const data = certs.map((cert) => [
     cert.certificateNumber,
@@ -191,15 +182,7 @@ const CertificationListPage: React.FC = () => {
       <button
         title="Download PDF"
         className="p-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => handleDownload(cert.id, cert.certificateNumber)}
-        disabled={actionLoading === cert.id}
-      >
-        <Download size={16} />
-      </button>
-      <button
-        title={`Email PDF to ${cert.customerName}`}
-        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => handleOpenEmailModal(cert.id, cert.customerName)}
+        onClick={() => handleDownload(cert.id)}
         disabled={actionLoading === cert.id}
       >
         {actionLoading === cert.id ? (
@@ -208,8 +191,16 @@ const CertificationListPage: React.FC = () => {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
         ) : (
-          <Mail size={16} />
+          <Download size={16} />
         )}
+      </button>
+      <button
+        title={`Email PDF to ${cert.customerName}`}
+        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
+        onClick={() => handleOpenEmailModal(cert.id, cert.customerName)}
+        disabled={actionLoading === cert.id}
+      >
+        <Mail size={16} />
       </button>
       <button
         title="Delete"
@@ -222,15 +213,15 @@ const CertificationListPage: React.FC = () => {
     </div>,
   ]);
 
+  // Modal left offset accounts for sidebar width so it's centered in the content area
+  const sidebarWidth = sidebarOpen ? 288 : 64; // w-72 = 288px, w-16 = 64px
+
   return (
     <Layout
       pageTitle="Certifications"
       pageSubtitle={`Manage all issued certificates${count ? ` (${count} total)` : ""}`}
       action={
-        <Button
-          className="flex items-center"
-          onClick={() => navigate("/certifications/generate")}
-        >
+        <Button className="flex items-center" onClick={() => navigate("/certifications/generate")}>
           <Plus size={16} className="mr-2" /> Generate Certificate
         </Button>
       }
@@ -268,15 +259,11 @@ const CertificationListPage: React.FC = () => {
           <Skeleton className="h-5 w-40 mb-6" />
           <div className="space-y-3">
             <div className="grid grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-4" />
-              ))}
+              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-4" />)}
             </div>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="grid grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <Skeleton key={j} className="h-8" />
-                ))}
+                {Array.from({ length: 6 }).map((_, j) => <Skeleton key={j} className="h-8" />)}
               </div>
             ))}
           </div>
@@ -286,7 +273,7 @@ const CertificationListPage: React.FC = () => {
       {/* Error State */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
+          <TriangleAlert className="w-8 h-8 text-yellow-500 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load certificates</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
@@ -301,23 +288,22 @@ const CertificationListPage: React.FC = () => {
       {/* Table */}
       {!loading && !error && (
         <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            All Certificates
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">All Certificates</h3>
           {data.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
-              No certificates found.
-            </p>
+            <p className="text-sm text-gray-500 text-center py-8">No certificates found.</p>
           ) : (
             <Table headers={headers} data={data} />
           )}
         </Card>
       )}
 
-      {/* Email Modal */}
+      {/* Email Modal — offset by sidebar width so it's centered in the content area */}
       {emailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          style={{ paddingLeft: sidebarWidth }}
+        >
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-base font-semibold text-gray-800">Send Certificate</h2>
               <button onClick={() => setEmailModal(null)} className="text-gray-400 hover:text-gray-600">
@@ -326,7 +312,8 @@ const CertificationListPage: React.FC = () => {
             </div>
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-4">
-                Enter the recipient email address for <span className="font-medium">{emailModal.customerName}</span>'s certificate.
+                Enter the recipient email address for{" "}
+                <span className="font-medium">{emailModal.customerName}</span>'s certificate.
               </p>
               <input
                 type="email"
