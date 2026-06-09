@@ -191,15 +191,22 @@ const GenerateCertificateFormPage: React.FC = () => {
     if (!savedId) return;
     setDownloading(true);
     try {
-      const blob = await generatePdf(savedId);
-      const url = URL.createObjectURL(blob);
+      const result = await generatePdf(savedId);
+      const pdfUrl = result?.pdfUrl;
+      if (!pdfUrl) throw new Error("No PDF URL returned from server.");
+      const response = await fetch(pdfUrl);
+      if (!response.ok) throw new Error("Failed to fetch PDF from server.");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `${certNo}.pdf`;
+      a.href = blobUrl;
+      a.download = `${certNo || `certificate-${savedId}`}.pdf`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert("Failed to generate PDF.");
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to generate PDF.");
     } finally {
       setDownloading(false);
     }

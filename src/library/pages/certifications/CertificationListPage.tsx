@@ -62,25 +62,10 @@ const CertificationListPage: React.FC = () => {
   const [count, setCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem("sidebarOpen");
-    return saved ? JSON.parse(saved) : true;
-  });
-
   // Email modal state
   const [emailModal, setEmailModal] = useState<{ id: number; customerName: string } | null>(null);
   const [emailTo, setEmailTo] = useState("");
   const [sending, setSending] = useState(false);
-
-  // Keep sidebar state in sync for modal centering
-  useEffect(() => {
-    const onStorage = () => {
-      const saved = localStorage.getItem("sidebarOpen");
-      if (saved !== null) setSidebarOpen(JSON.parse(saved));
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
 
   const showToast = (message: string, type: ToastType) => {
     const id = Date.now();
@@ -122,16 +107,27 @@ const CertificationListPage: React.FC = () => {
     }
   };
 
-  // Calls generate-pdf → gets pdfUrl from Cloudinary → opens in new tab
+  // Calls generate-pdf → gets pdfUrl from Cloudinary → auto-downloads
   const handleDownload = async (id: number) => {
+    const cert = certs.find((c) => c.id === id);
     try {
       setActionLoading(id);
       const result = await generatePdf(id);
       const pdfUrl = result?.pdfUrl;
       if (!pdfUrl) throw new Error("No PDF URL returned from server.");
-      // Cloudinary URLs are cross-origin — open directly instead of blob fetch
-      window.open(pdfUrl, "_blank", "noopener,noreferrer");
-      showToast("PDF opened in new tab.", "success");
+      // Fetch as blob so browser triggers a file download instead of navigation
+      const response = await fetch(pdfUrl);
+      if (!response.ok) throw new Error("Failed to fetch PDF from server.");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = cert ? `${cert.certificateNumber}.pdf` : `certificate-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      showToast("PDF downloaded successfully.", "success");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to generate PDF.";
       showToast(message, "error");
@@ -212,9 +208,6 @@ const CertificationListPage: React.FC = () => {
       </button>
     </div>,
   ]);
-
-  // Modal left offset accounts for sidebar width so it's centered in the content area
-  const sidebarWidth = sidebarOpen ? 288 : 64; // w-72 = 288px, w-16 = 64px
 
   return (
     <Layout
@@ -297,12 +290,8 @@ const CertificationListPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Email Modal — offset by sidebar width so it's centered in the content area */}
       {emailModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          style={{ paddingLeft: sidebarWidth }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-base font-semibold text-gray-800">Send Certificate</h2>
