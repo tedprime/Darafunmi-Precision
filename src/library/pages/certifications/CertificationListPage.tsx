@@ -307,7 +307,7 @@ const CertificationListPage: React.FC = () => {
         >
           <div
             // FIXED: Standardized safe width layout configurations to eliminate configuration compilation misses
-            className="bg-white rounded-lg shadow-3xl w-full mx-4 max-w-lg"
+            className="bg-white rounded-lg shadow-3xl w-full mx-4 max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
