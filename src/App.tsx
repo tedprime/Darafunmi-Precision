@@ -27,6 +27,9 @@ import GenerateCertificateFormPage from "./library/pages/certifications/Generate
 import BlogListPage from "./library/pages/blog/BlogListPage";
 import AddBlogPage from "./library/pages/blog/AddBlogPage";
 import EditBlogPage from "./library/pages/blog/EditBlogPage";
+import CaseStudyListPage from "./library/pages/caseStudy/CaseStudyListPage";
+import AddCaseStudyPage from "./library/pages/caseStudy/AddCaseStudyPage";
+import EditCaseStudyPage from "./library/pages/caseStudy/EditCaseStudyPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
 import OrderListPage from "./library/pages/orders/OrderListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
@@ -296,6 +299,31 @@ function App() {
             }
           />
 
+          {/* Content — Case Studies */}
+          <Route
+            path="/case-studies"
+            element={
+              <ProtectedRoute>
+                <CaseStudyListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/case-studies/add"
+            element={
+              <ProtectedRoute>
+                <AddCaseStudyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/case-studies/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditCaseStudyPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Settings */}
           <Route
             path="/settings"

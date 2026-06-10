@@ -40,7 +40,6 @@ const navItems = [
     path: "/orders",
     subItems: [
       { name: "Order List", path: "/orders" },
-      // { name: "Active Carts", path: "/orders/carts" },
     ],
   },
   {
@@ -114,11 +113,12 @@ const navItems = [
   {
     name: "Content",
     icon: BookOpen,
-    path: "/content",
+    path: "/content", // Keeping path root baseline for submenus
     subItems: [
       { name: "Blog List", path: "/blog" },
       { name: "Add Blog", path: "/blog/add" },
-      // { name: "Case Studies", path: "/content/case-studies" },
+      { name: "Case Studies", path: "/case-studies" },
+      { name: "Add Case Study", path: "/case-studies/add" },
       // { name: "Testimonials", path: "/content/testimonials" },
       // { name: "Resources", path: "/content/resources" },
     ],
