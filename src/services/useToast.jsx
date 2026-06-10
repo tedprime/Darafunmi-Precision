@@ -21,12 +21,18 @@ let _externalPush = null; // escape hatch for non-React call sites (see toastErr
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const counter = useRef(0);
+  const activeKeys = useRef(new Set());
 
   const push = useCallback((message, type = "error") => {
+    const key = `${type}::${message}`;
+    if (activeKeys.current.has(key)) return;
+    activeKeys.current.add(key);
+
     const id = ++counter.current;
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
+      activeKeys.current.delete(key);
     }, 5000);
   }, []);
 
@@ -37,7 +43,11 @@ export function ToastProvider({ children }) {
   }, [push]);
 
   const dismiss = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts((prev) => {
+      const toast = prev.find((t) => t.id === id);
+      if (toast) activeKeys.current.delete(`${toast.type}::${toast.message}`);
+      return prev.filter((t) => t.id !== id);
+    });
   }, []);
 
   const toast = {
