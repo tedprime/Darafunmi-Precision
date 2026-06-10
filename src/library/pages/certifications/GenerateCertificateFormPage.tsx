@@ -119,7 +119,6 @@ const GenerateCertificateFormPage: React.FC = () => {
   const [savedId, setSavedId] = useState<number | null>(editId);
   const [submitting, setSubmitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [certNoTaken, setCertNoTaken] = useState(false);
 
   // Load clients for dropdown
   useEffect(() => {
@@ -194,27 +193,6 @@ const GenerateCertificateFormPage: React.FC = () => {
   const updateRow = (i: number, field: keyof CalibrationRow, val: string) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: val } : row)));
 
-  // Check for duplicate certificate number on blur (create mode only)
-  const handleCertNoBlur = async () => {
-    if (isEditMode || !certNo.trim()) {
-      setCertNoTaken(false);
-      return;
-    }
-    try {
-      const { data } = await getCertification({ search: certNo.trim(), limit: 5 });
-      const duplicate = data.some(
-        (c: { certificateNumber: string }) =>
-          c.certificateNumber.toLowerCase() === certNo.trim().toLowerCase()
-      );
-      setCertNoTaken(duplicate);
-      if (duplicate) {
-        toast.error(`Certificate number "${certNo.trim()}" already exists. Please use a different number.`);
-      }
-    } catch {
-      // silently ignore — don't block the user if the check fails
-    }
-  };
-
   const buildCalibrationResults = () =>
     rows
       .filter((r) => r.standardValue || r.measuredValue || r.deviation)
@@ -281,11 +259,6 @@ const GenerateCertificateFormPage: React.FC = () => {
 
     if (missing.length > 0) {
       toast.error(`Please fill in required fields: ${missing.join(", ")}.`);
-      return;
-    }
-
-    if (certNoTaken) {
-      toast.error(`Certificate number "${certNo.trim()}" already exists. Please use a different number.`);
       return;
     }
 
@@ -410,10 +383,7 @@ const GenerateCertificateFormPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="certNo" className="block text-sm font-medium text-gray-700 mb-1">Certificate Number<Req /></label>
-                      <input id="certNo" type="text" placeholder="e.g., DPT/CAL/2025/001" value={certNo} onChange={(e) => { setCertNo(e.target.value); setCertNoTaken(false); }} onBlur={handleCertNoBlur} className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${certNoTaken ? "border-red-500 bg-red-50" : "border-gray-300"}`} />
-                      {certNoTaken && (
-                        <p className="mt-1 text-xs text-red-600">This certificate number already exists.</p>
-                      )}
+                      <input id="certNo" type="text" placeholder="e.g., DPT/CAL/2025/001" value={certNo} onChange={(e) => setCertNo(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
                     </div>
                     <div>
                       <label htmlFor="calDate" className="block text-sm font-medium text-gray-700 mb-1">Calibration Date<Req /></label>
