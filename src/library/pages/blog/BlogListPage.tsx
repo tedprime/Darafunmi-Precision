@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Eye, Edit2, Trash2, Search, TriangleAlert } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getBlogs, deleteBlog, type BlogPost } from "../../../services/blog";
 
@@ -169,12 +169,6 @@ const BlogListPage = () => {
                       {statusText}
                     </Badge>
                     <div className="flex space-x-4 text-gray-400">
-                      <button
-                        className="hover:text-gray-600"
-                        onClick={() => navigate(`/blog/${blog.id}`)}
-                      >
-                        <Eye size={18} />
-                      </button>
                       <button
                         className="text-blue-500 hover:text-blue-600"
                         onClick={() => navigate(`/blog/edit/${blog.id}`)}
