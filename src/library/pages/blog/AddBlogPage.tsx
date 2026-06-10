@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
@@ -6,12 +6,13 @@ import Button from "../../components/common/Button";
 import { Image as ImageIcon, Save, X, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createBlog } from "../../../services/blog";
-import { getCategories } from "../../../services/categories";
 
-interface Category {
-  id: number;
-  name: string;
-}
+const BLOG_CATEGORIES = [
+  "Calibration",
+  "Industry News",
+  "Technology",
+  "Best Practices",
+] as const;
 
 const AddBlogPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,22 +31,10 @@ const AddBlogPage: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
-  // Categories from API
-  const [categories, setCategories] = useState<Category[]>([]);
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    getCategories({ limit: 100 })
-      .then(({ data }) => {
-        setCategories(data);
-        if (data.length > 0) setCategory(data[0].name);
-      })
-      .catch(() => {});
-  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -283,9 +272,9 @@ const AddBlogPage: React.FC = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
             >
               <option value="">Select category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
+              {BLOG_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
                 </option>
               ))}
             </select>

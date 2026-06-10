@@ -6,12 +6,13 @@ import Button from "../../components/common/Button";
 import { Image as ImageIcon, Save, X, Plus, TriangleAlert } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getBlog, updateBlog } from "../../../services/blog";
-import { getCategories } from "../../../services/categories";
 
-interface Category {
-  id: number;
-  name: string;
-}
+const BLOG_CATEGORIES = [
+  "Calibration",
+  "Industry News",
+  "Technology",
+  "Best Practices",
+] as const;
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
@@ -31,7 +32,6 @@ const EditBlogPage: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -41,8 +41,8 @@ const EditBlogPage: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getBlog(id), getCategories({ limit: 100 })])
-      .then(([blog, { data: cats }]) => {
+    getBlog(id)
+      .then((blog) => {
         setTitle(blog.title ?? "");
         setExcerpt(blog.excerpt ?? "");
         setContent(blog.content ?? "");
@@ -51,7 +51,6 @@ const EditBlogPage: React.FC = () => {
         setIsFeatured(blog.isFeatured ?? false);
         setTags(blog.tags ?? []);
         if (blog.featuredImage) setImagePreview(blog.featuredImage);
-        setCategories(cats);
       })
       .catch((err: Error) => setLoadError(err.message))
       .finally(() => setLoading(false));
@@ -360,9 +359,9 @@ const EditBlogPage: React.FC = () => {
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
                 >
                   <option value="">Select category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.name}>
-                      {cat.name}
+                  {BLOG_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
                     </option>
                   ))}
                 </select>
