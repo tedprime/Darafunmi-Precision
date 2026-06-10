@@ -1,85 +1,81 @@
+// industries.jsx
 import { apiFetch } from "./api.jsx";
+import { toastError } from "./useToast";
 
-/**
- * GET /industries
- * List all industries (public).
- */
+const wrap = async (label, fn) => {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!err?.status) toastError(`${label}: an unexpected error occurred.`);
+    throw err;
+  }
+};
+
 export async function getIndustries() {
-  return apiFetch("/industries");
+  return wrap("Load industries", () => apiFetch("/industries"));
 }
 
-/**
- * GET /industries/:slug
- * Get a single industry by slug (public).
- * @param {string} slug
- */
 export async function getIndustryBySlug(slug) {
-  return apiFetch(`/industries/${slug}`);
+  return wrap("Load industry", () => apiFetch(`/industries/${slug}`));
 }
 
-/**
- * POST /industries
- * Create a new industry (admin). multipart/form-data.
- * @param {{ title: string, slug?: string, description?: string, content?: string, image?: File|null, status?: string }} payload
- */
 export async function createIndustry({ title, slug, description, content, image, status }) {
-  const token = localStorage.getItem("token");
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  return wrap("Create industry", async () => {
+    const token = localStorage.getItem("token");
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const form = new FormData();
-  form.append("title", title);
-  if (slug) form.append("slug", slug);
-  if (description) form.append("description", description);
-  if (content) form.append("content", content);
-  if (image) form.append("image", image);
-  if (status) form.append("status", status);
+    const form = new FormData();
+    form.append("title", title);
+    if (slug) form.append("slug", slug);
+    if (description) form.append("description", description);
+    if (content) form.append("content", content);
+    if (image) form.append("image", image);
+    if (status) form.append("status", status);
 
-  const response = await fetch(`${BASE_URL}/industries`, {
-    method: "POST",
-    headers: { ...(token && { Authorization: `Bearer ${token}` }) },
-    body: form,
+    const response = await fetch(`${BASE_URL}/industries`, {
+      method: "POST",
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: form,
+    });
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      const message = errBody.message || `Failed to create industry (${response.status}).`;
+      toastError(message);
+      throw new Error(message);
+    }
+    return response.json();
   });
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
-    throw new Error(errBody.message || `API error: ${response.status}`);
-  }
-  return response.json();
 }
 
-/**
- * PATCH /industries/:id
- * Update an industry (admin). multipart/form-data.
- * @param {number|string} id
- * @param {{ title?: string, description?: string, content?: string, image?: File|null, status?: string }} payload
- */
 export async function updateIndustry(id, { title, description, content, image, status }) {
-  const token = localStorage.getItem("token");
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  return wrap("Update industry", async () => {
+    const token = localStorage.getItem("token");
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const form = new FormData();
-  if (title) form.append("title", title);
-  if (description) form.append("description", description);
-  if (content) form.append("content", content);
-  if (image) form.append("image", image);
-  if (status) form.append("status", status);
+    const form = new FormData();
+    if (title) form.append("title", title);
+    if (description) form.append("description", description);
+    if (content) form.append("content", content);
+    if (image) form.append("image", image);
+    if (status) form.append("status", status);
 
-  const response = await fetch(`${BASE_URL}/industries/${id}`, {
-    method: "PATCH",
-    headers: { ...(token && { Authorization: `Bearer ${token}` }) },
-    body: form,
+    const response = await fetch(`${BASE_URL}/industries/${id}`, {
+      method: "PATCH",
+      headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+      body: form,
+    });
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      const message = errBody.message || `Failed to update industry (${response.status}).`;
+      toastError(message);
+      throw new Error(message);
+    }
+    return response.json();
   });
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
-    throw new Error(errBody.message || `API error: ${response.status}`);
-  }
-  return response.json();
 }
 
-/**
- * DELETE /industries/:id
- * Delete an industry (admin).
- * @param {number|string} id
- */
 export async function deleteIndustry(id) {
-  return apiFetch(`/industries/${id}`, { method: "DELETE" });
+  return wrap("Delete industry", () =>
+    apiFetch(`/industries/${id}`, { method: "DELETE" })
+  );
 }
