@@ -29,12 +29,13 @@ export async function getCertification(id) {
 }
 
 export async function createCertification(payload) {
-  return wrap("Create certification", () =>
-    apiFetch("/certifications", {
+  return wrap("Create certification", () => {
+    console.log("[createCertification] payload:", JSON.stringify(payload, null, 2));
+    return apiFetch("/certifications", {
       method: "POST",
       body: JSON.stringify(payload),
-    })
-  );
+    });
+  });
 }
 
 export async function updateCertification(id, payload) {
