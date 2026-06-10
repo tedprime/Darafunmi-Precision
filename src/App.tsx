@@ -26,6 +26,7 @@ import CertificationListPage from "./library/pages/certifications/CertificationL
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
 import BlogListPage from "./library/pages/blog/BlogListPage";
 import AddBlogPage from "./library/pages/blog/AddBlogPage";
+import EditBlogPage from "./library/pages/blog/EditBlogPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
 import OrderListPage from "./library/pages/orders/OrderListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
@@ -275,6 +276,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddBlogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/blog/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditBlogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/blog/:id"
+            element={
+              <ProtectedRoute>
+                <EditBlogPage />
               </ProtectedRoute>
             }
           />

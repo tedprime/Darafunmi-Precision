@@ -168,7 +168,7 @@ const BlogListPage = () => {
                     <Badge color={statusText === "published" ? "blue" : "gray"}>
                       {statusText}
                     </Badge>
-                    <div className="flex space-x-2 text-gray-400">
+                    <div className="flex space-x-4 text-gray-400">
                       <button
                         className="hover:text-gray-600"
                         onClick={() => navigate(`/blog/${blog.id}`)}
