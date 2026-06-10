@@ -7,6 +7,7 @@ import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Eye, Download, Mail, Search, Trash2, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../../services/useToast";
 import {
   getCertifications,
   deleteCertification,
@@ -19,6 +20,8 @@ interface Certificate {
   certificateNumber: string;
   customerName: string;
   equipmentCalibrated: string;
+  equipment?: string;
+  instrument?: string;
   expiryDate: string;
   status: "draft" | "active" | "expiring-soon" | "expired" | string;
 }
@@ -34,26 +37,15 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
 
-type ToastType = "success" | "error";
-interface Toast { id: number; message: string; type: ToastType }
-
-const ToastContainer = ({ toasts }: { toasts: Toast[] }) => (
-  <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
-    {toasts.map((t) => (
-      <div
-        key={t.id}
-        className={`px-4 py-3 rounded-lg shadow-lg text-sm text-white transition-all ${
-          t.type === "success" ? "bg-green-600" : "bg-red-600"
-        }`}
-      >
-        {t.message}
-      </div>
-    ))}
-  </div>
-);
-
 const CertificationListPage: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast() as {
+    toast: {
+      error: (msg: string) => void;
+      success: (msg: string) => void;
+      info: (msg: string) => void;
+    };
+  };
 
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,18 +54,11 @@ const CertificationListPage: React.FC = () => {
   const [status, setStatus] = useState("");
   const [count, setCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  
+
   // Email modal state
   const [emailModal, setEmailModal] = useState<{ id: number; customerName: string } | null>(null);
   const [emailTo, setEmailTo] = useState("");
   const [sending, setSending] = useState(false);
-
-  const showToast = (message: string, type: ToastType) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +66,6 @@ const CertificationListPage: React.FC = () => {
       try {
         const { data, count: total } = await getCertifications({ search, status });
         if (cancelled) return;
-        // FIXED: Using correct state setter to prevent runtime errors
         setCerts(data);
         setCount(total);
         setError(null);
@@ -102,9 +86,9 @@ const CertificationListPage: React.FC = () => {
       setActionLoading(id);
       await deleteCertification(id);
       setCerts((prev) => prev.filter((c) => c.id !== id));
-      showToast("Certificate deleted.", "success");
+      toast.success("Certificate deleted.");
     } catch {
-      showToast("Failed to delete certificate.", "error");
+      toast.error("Failed to delete certificate.");
     } finally {
       setActionLoading(null);
     }
@@ -128,10 +112,10 @@ const CertificationListPage: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
-      showToast("PDF downloaded successfully.", "success");
+      toast.success("PDF downloaded successfully.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to generate PDF.";
-      showToast(message, "error");
+      toast.error(message);
     } finally {
       setActionLoading(null);
     }
@@ -147,11 +131,11 @@ const CertificationListPage: React.FC = () => {
     setSending(true);
     try {
       await sendCertificateEmail(emailModal.id, emailTo.trim());
-      showToast(`Certificate sent to ${emailTo} successfully!`, "success");
+      toast.success(`Certificate sent to ${emailTo} successfully!`);
       setEmailModal(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send email.";
-      showToast(message, "error");
+      toast.error(message);
     } finally {
       setSending(false);
     }
@@ -162,7 +146,8 @@ const CertificationListPage: React.FC = () => {
   const data = certs.map((cert) => [
     cert.certificateNumber,
     cert.customerName,
-    cert.equipmentCalibrated,
+    // Handle different field names the list API might return
+    cert.equipmentCalibrated || cert.equipment || cert.instrument || "—",
     cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString() : "—",
     <Badge key={`status-${cert.id}`} color={STATUS_COLOR[cert.status] ?? "gray"}>
       {cert.status}
@@ -295,18 +280,14 @@ const CertificationListPage: React.FC = () => {
         </Card>
       )}
 
-      <ToastContainer toasts={toasts} />
-
       {/* Email Modal */}
       {emailModal && createPortal(
         <div
-          // FIXED: Reverted to bulletproof fallback utilities & absolute window positioning configurations
           className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
           style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 99999, backgroundColor: "rgba(0, 0, 0, 0.5)" }}
           onClick={() => setEmailModal(null)}
         >
           <div
-            // FIXED: Standardized safe width layout configurations to eliminate configuration compilation misses
             className="bg-white rounded-lg shadow-2xl w-full mx-4 max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
