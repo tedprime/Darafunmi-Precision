@@ -51,8 +51,7 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
         toastError(message);
         throw { status: response.status, message };
       }
-const body = await response.text();
-console.error(`[API ${response.status}]`, endpoint, body);
+
       return await response.json();
     } catch (err) {
       // Don't double-toast — only fire on the last attempt, and only if

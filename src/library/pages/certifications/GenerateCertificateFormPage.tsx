@@ -67,6 +67,9 @@ const s = {
   footer: { backgroundColor: "#fff", padding: "6px 18px 10px", textAlign: "center" as const, fontSize: 9, fontWeight: 700, color: BLACK, lineHeight: 1.7 } as React.CSSProperties,
 };
 
+/* ── Required label helper ── */
+const Req = () => <span className="text-red-500 ml-0.5">*</span>;
+
 const GenerateCertificateFormPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -226,7 +229,27 @@ const GenerateCertificateFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!certNo.trim()) { toast.error("Certificate number is required."); return; }
+
+    const missing: string[] = [];
+    if (!certNo.trim())           missing.push("Certificate Number");
+    if (!calDate)                 missing.push("Calibration Date");
+    if (!custName.trim())         missing.push("Customer Name");
+    if (!custAddress.trim())      missing.push("Customer Address");
+    if (!equipCalibrated.trim())  missing.push("Equipment Calibrated");
+    if (!equipLocation.trim())    missing.push("Equipment Location");
+    if (!idNo.trim())             missing.push("ID No.");
+    if (!scale.trim())            missing.push("Scale");
+    if (!scaleRange.trim())       missing.push("Scale Range");
+    if (!scaleDiv.trim())         missing.push("Scale Division");
+    if (!maxError.trim())         missing.push("Max Scale Error Permitted");
+    if (!refInst.trim())          missing.push("Reference Instrument");
+    if (!temp.trim())             missing.push("Temperature");
+    if (!humidity.trim())         missing.push("Relative Humidity");
+
+    if (missing.length > 0) {
+      toast.error(`Please fill in required fields: ${missing.join(", ")}.`);
+      return;
+    }
 
     const calibrationResults = buildCalibrationResults();
     if (calibrationResults.length === 0) {
@@ -347,8 +370,14 @@ const GenerateCertificateFormPage: React.FC = () => {
                 <Card>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Certificate Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input id="certNo" label="Certificate Number" placeholder="e.g., DPT/CAL/2025/001" value={certNo} onChange={(e) => setCertNo(e.target.value)} />
-                    <Input id="calDate" label="Calibration Date" type="date" value={calDate} onChange={(e) => setCalDate(e.target.value)} />
+                    <div>
+                      <label htmlFor="certNo" className="block text-sm font-medium text-gray-700 mb-1">Certificate Number<Req /></label>
+                      <input id="certNo" type="text" placeholder="e.g., DPT/CAL/2025/001" value={certNo} onChange={(e) => setCertNo(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="calDate" className="block text-sm font-medium text-gray-700 mb-1">Calibration Date<Req /></label>
+                      <input id="calDate" type="date" value={calDate} onChange={(e) => setCalDate(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
                     <div>
                       <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                       <select id="status" value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
@@ -364,8 +393,14 @@ const GenerateCertificateFormPage: React.FC = () => {
                 <Card>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Customer Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input id="custName" label="Customer Name" placeholder="Enter customer name" value={custName} onChange={(e) => setCustName(e.target.value)} />
-                    <Input id="custAddress" label="Customer Address" placeholder="Enter customer address" value={custAddress} onChange={(e) => setCustAddress(e.target.value)} />
+                    <div>
+                      <label htmlFor="custName" className="block text-sm font-medium text-gray-700 mb-1">Customer Name<Req /></label>
+                      <input id="custName" type="text" placeholder="Enter customer name" value={custName} onChange={(e) => setCustName(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="custAddress" className="block text-sm font-medium text-gray-700 mb-1">Customer Address<Req /></label>
+                      <input id="custAddress" type="text" placeholder="Enter customer address" value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
                   </div>
                 </Card>
 
@@ -373,14 +408,38 @@ const GenerateCertificateFormPage: React.FC = () => {
                 <Card>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Instrument Description</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input id="equipCalibrated" label="Equipment Calibrated" placeholder="e.g., Vernier Caliper" value={equipCalibrated} onChange={(e) => setEquipCalibrated(e.target.value)} />
-                    <Input id="equipLocation" label="Equipment Location" placeholder="e.g., Lab A" value={equipLocation} onChange={(e) => setEquipLocation(e.target.value)} />
-                    <Input id="idNo" label="ID No." placeholder="e.g., DPT-001" value={idNo} onChange={(e) => setIdNo(e.target.value)} />
-                    <Input id="scale" label="Scale" placeholder="e.g., Metric" value={scale} onChange={(e) => setScale(e.target.value)} />
-                    <Input id="scaleRange" label="Scale Range" placeholder="e.g., 0 - 150mm" value={scaleRange} onChange={(e) => setScaleRange(e.target.value)} />
-                    <Input id="scaleDiv" label="Scale Division" placeholder="e.g., 0.02mm" value={scaleDiv} onChange={(e) => setScaleDiv(e.target.value)} />
-                    <Input id="maxError" label="Max Scale Error Permitted" placeholder="e.g., ±0.05mm" value={maxError} onChange={(e) => setMaxError(e.target.value)} />
-                    <Input id="refInst" label="Reference Instrument" placeholder="e.g., Gauge Block Set" value={refInst} onChange={(e) => setRefInst(e.target.value)} />
+                    <div>
+                      <label htmlFor="equipCalibrated" className="block text-sm font-medium text-gray-700 mb-1">Equipment Calibrated<Req /></label>
+                      <input id="equipCalibrated" type="text" placeholder="e.g., Vernier Caliper" value={equipCalibrated} onChange={(e) => setEquipCalibrated(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="equipLocation" className="block text-sm font-medium text-gray-700 mb-1">Equipment Location<Req /></label>
+                      <input id="equipLocation" type="text" placeholder="e.g., Lab A" value={equipLocation} onChange={(e) => setEquipLocation(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="idNo" className="block text-sm font-medium text-gray-700 mb-1">ID No.<Req /></label>
+                      <input id="idNo" type="text" placeholder="e.g., DPT-001" value={idNo} onChange={(e) => setIdNo(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="scale" className="block text-sm font-medium text-gray-700 mb-1">Scale<Req /></label>
+                      <input id="scale" type="text" placeholder="e.g., Metric" value={scale} onChange={(e) => setScale(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="scaleRange" className="block text-sm font-medium text-gray-700 mb-1">Scale Range<Req /></label>
+                      <input id="scaleRange" type="text" placeholder="e.g., 0 - 150mm" value={scaleRange} onChange={(e) => setScaleRange(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="scaleDiv" className="block text-sm font-medium text-gray-700 mb-1">Scale Division<Req /></label>
+                      <input id="scaleDiv" type="text" placeholder="e.g., 0.02mm" value={scaleDiv} onChange={(e) => setScaleDiv(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="maxError" className="block text-sm font-medium text-gray-700 mb-1">Max Scale Error Permitted<Req /></label>
+                      <input id="maxError" type="text" placeholder="e.g., ±0.05mm" value={maxError} onChange={(e) => setMaxError(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="refInst" className="block text-sm font-medium text-gray-700 mb-1">Reference Instrument<Req /></label>
+                      <input id="refInst" type="text" placeholder="e.g., Gauge Block Set" value={refInst} onChange={(e) => setRefInst(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
                     <Input id="refInstSn" label="Reference Instrument S/N" placeholder="e.g., SN-20210045" value={refInstSn} onChange={(e) => setRefInstSn(e.target.value)} />
                   </div>
                 </Card>
@@ -389,8 +448,14 @@ const GenerateCertificateFormPage: React.FC = () => {
                 <Card>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Environmental Conditions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input id="temp" label="Temperature" placeholder="e.g., 25°C" value={temp} onChange={(e) => setTemp(e.target.value)} />
-                    <Input id="humidity" label="Relative Humidity" placeholder="e.g., 60%" value={humidity} onChange={(e) => setHumidity(e.target.value)} />
+                    <div>
+                      <label htmlFor="temp" className="block text-sm font-medium text-gray-700 mb-1">Temperature<Req /></label>
+                      <input id="temp" type="text" placeholder="e.g., 25°C" value={temp} onChange={(e) => setTemp(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                    <div>
+                      <label htmlFor="humidity" className="block text-sm font-medium text-gray-700 mb-1">Relative Humidity<Req /></label>
+                      <input id="humidity" type="text" placeholder="e.g., 60%" value={humidity} onChange={(e) => setHumidity(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
                   </div>
                 </Card>
 
