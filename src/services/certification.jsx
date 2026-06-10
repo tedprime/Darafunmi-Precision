@@ -1,66 +1,78 @@
+// certification.jsx
 import { apiFetch } from "./api.jsx";
+import { toastError } from "./useToast";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// ─── GET /certifications ──────────────────────────────────────────────────────
-export async function getCertifications({ page = 1, limit = 20, search = "", status = "" } = {}) {
-  const params = new URLSearchParams({ page, limit });
-  if (search) params.set("search", search);
-  if (status) params.set("status", status);
-  const res = await apiFetch(`/certifications?${params.toString()}`);
-  return {
-    data: res.data ?? [],
-    count: res.count ?? 0,
-  };
-}
-
-// ─── GET /certifications/{id} ─────────────────────────────────────────────────
-export async function getCertification(id) {
-  const res = await apiFetch(`/certifications/${id}`);
-  return res.data ?? res;
-}
-
-// ─── POST /certifications ─────────────────────────────────────────────────────
-export async function createCertification(payload) {
-  return apiFetch("/certifications", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-// ─── PATCH /certifications/{id} ───────────────────────────────────────────────
-export async function updateCertification(id, payload) {
-  return apiFetch(`/certifications/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
-}
-
-// ─── DELETE /certifications/{id} ──────────────────────────────────────────────
-export async function deleteCertification(id) {
-  return apiFetch(`/certifications/${id}`, { method: "DELETE" });
-}
-
-// ─── POST /certifications/{id}/generate-pdf ───────────────────────────────────
-// Returns { success: true, pdfUrl: "https://res.cloudinary.com/..." }
-export async function generatePdf(id) {
-  const res = await apiFetch(`/certifications/${id}/generate-pdf`, {
-    method: "POST",
-  });
-  if (!res.success && !res.pdfUrl) {
-    throw new Error(res.message || "Failed to generate PDF");
+const wrap = async (label, fn) => {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!err?.status) toastError(`${label}: an unexpected error occurred.`);
+    throw err;
   }
-  return res; // { success, pdfUrl }
+};
+
+export async function getCertifications({ page = 1, limit = 20, search = "", status = "" } = {}) {
+  return wrap("Load certifications", async () => {
+    const params = new URLSearchParams({ page, limit });
+    if (search) params.set("search", search);
+    if (status) params.set("status", status);
+    const res = await apiFetch(`/certifications?${params.toString()}`);
+    return { data: res.data ?? [], count: res.count ?? 0 };
+  });
 }
 
-// ─── POST /certifications/{id}/send-email ─────────────────────────────────────
-// Requires { to: "email@example.com" } in body
-// Generates the PDF if it doesn't exist, then sends via SMTP
-export async function sendCertificateEmail(id, toEmail) {
-  return apiFetch(`/certifications/${id}/send-email`, {
-    method: "POST",
-    body: JSON.stringify({ to: toEmail }),
+export async function getCertification(id) {
+  return wrap("Load certification", async () => {
+    const res = await apiFetch(`/certifications/${id}`);
+    return res.data ?? res;
   });
+}
+
+export async function createCertification(payload) {
+  return wrap("Create certification", () =>
+    apiFetch("/certifications", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  );
+}
+
+export async function updateCertification(id, payload) {
+  return wrap("Update certification", () =>
+    apiFetch(`/certifications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    })
+  );
+}
+
+export async function deleteCertification(id) {
+  return wrap("Delete certification", () =>
+    apiFetch(`/certifications/${id}`, { method: "DELETE" })
+  );
+}
+
+export async function generatePdf(id) {
+  return wrap("Generate PDF", async () => {
+    const res = await apiFetch(`/certifications/${id}/generate-pdf`, {
+      method: "POST",
+    });
+    if (!res.success && !res.pdfUrl) {
+      const message = res.message || "Failed to generate PDF.";
+      toastError(message);
+      throw new Error(message);
+    }
+    return res;
+  });
+}
+
+export async function sendCertificateEmail(id, toEmail) {
+  return wrap("Send certificate email", () =>
+    apiFetch(`/certifications/${id}/send-email`, {
+      method: "POST",
+      body: JSON.stringify({ to: toEmail }),
+    })
+  );
 }
 
 // Legacy alias — kept so existing imports don't break
