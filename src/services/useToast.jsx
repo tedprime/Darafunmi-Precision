@@ -10,6 +10,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { AlertCircle, CheckCircle, Info, X } from "lucide-react";
 
 // ── Context ──────────────────────────────────────────────────────────────────
 const ToastContext = createContext(null);
@@ -67,12 +68,6 @@ export function toastError(message) {
 }
 
 // ── Container ────────────────────────────────────────────────────────────────
-const TYPE_STYLES = {
-  error:   "text-blue-600",
-  success: "text-blue-600",
-  info:    "text-blue-600",
-};
-
 function ToastContainer({ toasts, onDismiss }) {
   return (
     <div
@@ -81,7 +76,7 @@ function ToastContainer({ toasts, onDismiss }) {
       style={{
         position: "fixed",
         bottom: "1.5rem",
-        left: "1.5rem",
+        right: "1.5rem",
         zIndex: 9999,
         display: "flex",
         flexDirection: "column",
@@ -132,33 +127,15 @@ function Toast({ toast, onDismiss }) {
       }}
     >
       {/* Icon */}
-      <span style={{ flexShrink: 0, marginTop: "1px" }}>
-        {toast.type === "error" && (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7.25" stroke="#2563EB" strokeWidth="1.5"/>
-            <path d="M8 4.5V8.5" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-            <circle cx="8" cy="11" r="0.75" fill="#2563EB"/>
-          </svg>
-        )}
-        {toast.type === "success" && (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7.25" stroke="#2563EB" strokeWidth="1.5"/>
-            <path d="M5 8.5L7 10.5L11 6" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-        {toast.type === "info" && (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7.25" stroke="#2563EB" strokeWidth="1.5"/>
-            <path d="M8 7V11.5" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-            <circle cx="8" cy="5" r="0.75" fill="#2563EB"/>
-          </svg>
-        )}
+      <span style={{ flexShrink: 0, marginTop: "1px", display: "flex" }}>
+        {toast.type === "error"   && <AlertCircle  size={16} color="#1e40af" strokeWidth={2} />}
+        {toast.type === "success" && <CheckCircle  size={16} color="#1e40af" strokeWidth={2} />}
+        {toast.type === "info"    && <Info         size={16} color="#1e40af" strokeWidth={2} />}
       </span>
 
       {/* Message */}
       <span
-        className={TYPE_STYLES[toast.type]}
-        style={{ fontSize: "0.875rem", lineHeight: "1.45", flex: 1 }}
+        style={{ fontSize: "0.875rem", lineHeight: "1.45", flex: 1, color: "#1e40af", fontWeight: 600 }}
       >
         {toast.message}
       </span>
@@ -174,12 +151,11 @@ function Toast({ toast, onDismiss }) {
           cursor: "pointer",
           padding: 0,
           lineHeight: 1,
-          color: "#9ca3af",
-          fontSize: "1rem",
+          display: "flex",
           marginTop: "-1px",
         }}
       >
-        ×
+        <X size={14} color="#9ca3af" strokeWidth={2} />
       </button>
     </div>
   );
