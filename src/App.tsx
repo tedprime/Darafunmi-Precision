@@ -4,6 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { ToastProvider } from "./services/useToast";
 import LoginPage from "./library/pages/auth/LoginPage";
 import DashboardPage from "./library/pages/dashboard/DashboardPage";
 import BookingListPage from "./library/pages/bookings/BookingListPage";
@@ -23,32 +24,15 @@ import AddCalibrationPage from "./library/pages/calibrations/AddCalibrationPage"
 import CalibrationHistoryPage from "./library/pages/calibrations/CalibrationHistoryPage";
 import CertificationListPage from "./library/pages/certifications/CertificationListPage";
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
-// import GenerateCertificatePreviewPage from "./library/pages/certifications/GenerateCertificatePreviewPage";
 import BlogListPage from "./library/pages/blog/BlogListPage";
 import AddBlogPage from "./library/pages/blog/AddBlogPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
-
-// New sections
 import OrderListPage from "./library/pages/orders/OrderListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
 import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
 import ServiceListPage from "./library/pages/services/ServicesListPage";
 import AddServicePage from "./library/pages/services/AddServicePage";
 import EditServicePage from "./library/pages/services/EditServicePage";
-// import IndustryListPage from "./library/pages/industries/IndustryListPage";
-// import AddIndustryPage from "./library/pages/industries/AddIndustryPage";
-// import EditIndustryPage from "./library/pages/industries/EditIndustryPage";
-// import CompanyCertificationListPage from "./library/pages/certifications/CompanyCertificationListPage";
-// import CaseStudyListPage from "./library/pages/content/CaseStudyListPage";
-// import AddCaseStudyPage from "./library/pages/content/AddCaseStudyPage";
-// import EditCaseStudyPage from "./library/pages/content/EditCaseStudyPage";
-// import TestimonialListPage from "./library/pages/content/TestimonialListPage";
-// import AddTestimonialPage from "./library/pages/content/AddTestimonialPage";
-// import EditTestimonialPage from "./library/pages/content/EditTestimonialPage";
-// import ResourceListPage from "./library/pages/content/ResourceListPage";
-// import AddResourcePage from "./library/pages/content/AddResourcePage";
-// import EditResourcePage from "./library/pages/content/EditResourcePage";
-// import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
 
 import { isAuthenticated } from "./services/auth.jsx";
 
@@ -58,379 +42,258 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
+    <ToastProvider>
+      <Router>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Dashboard */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Dashboard */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Bookings */}
-        <Route
-          path="/bookings"
-          element={
-            <ProtectedRoute>
-              <BookingListPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Bookings */}
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                <BookingListPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Orders */}
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <OrderListPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Orders */}
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <OrderListPage />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Clients */}
+          <Route
+            path="/clients"
+            element={
+              <ProtectedRoute>
+                <ClientListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients/add"
+            element={
+              <ProtectedRoute>
+                <AddClientPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditClientPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/clients/contact-submissions"
+            element={
+              <ProtectedRoute>
+                <ContactSubmissionsPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Clients */}
-        <Route
-          path="/clients"
-          element={
-            <ProtectedRoute>
-              <ClientListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients/add"
-          element={
-            <ProtectedRoute>
-              <AddClientPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditClientPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/clients/contact-submissions"
-          element={
-            <ProtectedRoute>
-              <ContactSubmissionsPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Site Users */}
+          <Route
+            path="/site-users"
+            element={
+              <ProtectedRoute>
+                <SiteUserListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/site-users/auth"
+            element={
+              <ProtectedRoute>
+                <SiteUserAuthPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Site Users */}
-        <Route
-          path="/site-users"
-          element={
-            <ProtectedRoute>
-              <SiteUserListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/site-users/auth"
-          element={
-            <ProtectedRoute>
-              <SiteUserAuthPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Services */}
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <ServiceListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services/add"
+            element={
+              <ProtectedRoute>
+                <AddServicePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditServicePage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Services */}
-        <Route
-          path="/services"
-          element={
-            <ProtectedRoute>
-              <ServiceListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/services/add"
-          element={
-            <ProtectedRoute>
-              <AddServicePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/services/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditServicePage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Products */}
+          <Route
+            path="/products"
+            element={
+              <ProtectedRoute>
+                <ProductListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products/add"
+            element={
+              <ProtectedRoute>
+                <AddProductPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditProductPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products/categories"
+            element={
+              <ProtectedRoute>
+                <CategoriesPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Industries */}
-        {/* <Route
-          path="/industries"
-          element={
-            <ProtectedRoute>
-              <IndustryListPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/industries/add"
-          element={
-            <ProtectedRoute>
-              <AddIndustryPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/industries/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditIndustryPage />
-            </ProtectedRoute>
-          }
-        /> */}
+          {/* Quotations */}
+          <Route
+            path="/quotes"
+            element={
+              <ProtectedRoute>
+                <QuoteListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quotes/add"
+            element={
+              <ProtectedRoute>
+                <AddQuotePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quotes/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditQuotePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quotes/quote-requests"
+            element={
+              <ProtectedRoute>
+                <QuoteRequestListPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Products */}
-        <Route
-          path="/products"
-          element={
-            <ProtectedRoute>
-              <ProductListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/products/add"
-          element={
-            <ProtectedRoute>
-              <AddProductPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/products/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditProductPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/products/categories"
-          element={
-            <ProtectedRoute>
-              <CategoriesPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Calibrations */}
+          <Route
+            path="/calibrations/add"
+            element={
+              <ProtectedRoute>
+                <AddCalibrationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calibrations/history"
+            element={
+              <ProtectedRoute>
+                <CalibrationHistoryPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Quotations */}
-        <Route
-          path="/quotes"
-          element={
-            <ProtectedRoute>
-              <QuoteListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/add"
-          element={
-            <ProtectedRoute>
-              <AddQuotePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditQuotePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/quote-requests"
-          element={
-            <ProtectedRoute>
-              <QuoteRequestListPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Certifications */}
+          <Route
+            path="/certifications"
+            element={
+              <ProtectedRoute>
+                <CertificationListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/certifications/generate"
+            element={
+              <ProtectedRoute>
+                <GenerateCertificateFormPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Calibrations */}
-        <Route
-          path="/calibrations/add"
-          element={
-            <ProtectedRoute>
-              <AddCalibrationPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/calibrations/history"
-          element={
-            <ProtectedRoute>
-              <CalibrationHistoryPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Content — Blog */}
+          <Route
+            path="/blog"
+            element={
+              <ProtectedRoute>
+                <BlogListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/blog/add"
+            element={
+              <ProtectedRoute>
+                <AddBlogPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Certifications */}
-        <Route
-          path="/certifications"
-          element={
-            <ProtectedRoute>
-              <CertificationListPage />
-            </ProtectedRoute>
-          }
-        />
-       <Route
-  path="/certifications/generate"
-  element={
-    <ProtectedRoute>
-      <GenerateCertificateFormPage />
-    </ProtectedRoute>
-  }
-/>
-        {/* <Route
-          path="/certifications/company"
-          element={
-            <ProtectedRoute>
-              <CompanyCertificationListPage />
-            </ProtectedRoute>
-          }
-        /> */}
+          {/* Settings */}
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Content — Blog */}
-        <Route
-          path="/blog"
-          element={
-            <ProtectedRoute>
-              <BlogListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/blog/add"
-          element={
-            <ProtectedRoute>
-              <AddBlogPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Content — Case Studies */}
-        {/* <Route
-          path="/content/case-studies"
-          element={
-            <ProtectedRoute>
-              <CaseStudyListPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/content/case-studies/add"
-          element={
-            <ProtectedRoute>
-              <AddCaseStudyPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/content/case-studies/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditCaseStudyPage />
-            </ProtectedRoute>
-          }
-        /> */}
-
-        {/* Content — Testimonials */}
-        {/* <Route
-          path="/content/testimonials"
-          element={
-            <ProtectedRoute>
-              <TestimonialListPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/content/testimonials/add"
-          element={
-            <ProtectedRoute>
-              <AddTestimonialPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/content/testimonials/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditTestimonialPage />
-            </ProtectedRoute>
-          }
-        /> */}
-
-        {/* Content — Resources */}
-        {/* <Route
-          path="/content/resources"
-          element={
-            <ProtectedRoute>
-              <ResourceListPage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/content/resources/add"
-          element={
-            <ProtectedRoute>
-              <AddResourcePage />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route
-          path="/content/resources/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditResourcePage />
-            </ProtectedRoute>
-          }
-        /> */}
-
-        {/* Newsletter */}
-        {/* <Route
-          path="/newsletter"
-          element={
-            <ProtectedRoute>
-              <NewsletterListPage />
-            </ProtectedRoute>
-          }
-        /> */}
-
-        {/* Settings */}
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Router>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 
