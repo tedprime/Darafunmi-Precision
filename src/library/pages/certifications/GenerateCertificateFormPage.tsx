@@ -5,6 +5,7 @@ import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { Plus, Trash2, Download, Eye } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useToast } from "../../../services/useToast";
 import {
   createCertification,
   updateCertification,
@@ -109,10 +110,10 @@ const GenerateCertificateFormPage: React.FC = () => {
   const [status, setStatus] = useState("draft");
   const [clientId, setClientId] = useState("");
 
+  const { toast } = useToast() as { toast: { error: (msg: string) => void; success: (msg: string) => void; info: (msg: string) => void } };
   const [savedId, setSavedId] = useState<number | null>(editId);
   const [submitting, setSubmitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Load existing cert when ?id= is present
   useEffect(() => {
@@ -166,14 +167,14 @@ const GenerateCertificateFormPage: React.FC = () => {
         setSavedId(typeof d.id === "number" ? d.id : editId);
       })
       .catch(() => {
-        if (!cancelled) setError("Failed to load certificate.");
+        if (!cancelled) toast.error("Failed to load certificate.");
       })
       .finally(() => {
         if (!cancelled) setLoadingCert(false);
       });
 
     return () => { cancelled = true; };
-  }, [editId]);
+  }, [editId, toast]);
 
   const addRow = () => setRows((r) => [...r, emptyRow()]);
   const removeRow = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
@@ -225,12 +226,11 @@ const GenerateCertificateFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    if (!certNo.trim()) { setError("Certificate number is required."); return; }
+    if (!certNo.trim()) { toast.error("Certificate number is required."); return; }
 
     const calibrationResults = buildCalibrationResults();
     if (calibrationResults.length === 0) {
-      setError("Please add at least one calibration result row with a standard value.");
+      toast.error("Please add at least one calibration result row with a standard value.");
       return;
     }
 
@@ -250,7 +250,7 @@ const GenerateCertificateFormPage: React.FC = () => {
 
       navigate("/certifications");
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${isEditMode ? "update" : "create"} certificate.`);
+      toast.error(err instanceof Error ? err.message : `Failed to ${isEditMode ? "update" : "create"} certificate.`);
     } finally {
       setSubmitting(false);
     }
@@ -275,7 +275,7 @@ const GenerateCertificateFormPage: React.FC = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate PDF.");
+      toast.error(err instanceof Error ? err.message : "Failed to generate PDF.");
     } finally {
       setDownloading(false);
     }
@@ -342,12 +342,6 @@ const GenerateCertificateFormPage: React.FC = () => {
           {/* ── FORM TAB ── */}
           {activeTab === "form" && (
             <>
-              {error && (
-                <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Certificate Information */}
                 <Card>
