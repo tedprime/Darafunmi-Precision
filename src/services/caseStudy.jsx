@@ -1,6 +1,6 @@
 // caseStudies.jsx
 import { apiFetch } from "./api.jsx";
-import { toastError } from "./useToast";
+import { toastError, toastSuccess } from "./useToast";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -29,18 +29,15 @@ async function apiFormData(endpoint, method, formData) {
   return response.json();
 }
 
-// List — admin fetches all statuses
 export async function getCaseStudies({ page = 1, limit = 50 } = {}) {
   return wrap("Load case studies", async () => {
     const params = new URLSearchParams({ page, limit });
     const res = await apiFetch(`/case-studies?${params.toString()}`);
-    // Normalise: backend may return { data: [...] } or [...] directly
     const list = Array.isArray(res) ? res : res.data ?? [];
     return { data: list, pagination: res.pagination ?? {} };
   });
 }
 
-// Single — fetched by slug OR numeric id (admin edit passes slug via route)
 export async function getCaseStudy(slugOrId) {
   return wrap("Load case study", async () => {
     const res = await apiFetch(`/case-studies/${slugOrId}`);
@@ -48,17 +45,8 @@ export async function getCaseStudy(slugOrId) {
   });
 }
 
-// Create — admin, multipart/form-data
-export async function createCaseStudy({
-  title,
-  slug,
-  excerpt,
-  content,
-  industry,
-  featuredImage,
-  status,
-}) {
-  return wrap("Create case study", () => {
+export async function createCaseStudy({ title, slug, excerpt, content, industry, featuredImage, status }) {
+  return wrap("Create case study", async () => {
     const form = new FormData();
     form.append("title", title);
     if (slug) form.append("slug", slug);
@@ -67,16 +55,14 @@ export async function createCaseStudy({
     if (industry) form.append("industry", industry);
     if (featuredImage) form.append("featuredImage", featuredImage);
     if (status) form.append("status", status);
-    return apiFormData("/case-studies", "POST", form);
+    const res = await apiFormData("/case-studies", "POST", form);
+    toastSuccess("Case study created successfully.");
+    return res;
   });
 }
 
-// Update — admin, PATCH by id, multipart/form-data
-export async function updateCaseStudy(
-  id,
-  { title, excerpt, content, industry, featuredImage, status }
-) {
-  return wrap("Update case study", () => {
+export async function updateCaseStudy(id, { title, excerpt, content, industry, featuredImage, status }) {
+  return wrap("Update case study", async () => {
     const form = new FormData();
     if (title !== undefined) form.append("title", title);
     if (excerpt !== undefined) form.append("excerpt", excerpt);
@@ -84,13 +70,16 @@ export async function updateCaseStudy(
     if (industry !== undefined) form.append("industry", industry);
     if (status !== undefined) form.append("status", status);
     if (featuredImage) form.append("featuredImage", featuredImage);
-    return apiFormData(`/case-studies/${id}`, "PATCH", form);
+    const res = await apiFormData(`/case-studies/${id}`, "PATCH", form);
+    toastSuccess("Case study updated successfully.");
+    return res;
   });
 }
 
-// Delete — admin, DELETE by id
 export async function deleteCaseStudy(id) {
-  return wrap("Delete case study", () =>
-    apiFetch(`/case-studies/${id}`, { method: "DELETE" })
-  );
+  return wrap("Delete case study", async () => {
+    const res = await apiFetch(`/case-studies/${id}`, { method: "DELETE" });
+    toastSuccess("Case study deleted.");
+    return res;
+  });
 }
