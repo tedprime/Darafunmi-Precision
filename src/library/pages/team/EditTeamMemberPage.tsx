@@ -1,15 +1,30 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Image as ImageIcon, Save, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createTeamMember } from "../../../services/team.jsx";
+import { Image as ImageIcon, Save, X, TriangleAlert } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { getTeamMembers, updateTeamMember } from "../../../services/team.jsx";
 import { useToast } from "../../../services/useToast";
 
-const AddTeamMemberPage: React.FC = () => {
+interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  bio?: string | null;
+  imageUrl?: string | null;
+  order?: number | null;
+  isVisible: boolean;
+}
+
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+);
+
+const EditTeamMemberPage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { toast } = useToast() as {
     toast: {
       success: (msg: string) => void;
@@ -23,12 +38,35 @@ const AddTeamMemberPage: React.FC = () => {
   const [bio, setBio] = useState("");
   const [order, setOrder] = useState("");
   const [isVisible, setIsVisible] = useState(true);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    getTeamMembers()
+      .then((res) => {
+        const all: TeamMember[] = res.data ?? res;
+        const member = all.find((m) => m.id === Number(id));
+        if (!member) {
+          setFetchError("Team member not found.");
+          return;
+        }
+        setName(member.name);
+        setRole(member.role);
+        setBio(member.bio ?? "");
+        setOrder(member.order != null ? String(member.order) : "");
+        setIsVisible(member.isVisible);
+        setExistingImageUrl(member.imageUrl ?? null);
+      })
+      .catch((err) => setFetchError(err.message ?? "Failed to load member."))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,25 +91,63 @@ const AddTeamMemberPage: React.FC = () => {
     const fd = new FormData();
     fd.append("name", name.trim());
     fd.append("role", role.trim());
-    if (bio.trim()) fd.append("bio", bio.trim());
+    fd.append("bio", bio.trim());
     if (order) fd.append("order", order);
     fd.append("isVisible", String(isVisible));
     if (imageFile) fd.append("image", imageFile);
 
     setSubmitting(true);
     try {
-      await createTeamMember(fd);
-      toast.success("Team member added successfully.");
+      await updateTeamMember(Number(id), fd);
+      toast.success("Team member updated successfully.");
       navigate("/team");
     } catch {
-      setError("Failed to add team member.");
+      setError("Failed to update team member.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <Layout pageTitle="Edit Team Member" pageSubtitle="Update team member details">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card><Skeleton className="h-10 w-full" /></Card>
+            <Card><Skeleton className="h-10 w-full" /></Card>
+            <Card><Skeleton className="h-32 w-full" /></Card>
+          </div>
+          <div className="space-y-6">
+            <Card><Skeleton className="h-40 w-full" /></Card>
+            <Card><Skeleton className="h-10 w-full" /></Card>
+            <Card><Skeleton className="h-10 w-full" /></Card>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <Layout pageTitle="Edit Team Member" pageSubtitle="Update team member details">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
+          <p className="text-gray-700 font-medium">{fetchError}</p>
+          <button
+            onClick={() => navigate("/team")}
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Back to Team
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  const displayImage = imagePreview ?? existingImageUrl;
+
   return (
-    <Layout pageTitle="Add Team Member" pageSubtitle="Create a new team member">
+    <Layout pageTitle="Edit Team Member" pageSubtitle="Update team member details">
       {error && (
         <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
           {error}
@@ -124,22 +200,32 @@ const AddTeamMemberPage: React.FC = () => {
           {/* Photo */}
           <Card>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Photo</h3>
-            {imagePreview ? (
+            {displayImage ? (
               <div className="relative">
                 <img
-                  src={imagePreview}
+                  src={displayImage}
                   alt="Preview"
                   className="w-full h-40 object-cover rounded-lg"
                 />
-                <button
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100"
-                >
-                  <X size={14} className="text-gray-600" />
-                </button>
-                <p className="text-xs text-gray-500 mt-2 truncate">
-                  {imageFile?.name}
+                {imagePreview && (
+                  <button
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100"
+                  >
+                    <X size={14} className="text-gray-600" />
+                  </button>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  {imageFile ? imageFile.name : "Current photo"}
                 </p>
+                {!imagePreview && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2 text-xs text-blue-600 hover:underline"
+                  >
+                    Replace photo
+                  </button>
+                )}
               </div>
             ) : (
               <div
@@ -205,7 +291,7 @@ const AddTeamMemberPage: React.FC = () => {
             disabled={submitting}
           >
             <Save size={16} className="mr-2" />
-            {submitting ? "Saving..." : "Add Team Member"}
+            {submitting ? "Saving..." : "Save Changes"}
           </Button>
           <Button
             variant="secondary"
@@ -221,4 +307,4 @@ const AddTeamMemberPage: React.FC = () => {
   );
 };
 
-export default AddTeamMemberPage;
+export default EditTeamMemberPage;

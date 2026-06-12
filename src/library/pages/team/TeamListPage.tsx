@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
-import { TriangleAlert, Plus, Pencil, Trash2 } from "lucide-react";
+import Button from "../../components/common/Button";
+import { Plus, Edit2, Trash2, TriangleAlert } from "lucide-react";
 import { getTeamMembers, deleteTeamMember } from "../../../services/team.jsx";
 import { useToast } from "../../../services/useToast";
 
@@ -60,75 +60,44 @@ const TeamListPage: React.FC = () => {
     }
   };
 
-  const headers = ["", "Name", "Role", "Visibility", "Order", "Actions"];
-
-  const data = members.map((member) => [
-    <div key={`img-${member.id}`} className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-      {member.imageUrl ? (
-        <img src={member.imageUrl} alt={member.name} className="w-full h-full object-cover" />
-      ) : (
-        <span className="text-xs font-semibold text-gray-500">
-          {member.name.charAt(0).toUpperCase()}
-        </span>
-      )}
-    </div>,
-    member.name,
-    member.role,
-    <Badge key={`vis-${member.id}`} color={member.isVisible ? "green" : "gray"}>
-      {member.isVisible ? "Visible" : "Hidden"}
-    </Badge>,
-    member.order ?? "—",
-    <div key={`actions-${member.id}`} className="flex gap-2">
-      <button
-        onClick={() => navigate(`/team/edit/${member.id}`)}
-        title="Edit"
-        className="p-1 border border-blue-100 text-blue-500 hover:bg-blue-50 rounded transition-colors"
-      >
-        <Pencil size={15} />
-      </button>
-      <button
-        onClick={() => handleDelete(member)}
-        disabled={deletingId === member.id}
-        title="Delete"
-        className="p-1 border border-red-100 text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-40"
-      >
-        <Trash2 size={15} />
-      </button>
-    </div>,
-  ]);
-
   return (
-    <Layout pageTitle="Team" pageSubtitle="Manage team members.">
-      <div className="flex justify-end mb-6">
-        <button
+    <Layout
+      pageTitle="Team"
+      pageSubtitle="Manage team members."
+      action={
+        <Button
+          className="flex items-center"
           onClick={() => navigate("/team/add")}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
         >
-          <Plus size={16} />
-          Add Member
-        </button>
-      </div>
-
+          <Plus size={16} className="mr-2" /> Add Member
+        </Button>
+      }
+    >
+      {/* Loading Skeleton */}
       {loading && (
-        <Card>
-          <Skeleton className="h-5 w-32 mb-6" />
-          <div className="space-y-3">
-            <div className="grid grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-4" />
-              ))}
-            </div>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <Skeleton key={j} className="h-8" />
-                ))}
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="flex justify-between items-center py-8 px-6">
+              <div className="flex items-center gap-4 flex-1">
+                <Skeleton className="w-12 h-12 rounded-full" />
+                <div>
+                  <Skeleton className="h-5 w-48 mb-2" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
               </div>
-            ))}
-          </div>
-        </Card>
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <div className="flex space-x-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-5 rounded" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
 
+      {/* Error State */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
@@ -143,22 +112,67 @@ const TeamListPage: React.FC = () => {
         </div>
       )}
 
+      {/* List */}
       {!loading && !error && (
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            All Members{" "}
-            <span className="text-sm font-normal text-gray-400">
-              ({members.length})
-            </span>
-          </h3>
-          {data.length === 0 ? (
+        <div className="space-y-4">
+          {members.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
               No team members yet.
             </p>
           ) : (
-            <Table headers={headers} data={data} />
+            members.map((member) => (
+              <Card
+                key={member.id}
+                className="flex justify-between items-center py-6 px-6"
+              >
+                {/* Avatar + Info */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center shrink-0">
+                    {member.imageUrl ? (
+                      <img
+                        src={member.imageUrl}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-gray-500">
+                        {member.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-base font-medium text-gray-900">
+                      {member.name}
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-0.5">{member.role}</p>
+                  </div>
+                </div>
+
+                {/* Badge + Actions */}
+                <div className="flex items-center space-x-4">
+                  <Badge color={member.isVisible ? "green" : "gray"}>
+                    {member.isVisible ? "Visible" : "Hidden"}
+                  </Badge>
+                  <div className="flex space-x-4 text-gray-400">
+                    <button
+                      className="text-blue-500 hover:text-blue-600"
+                      onClick={() => navigate(`/team/edit/${member.id}`)}
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      className="text-red-500 hover:text-red-600 disabled:opacity-40"
+                      onClick={() => handleDelete(member)}
+                      disabled={deletingId === member.id}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            ))
           )}
-        </Card>
+        </div>
       )}
     </Layout>
   );

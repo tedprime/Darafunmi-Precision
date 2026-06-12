@@ -20,11 +20,22 @@ export async function getNewsletterSubscribers({ page = 1, limit = 50 } = {}) {
   });
 }
 
+// export async function unsubscribeNewsletter(email) {
+//   return wrap("Unsubscribe", () =>
+//     apiFetch("/newsletter/unsubscribe", {
+//       method: "POST",
+//       body: JSON.stringify({ email }),
+//     })
+//   );
+// }
 export async function unsubscribeNewsletter(email) {
   return wrap("Unsubscribe", () =>
     apiFetch("/newsletter/unsubscribe", {
       method: "POST",
       body: JSON.stringify({ email }),
+    }).then((res) => {
+      console.log("Unsubscribe response:", res);
+      return res;
     })
   );
 }

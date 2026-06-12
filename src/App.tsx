@@ -40,6 +40,7 @@ import EditServicePage from "./library/pages/services/EditServicePage";
 import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
 import TeamListPage from "./library/pages/team/TeamListPage";
 import AddTeamMemberPage from "./library/pages/team/AddTeamMemberPage";
+import EditTeamMemberPage from "./library/pages/team/EditTeamMemberPage";
 import { isAuthenticated } from "./services/auth.jsx";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -352,6 +353,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/team/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditTeamMemberPage />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Settings */}
           <Route
             path="/settings"
