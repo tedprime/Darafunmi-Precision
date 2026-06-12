@@ -72,10 +72,6 @@ export function useToast() {
 }
 
 // ── Imperative helper (use in api modules / outside React) ───────────────────
-export function toastError(message) {
-  if (_externalPush) _externalPush(message, "error");
-  else console.error("[Toast]", message); // fallback before provider mounts
-}
 
 export function toastError(message) {
   if (_externalPush) _externalPush(message, "error");
