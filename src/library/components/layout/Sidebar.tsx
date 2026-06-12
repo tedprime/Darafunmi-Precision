@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  Users2,
   CalendarCheck,
   ShoppingBag,
   // Wrench,
@@ -71,6 +72,15 @@ const navItems = [
   //   icon: Building2,
   //   path: "/industries",
   // },
+  {
+  name: "Team",
+  icon: Users2,        // add to lucide imports
+  path: "/team",
+  subItems: [
+    { name: "Team Members", path: "/team" },        
+    { name: "Add Member", path: "/team/add" },      
+  ],
+},
   {
     name: "Products",
     icon: Package,
