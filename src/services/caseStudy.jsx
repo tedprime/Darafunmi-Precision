@@ -1,4 +1,3 @@
-// caseStudies.jsx
 import { apiFetch } from "./api.jsx";
 import { toastError, toastSuccess } from "./useToast";
 
@@ -45,30 +44,44 @@ export async function getCaseStudy(slugOrId) {
   });
 }
 
-export async function createCaseStudy({ title, slug, excerpt, content, industry, featuredImage, status }) {
+export async function createCaseStudy({
+  title, slug, clientName, industry,
+  challenge, solution, results,
+  featuredImage, isPublished, isFeatured,
+}) {
   return wrap("Create case study", async () => {
     const form = new FormData();
     form.append("title", title);
     if (slug) form.append("slug", slug);
-    if (excerpt) form.append("excerpt", excerpt);
-    if (content) form.append("content", content);
+    if (clientName) form.append("clientName", clientName);
     if (industry) form.append("industry", industry);
+    if (challenge) form.append("challenge", challenge);
+    if (solution) form.append("solution", solution);
+    if (results) form.append("results", results);
     if (featuredImage) form.append("featuredImage", featuredImage);
-    if (status) form.append("status", status);
+    form.append("isPublished", String(isPublished ?? false));
+    form.append("isFeatured", String(isFeatured ?? false));
     const res = await apiFormData("/case-studies", "POST", form);
     toastSuccess("Case study created successfully.");
     return res;
   });
 }
 
-export async function updateCaseStudy(id, { title, excerpt, content, industry, featuredImage, status }) {
+export async function updateCaseStudy(id, {
+  title, clientName, industry,
+  challenge, solution, results,
+  featuredImage, isPublished, isFeatured,
+}) {
   return wrap("Update case study", async () => {
     const form = new FormData();
     if (title !== undefined) form.append("title", title);
-    if (excerpt !== undefined) form.append("excerpt", excerpt);
-    if (content !== undefined) form.append("content", content);
+    if (clientName !== undefined) form.append("clientName", clientName);
     if (industry !== undefined) form.append("industry", industry);
-    if (status !== undefined) form.append("status", status);
+    if (challenge !== undefined) form.append("challenge", challenge);
+    if (solution !== undefined) form.append("solution", solution);
+    if (results !== undefined) form.append("results", results);
+    if (isPublished !== undefined) form.append("isPublished", String(isPublished));
+    if (isFeatured !== undefined) form.append("isFeatured", String(isFeatured));
     if (featuredImage) form.append("featuredImage", featuredImage);
     const res = await apiFormData(`/case-studies/${id}`, "PATCH", form);
     toastSuccess("Case study updated successfully.");

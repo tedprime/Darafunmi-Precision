@@ -11,25 +11,17 @@ export interface CaseStudy {
   id: number;
   title: string;
   slug: string;
-  excerpt?: string;
-  content?: string;
+  clientName?: string;
   industry?: string;
   featuredImage?: string;
-  status: string | { name: string };
+  isPublished?: boolean;
+  isFeatured?: boolean;
   createdAt?: string;
-  date?: string;
 }
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
-
-const getStatusText = (status: CaseStudy["status"]): string => {
-  if (status && typeof status === "object" && "name" in status)
-    return (status as { name: string }).name;
-  if (typeof status === "string") return status;
-  return "draft";
-};
 
 const CaseStudyListPage = () => {
   const navigate = useNavigate();
@@ -50,15 +42,15 @@ const CaseStudyListPage = () => {
 
   useEffect(() => { load(); }, []);
 
- const handleDelete = async (id: number) => {
-  if (!confirm("Delete this case study?")) return;
-  try {
-    await deleteCaseStudy(id);
-    setStudies((prev) => prev.filter((s) => s.id !== id));
-  } catch {
-    // toastError already fired inside deleteCaseStudy
-  }
-};
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this case study?")) return;
+    try {
+      await deleteCaseStudy(id);
+      setStudies((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      // toastError already fired inside deleteCaseStudy
+    }
+  };
 
   return (
     <Layout
@@ -77,9 +69,12 @@ const CaseStudyListPage = () => {
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <Card key={i} className="flex justify-between items-center py-8 px-6">
-              <div className="flex-1">
-                <Skeleton className="h-5 w-64 mb-3" />
-                <Skeleton className="h-4 w-40" />
+              <div className="flex items-center gap-4 flex-1">
+                <Skeleton className="h-10 w-14 rounded-md" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-64 mb-3" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
               </div>
               <div className="flex items-center space-x-4">
                 <Skeleton className="h-6 w-20 rounded-full" />
@@ -114,62 +109,67 @@ const CaseStudyListPage = () => {
               No case studies found.
             </p>
           ) : (
-            studies.map((study) => {
-              const statusText = getStatusText(study.status);
-              return (
-                <Card
-                  key={study.id}
-                  className="flex justify-between items-center py-8 px-6"
-                >
-                  <div className="flex items-center gap-4">
-                    {study.featuredImage && (
-                      <img
-                        src={study.featuredImage}
-                        alt={study.title}
-                        className="w-14 h-10 object-cover rounded-md flex-shrink-0"
-                      />
-                    )}
-                    <div>
-                      <h4 className="text-base font-medium text-gray-900">
-                        {study.title}
-                      </h4>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {study.industry && (
-                          <span className="mr-3">{study.industry}</span>
-                        )}
+            studies.map((study) => (
+              <Card
+                key={study.id}
+                className="flex justify-between items-center py-8 px-6"
+              >
+                <div className="flex items-center gap-4">
+                  {study.featuredImage ? (
+                    <img
+                      src={study.featuredImage}
+                      alt={study.title}
+                      className="w-14 h-10 object-cover rounded-md flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-10 rounded-md bg-gray-100 flex-shrink-0" />
+                  )}
+                  <div>
+                    <h4 className="text-base font-medium text-gray-900">
+                      {study.title}
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {study.clientName && (
+                        <span className="mr-3">{study.clientName}</span>
+                      )}
+                      {study.industry && (
+                        <span className="mr-3 text-gray-400">{study.industry}</span>
+                      )}
+                      {study.createdAt && (
                         <span className="text-gray-400 text-xs">
-                          {study.createdAt
-                            ? new Date(study.createdAt).toLocaleDateString()
-                            : ""}
+                          {new Date(study.createdAt).toLocaleDateString()}
                         </span>
-                      </p>
-                    </div>
+                      )}
+                    </p>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <Badge color={statusText === "published" ? "blue" : "gray"}>
-                      {statusText}
-                    </Badge>
-                    <div className="flex space-x-4 text-gray-400">
-                      {/* ← use slug for the edit route so getCaseStudy can fetch it */}
-                      <button
-                        className="text-blue-500 hover:text-blue-600"
-                        onClick={() =>
-                          navigate(`/case-studies/edit/${study.slug ?? study.id}`)
-                        }
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        className="text-red-500 hover:text-red-600"
-                        onClick={() => handleDelete(study.id)}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  {study.isFeatured && (
+                    <Badge color="yellow">Featured</Badge>
+                  )}
+                  <Badge color={study.isPublished ? "blue" : "gray"}>
+                    {study.isPublished ? "published" : "draft"}
+                  </Badge>
+                  <div className="flex space-x-4">
+                    <button
+                      className="text-blue-500 hover:text-blue-600"
+                      onClick={() =>
+                        navigate(`/case-studies/edit/${study.slug ?? study.id}`)
+                      }
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      className="text-red-500 hover:text-red-600"
+                      onClick={() => handleDelete(study.id)}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                </Card>
-              );
-            })
+                </div>
+              </Card>
+            ))
           )}
         </div>
       )}
