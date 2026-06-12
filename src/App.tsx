@@ -37,7 +37,7 @@ import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
 import ServiceListPage from "./library/pages/services/ServicesListPage";
 import AddServicePage from "./library/pages/services/AddServicePage";
 import EditServicePage from "./library/pages/services/EditServicePage";
-
+import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
 import { isAuthenticated } from "./services/auth.jsx";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -83,6 +83,15 @@ function App() {
             }
           />
 
+{/* Newsletter */}
+<Route
+  path="/newsletter"
+  element={
+    <ProtectedRoute>
+      <NewsletterListPage />
+    </ProtectedRoute>
+  }
+/>
           {/* Clients */}
           <Route
             path="/clients"

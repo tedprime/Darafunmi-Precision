@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Badge from "../../components/common/Badge";
@@ -40,7 +40,7 @@ const CaseStudyListPage = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  // useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this case study?")) return;
@@ -119,10 +119,10 @@ const CaseStudyListPage = () => {
                     <img
                       src={study.featuredImage}
                       alt={study.title}
-                      className="w-14 h-10 object-cover rounded-md flex-shrink-0"
+                      className="w-14 h-10 object-cover rounded-md shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-10 rounded-md bg-gray-100 flex-shrink-0" />
+                    <div className="w-14 h-10 rounded-md bg-gray-100 shrink-0" />
                   )}
                   <div>
                     <h4 className="text-base font-medium text-gray-900">
