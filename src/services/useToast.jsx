@@ -77,6 +77,20 @@ export function toastError(message) {
   else console.error("[Toast]", message); // fallback before provider mounts
 }
 
+export function toastError(message) {
+  if (_externalPush) _externalPush(message, "error");
+  else console.error("[Toast]", message);
+}
+
+export function toastSuccess(message) {
+  if (_externalPush) _externalPush(message, "success");
+  else console.log("[Toast]", message);
+}
+
+export function toastInfo(message) {
+  if (_externalPush) _externalPush(message, "info");
+  else console.log("[Toast]", message);
+}
 // ── Container ────────────────────────────────────────────────────────────────
 function ToastContainer({ toasts, onDismiss }) {
   return (

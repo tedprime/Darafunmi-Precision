@@ -6,21 +6,15 @@ import Button from "../../components/common/Button";
 import { Image as ImageIcon, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createCaseStudy } from "../../../services/caseStudy";
+import { toastError } from "../../../services/useToast";
 
 const INDUSTRIES = [
-  "Manufacturing",
-  "Oil & Gas",
-  "Pharmaceuticals",
-  "Food & Beverage",
-  "Aerospace",
-  "Automotive",
-  "Energy",
-  "Other",
+  "Manufacturing", "Oil & Gas", "Pharmaceuticals", "Food & Beverage",
+  "Aerospace", "Automotive", "Energy", "Other",
 ] as const;
 
 const AddCaseStudyPage: React.FC = () => {
   const navigate = useNavigate();
-
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -30,26 +24,19 @@ const AddCaseStudyPage: React.FC = () => {
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-generate slug from title
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setTitle(val);
-    if (!slug || slug === slugify(title)) {
-      setSlug(slugify(val));
-    }
-  };
-
   const slugify = (str: string) =>
-    str
-      .toLowerCase()
-      .trim()
+    str.toLowerCase().trim()
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-");
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTitle(val);
+    if (!slug || slug === slugify(title)) setSlug(slugify(val));
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,9 +52,8 @@ const AddCaseStudyPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    setError(null);
     if (!title.trim()) {
-      setError("Case study title is required.");
+      toastError("Case study title is required.");
       return;
     }
     setSubmitting(true);
@@ -82,28 +68,16 @@ const AddCaseStudyPage: React.FC = () => {
         featuredImage: featuredImage ?? undefined,
       });
       navigate("/case-studies");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create case study.";
-      setError(message);
+    } catch {
+      // toastError already fired inside createCaseStudy/apiFormData
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Layout
-      pageTitle="Add Case Study"
-      pageSubtitle="Create and publish a new case study"
-    >
-      {error && (
-        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
+    <Layout pageTitle="Add Case Study" pageSubtitle="Create and publish a new case study">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <Input
@@ -132,10 +106,7 @@ const AddCaseStudyPage: React.FC = () => {
           </Card>
 
           <Card>
-            <label
-              htmlFor="excerpt"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
               Excerpt
             </label>
             <textarea
@@ -147,16 +118,11 @@ const AddCaseStudyPage: React.FC = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               placeholder="Brief summary shown in listings"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              {excerpt.length}/160 characters
-            </p>
+            <p className="text-xs text-gray-500 mt-1">{excerpt.length}/160 characters</p>
           </Card>
 
           <Card>
-            <label
-              htmlFor="content"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
               Content
             </label>
             <textarea
@@ -167,35 +133,23 @@ const AddCaseStudyPage: React.FC = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
               placeholder="Write the full case study content here..."
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Supports markdown formatting
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Supports markdown formatting</p>
           </Card>
         </div>
 
-        {/* Right column */}
         <div className="space-y-6">
-          {/* Featured Image */}
           <Card>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Featured Image
-            </h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Featured Image</h3>
             {imagePreview ? (
               <div className="relative rounded-lg overflow-hidden">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-40 object-cover rounded-lg"
-                />
+                <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
                 <button
                   onClick={removeImage}
                   className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100"
                 >
                   <X size={14} className="text-gray-600" />
                 </button>
-                <p className="text-xs text-gray-500 mt-2 truncate">
-                  {featuredImage?.name}
-                </p>
+                <p className="text-xs text-gray-500 mt-2 truncate">{featuredImage?.name}</p>
               </div>
             ) : (
               <div
@@ -203,9 +157,7 @@ const AddCaseStudyPage: React.FC = () => {
                 className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-900">
-                  Click to upload image
-                </p>
+                <p className="text-sm font-medium text-gray-900">Click to upload image</p>
                 <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
               </div>
             )}
@@ -218,12 +170,8 @@ const AddCaseStudyPage: React.FC = () => {
             />
           </Card>
 
-          {/* Industry */}
           <Card>
-            <label
-              htmlFor="industry"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
               Industry
             </label>
             <select
@@ -233,20 +181,12 @@ const AddCaseStudyPage: React.FC = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
             >
               <option value="">Select industry</option>
-              {INDUSTRIES.map((ind) => (
-                <option key={ind} value={ind}>
-                  {ind}
-                </option>
-              ))}
+              {INDUSTRIES.map((ind) => <option key={ind} value={ind}>{ind}</option>)}
             </select>
           </Card>
 
-          {/* Status */}
           <Card>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
               Status
             </label>
             <select

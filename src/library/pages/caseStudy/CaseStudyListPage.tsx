@@ -50,15 +50,15 @@ const CaseStudyListPage = () => {
 
   useEffect(() => { load(); }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this case study?")) return;
-    try {
-      await deleteCaseStudy(id);
-      setStudies((prev) => prev.filter((s) => s.id !== id));
-    } catch {
-      alert("Failed to delete case study.");
-    }
-  };
+ const handleDelete = async (id: number) => {
+  if (!confirm("Delete this case study?")) return;
+  try {
+    await deleteCaseStudy(id);
+    setStudies((prev) => prev.filter((s) => s.id !== id));
+  } catch {
+    // toastError already fired inside deleteCaseStudy
+  }
+};
 
   return (
     <Layout
