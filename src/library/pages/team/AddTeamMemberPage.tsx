@@ -5,18 +5,12 @@ import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { Image as ImageIcon, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createTeamMember } from "../../../services/team.jsx";
-import { useToast } from "../../../services/useToast";
+import { toastSuccess, toastError } from "../../../services/useToast";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AddTeamMemberPage: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast() as {
-    toast: {
-      success: (msg: string) => void;
-      error: (msg: string) => void;
-      info: (msg: string) => void;
-    };
-  };
 
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -60,11 +54,27 @@ const AddTeamMemberPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      await createTeamMember(fd);
-      toast.success("Team member added successfully.");
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/team`, {
+        method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+          // NO Content-Type — browser sets multipart boundary automatically
+        },
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message ?? "Failed to add team member.");
+      }
+
+      toastSuccess("Team member added successfully.");
       navigate("/team");
-    } catch {
-      setError("Failed to add team member.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to add team member.";
+      setError(message);
+      toastError(message);
     } finally {
       setSubmitting(false);
     }
@@ -79,7 +89,6 @@ const AddTeamMemberPage: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <Input
@@ -119,9 +128,7 @@ const AddTeamMemberPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Right column */}
         <div className="space-y-6">
-          {/* Photo */}
           <Card>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Photo</h3>
             {imagePreview ? (
@@ -162,7 +169,6 @@ const AddTeamMemberPage: React.FC = () => {
             />
           </Card>
 
-          {/* Display Order */}
           <Card>
             <Input
               id="order"
@@ -177,7 +183,6 @@ const AddTeamMemberPage: React.FC = () => {
             </p>
           </Card>
 
-          {/* Visibility */}
           <Card>
             <div className="flex items-center mb-2">
               <input

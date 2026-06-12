@@ -6,7 +6,7 @@ import Button from "../../components/common/Button";
 import { Image as ImageIcon, Save, X, TriangleAlert } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getTeamMembers, updateTeamMember } from "../../../services/team.jsx";
-import { useToast } from "../../../services/useToast";
+import { toastSuccess } from "../../../services/useToast";
 
 interface TeamMember {
   id: number;
@@ -25,13 +25,7 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
 const EditTeamMemberPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast() as {
-    toast: {
-      success: (msg: string) => void;
-      error: (msg: string) => void;
-      info: (msg: string) => void;
-    };
-  };
+  
 
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -99,7 +93,7 @@ const EditTeamMemberPage: React.FC = () => {
     setSubmitting(true);
     try {
       await updateTeamMember(Number(id), fd);
-      toast.success("Team member updated successfully.");
+      toastSuccess("Team member updated successfully.");
       navigate("/team");
     } catch {
       setError("Failed to update team member.");

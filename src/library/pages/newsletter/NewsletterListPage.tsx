@@ -7,7 +7,7 @@ import {
   getNewsletterSubscribers,
   unsubscribeNewsletter,
 } from "../../../services/newsletter.jsx";
-import { useToast } from "../../../services/useToast";
+import { toastSuccess, toastError } from "../../../services/useToast";
 
 interface Subscriber {
   id: number;
@@ -23,13 +23,6 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
 );
 
 const NewsletterListPage: React.FC = () => {
-  const { toast } = useToast() as {
-    toast: {
-      success: (msg: string) => void;
-      error: (msg: string) => void;
-      info: (msg: string) => void;
-    };
-  };
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +31,8 @@ const NewsletterListPage: React.FC = () => {
   useEffect(() => {
     getNewsletterSubscribers()
       .then((res) => {
-        setSubscribers(res.data ?? res);
+        const all: Subscriber[] = res.data ?? res;
+        setSubscribers(all.filter((s) => s.isActive));
         setError(null);
       })
       .catch((err) => setError(err.message ?? "Failed to load subscribers"))
@@ -54,9 +48,9 @@ const NewsletterListPage: React.FC = () => {
       setSubscribers((prev) =>
         prev.filter((s) => s.email !== subscriber.email)
       );
-      toast.success(`${subscriber.email} has been unsubscribed.`);
+      toastSuccess(`${subscriber.email} has been unsubscribed.`);
     } catch {
-      toast.error("Failed to unsubscribe. Please try again.");
+      toastError("Failed to unsubscribe. Please try again.");
     } finally {
       setRemovingEmail(null);
     }
