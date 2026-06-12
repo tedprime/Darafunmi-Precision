@@ -5,12 +5,8 @@ import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Edit2, Trash2, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  getCaseStudies,
-  deleteCaseStudy,
-} from "../../../services/caseStudy";
+import { getCaseStudies, deleteCaseStudy } from "../../../services/caseStudy";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
 export interface CaseStudy {
   id: number;
   title: string;
@@ -22,10 +18,8 @@ export interface CaseStudy {
   status: string | { name: string };
   createdAt?: string;
   date?: string;
-  author?: string | { name: string };
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
@@ -37,32 +31,24 @@ const getStatusText = (status: CaseStudy["status"]): string => {
   return "draft";
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
 const CaseStudyListPage = () => {
   const navigate = useNavigate();
   const [studies, setStudies] = useState<CaseStudy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const load = () => {
+    setLoading(true);
+    setError(null);
     getCaseStudies({ limit: 50 })
-      .then(({ data }) => {
-        if (isMounted) {
-          setStudies(data);
-          setError(null);
-        }
-      })
-      .catch((err: { message?: string }) => {
-        if (isMounted) setError(err.message ?? "Failed to load case studies.");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      .then(({ data }) => setStudies(data))
+      .catch((err: { message?: string }) =>
+        setError(err.message ?? "Failed to load case studies.")
+      )
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this case study?")) return;
@@ -87,14 +73,10 @@ const CaseStudyListPage = () => {
         </Button>
       }
     >
-      {/* Loading skeleton */}
       {loading && (
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Card
-              key={i}
-              className="flex justify-between items-center py-8 px-6"
-            >
+            <Card key={i} className="flex justify-between items-center py-8 px-6">
               <div className="flex-1">
                 <Skeleton className="h-5 w-64 mb-3" />
                 <Skeleton className="h-4 w-40" />
@@ -111,16 +93,13 @@ const CaseStudyListPage = () => {
         </div>
       )}
 
-      {/* Error state */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <TriangleAlert className="w-8 h-8 mb-4 text-gray-500" />
-          <p className="text-gray-700 font-medium">
-            Failed to load case studies
-          </p>
+          <p className="text-gray-700 font-medium">Failed to load case studies</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={load}
             className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Retry
@@ -128,7 +107,6 @@ const CaseStudyListPage = () => {
         </div>
       )}
 
-      {/* List */}
       {!loading && !error && (
         <div className="space-y-4">
           {studies.length === 0 ? (
@@ -143,30 +121,40 @@ const CaseStudyListPage = () => {
                   key={study.id}
                   className="flex justify-between items-center py-8 px-6"
                 >
-                  <div>
-                    <h4 className="text-base font-medium text-gray-900">
-                      {study.title}
-                    </h4>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {study.industry && (
-                        <span className="mr-3">{study.industry}</span>
-                      )}
-                      <span className="text-gray-400">
-                        {study.date ?? study.createdAt ?? ""}
-                      </span>
-                    </p>
+                  <div className="flex items-center gap-4">
+                    {study.featuredImage && (
+                      <img
+                        src={study.featuredImage}
+                        alt={study.title}
+                        className="w-14 h-10 object-cover rounded-md flex-shrink-0"
+                      />
+                    )}
+                    <div>
+                      <h4 className="text-base font-medium text-gray-900">
+                        {study.title}
+                      </h4>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {study.industry && (
+                          <span className="mr-3">{study.industry}</span>
+                        )}
+                        <span className="text-gray-400 text-xs">
+                          {study.createdAt
+                            ? new Date(study.createdAt).toLocaleDateString()
+                            : ""}
+                        </span>
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <Badge
-                      color={statusText === "published" ? "blue" : "gray"}
-                    >
+                    <Badge color={statusText === "published" ? "blue" : "gray"}>
                       {statusText}
                     </Badge>
                     <div className="flex space-x-4 text-gray-400">
+                      {/* ← use slug for the edit route so getCaseStudy can fetch it */}
                       <button
                         className="text-blue-500 hover:text-blue-600"
                         onClick={() =>
-                          navigate(`/case-studies/edit/${study.id}`)
+                          navigate(`/case-studies/edit/${study.slug ?? study.id}`)
                         }
                       >
                         <Edit2 size={18} />

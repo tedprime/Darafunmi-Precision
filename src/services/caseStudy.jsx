@@ -29,19 +29,21 @@ async function apiFormData(endpoint, method, formData) {
   return response.json();
 }
 
-// List — public endpoint, page + limit only (no search per Swagger)
-export async function getCaseStudies({ page = 1, limit = 12 } = {}) {
+// List — admin fetches all statuses
+export async function getCaseStudies({ page = 1, limit = 50 } = {}) {
   return wrap("Load case studies", async () => {
     const params = new URLSearchParams({ page, limit });
     const res = await apiFetch(`/case-studies?${params.toString()}`);
-    return { data: res.data ?? [], pagination: res.pagination ?? {} };
+    // Normalise: backend may return { data: [...] } or [...] directly
+    const list = Array.isArray(res) ? res : res.data ?? [];
+    return { data: list, pagination: res.pagination ?? {} };
   });
 }
 
-// Single — public, fetched by slug
-export async function getCaseStudy(slug) {
+// Single — fetched by slug OR numeric id (admin edit passes slug via route)
+export async function getCaseStudy(slugOrId) {
   return wrap("Load case study", async () => {
-    const res = await apiFetch(`/case-studies/${slug}`);
+    const res = await apiFetch(`/case-studies/${slugOrId}`);
     return res.data ?? res;
   });
 }

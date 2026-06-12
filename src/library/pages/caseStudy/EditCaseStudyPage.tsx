@@ -24,9 +24,10 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
 
 const EditCaseStudyPage: React.FC = () => {
   const navigate = useNavigate();
-  // Route param is the numeric id (we use slug to GET, id to PATCH)
-  const { id } = useParams<{ id: string }>();
+  // Route param is now the slug (e.g. /case-studies/edit/oil-gas-calibration)
+  const { id: slugParam } = useParams<{ id: string }>();
 
+  const [studyId, setStudyId] = useState<number | null>(null); // numeric id for PATCH
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
@@ -42,13 +43,10 @@ const EditCaseStudyPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!id) return;
-    // The GET-by-slug endpoint accepts slug (string); the admin edit route
-    // stores the numeric id in the URL. We pass id here — if your backend
-    // GET /case-studies/:slug only accepts slugs, swap this out for
-    // a separate admin GET-by-id endpoint when available.
-    getCaseStudy(id)
+    if (!slugParam) return;
+    getCaseStudy(slugParam)
       .then((study) => {
+        setStudyId(study.id);           // store numeric id for PATCH
         setTitle(study.title ?? "");
         setExcerpt(study.excerpt ?? "");
         setContent(study.content ?? "");
@@ -64,7 +62,7 @@ const EditCaseStudyPage: React.FC = () => {
         setLoadError(err.message ?? "Failed to load case study.")
       )
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [slugParam]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,14 +79,11 @@ const EditCaseStudyPage: React.FC = () => {
 
   const handleSubmit = async () => {
     setError(null);
-    if (!title.trim()) {
-      setError("Case study title is required.");
-      return;
-    }
-    if (!id) return;
+    if (!title.trim()) { setError("Case study title is required."); return; }
+    if (!studyId) { setError("Could not determine case study ID."); return; }
     setSubmitting(true);
     try {
-      await updateCaseStudy(id, {
+      await updateCaseStudy(studyId, {
         title: title.trim(),
         excerpt: excerpt.trim(),
         content: content.trim(),
@@ -109,43 +104,23 @@ const EditCaseStudyPage: React.FC = () => {
       pageTitle="Edit Case Study"
       pageSubtitle="Update and republish your case study"
     >
-      {/* Loading skeleton */}
       {loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-10 w-full" />
-            </Card>
-            <Card>
-              <Skeleton className="h-4 w-16 mb-2" />
-              <Skeleton className="h-20 w-full" />
-            </Card>
-            <Card>
-              <Skeleton className="h-4 w-16 mb-2" />
-              <Skeleton className="h-48 w-full" />
-            </Card>
+            <Card><Skeleton className="h-4 w-20 mb-2" /><Skeleton className="h-10 w-full" /></Card>
+            <Card><Skeleton className="h-4 w-16 mb-2" /><Skeleton className="h-20 w-full" /></Card>
+            <Card><Skeleton className="h-4 w-16 mb-2" /><Skeleton className="h-48 w-full" /></Card>
           </div>
           <div className="space-y-6">
-            <Card>
-              <Skeleton className="h-4 w-28 mb-3" />
-              <Skeleton className="h-40 w-full rounded-lg" />
-            </Card>
-            <Card>
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-10 w-full" />
-            </Card>
-            <Card>
-              <Skeleton className="h-4 w-16 mb-2" />
-              <Skeleton className="h-10 w-full" />
-            </Card>
+            <Card><Skeleton className="h-4 w-28 mb-3" /><Skeleton className="h-40 w-full rounded-lg" /></Card>
+            <Card><Skeleton className="h-4 w-20 mb-2" /><Skeleton className="h-10 w-full" /></Card>
+            <Card><Skeleton className="h-4 w-16 mb-2" /><Skeleton className="h-10 w-full" /></Card>
             <Skeleton className="h-10 w-full rounded-md" />
             <Skeleton className="h-10 w-full rounded-md" />
           </div>
         </div>
       )}
 
-      {/* Load error */}
       {!loading && loadError && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <TriangleAlert className="w-8 h-8 mb-4 text-gray-500" />
@@ -160,7 +135,6 @@ const EditCaseStudyPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit form */}
       {!loading && !loadError && (
         <>
           {error && (
@@ -168,9 +142,7 @@ const EditCaseStudyPage: React.FC = () => {
               {error}
             </div>
           )}
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left column */}
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <Input
@@ -186,10 +158,7 @@ const EditCaseStudyPage: React.FC = () => {
               </Card>
 
               <Card>
-                <label
-                  htmlFor="excerpt"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
                   Excerpt
                 </label>
                 <textarea
@@ -201,16 +170,11 @@ const EditCaseStudyPage: React.FC = () => {
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Brief summary shown in listings"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {excerpt.length}/160 characters
-                </p>
+                <p className="text-xs text-gray-500 mt-1">{excerpt.length}/160 characters</p>
               </Card>
 
               <Card>
-                <label
-                  htmlFor="content"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
                   Content
                 </label>
                 <textarea
@@ -221,19 +185,13 @@ const EditCaseStudyPage: React.FC = () => {
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
                   placeholder="Write the full case study content here..."
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Supports markdown formatting
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Supports markdown formatting</p>
               </Card>
             </div>
 
-            {/* Right column */}
             <div className="space-y-6">
-              {/* Featured Image */}
               <Card>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  Featured Image
-                </h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Featured Image</h3>
                 {imagePreview ? (
                   <div className="relative rounded-lg overflow-hidden">
                     <img
@@ -257,12 +215,8 @@ const EditCaseStudyPage: React.FC = () => {
                     className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-sm font-medium text-gray-900">
-                      Click to upload image
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      PNG, JPG up to 10MB
-                    </p>
+                    <p className="text-sm font-medium text-gray-900">Click to upload image</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
                   </div>
                 )}
                 <input
@@ -274,12 +228,8 @@ const EditCaseStudyPage: React.FC = () => {
                 />
               </Card>
 
-              {/* Industry */}
               <Card>
-                <label
-                  htmlFor="industry"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
                   Industry
                 </label>
                 <select
@@ -290,19 +240,13 @@ const EditCaseStudyPage: React.FC = () => {
                 >
                   <option value="">Select industry</option>
                   {INDUSTRIES.map((ind) => (
-                    <option key={ind} value={ind}>
-                      {ind}
-                    </option>
+                    <option key={ind} value={ind}>{ind}</option>
                   ))}
                 </select>
               </Card>
 
-              {/* Status */}
               <Card>
-                <label
-                  htmlFor="status"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
                 <select
