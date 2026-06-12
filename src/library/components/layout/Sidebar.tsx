@@ -19,7 +19,7 @@ import {
   // Building2,
   BookOpen,
   UserCog,
-  // Newspaper,
+  Newspaper,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -123,11 +123,11 @@ const navItems = [
       // { name: "Resources", path: "/content/resources" },
     ],
   },
-  // {
-  //   name: "Newsletter",
-  //   icon: Newspaper,
-  //   path: "/newsletter",
-  // },
+  {
+    name: "Newsletter",
+    icon: Newspaper,
+    path: "/newsletter",
+  },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
