@@ -12,8 +12,9 @@ import { useToast } from "../../../services/useToast";
 interface Subscriber {
   id: number;
   email: string;
-  name?: string;
-  createdAt: string;
+  name?: string | null;
+  created_at?: string;
+  createdAt?: string;   
 }
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
@@ -61,26 +62,29 @@ const NewsletterListPage: React.FC = () => {
 
   const headers = ["Name", "Email", "Subscribed On", "Actions"];
 
-  const data = subscribers.map((sub) => [
-    sub.name ?? "—",
-    sub.email,
-    sub.createdAt
-      ? new Date(sub.createdAt).toLocaleDateString("en-GB", {
+ const data = subscribers.map((sub) => [
+  sub.name ?? "—",
+  sub.email,
+  (() => {
+    const raw = sub.created_at ?? sub.createdAt;
+    return raw
+      ? new Date(raw).toLocaleDateString("en-GB", {
           day: "2-digit",
           month: "short",
           year: "numeric",
         })
-      : "—",
-    <button
-      key={`remove-${sub.email}`}
-      onClick={() => handleUnsubscribe(sub)}
-      disabled={removingEmail === sub.email}
-      title="Unsubscribe"
-      className="p-1 border border-red-100 text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-40"
-    >
-      <Trash2 size={16} />
-    </button>,
-  ]);
+      : "—";
+  })(),
+  <button
+    key={`remove-${sub.email}`}
+    onClick={() => handleUnsubscribe(sub)}
+    disabled={removingEmail === sub.email}
+    title="Unsubscribe"
+    className="p-1 border border-red-100 text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-40"
+  >
+    <Trash2 size={16} />
+  </button>,
+]);
 
   return (
     <Layout
