@@ -16,7 +16,7 @@ import {
   Users2,
   CalendarCheck,
   ShoppingBag,
-  // Wrench,
+  Wrench,
   // Building2,
   BookOpen,
   UserCog,
@@ -62,11 +62,11 @@ const navItems = [
       { name: "Auth Management", path: "/site-users/auth" },
     ],
   },
-  // {
-  //   name: "Services",
-  //   icon: Wrench,
-  //   path: "/services",
-  // },
+  {
+    name: "Services",
+    icon: Wrench,
+    path: "/services",
+  },
   // {
   //   name: "Industries",
   //   icon: Building2,
