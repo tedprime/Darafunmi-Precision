@@ -3,108 +3,164 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
-import Button from "../../components/common/Button";
-import { Plus, Trash2, Search, Edit2, TriangleAlert } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { getQuotes, deleteQuote } from "../../../services/quote.jsx";
+import { Search, TriangleAlert, Eye, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  getQuoteRequests,
+  getQuoteRequest,
+  updateQuoteRequestStatus,
+  deleteQuoteRequest,
+} from "../../../services/quoteRequests";
 
-interface Quote {
+interface QuoteRequest {
   id: number;
-  quoteNumber: string;
-  client?: { name: string } | string;
-  amount: number;
-  status: "pending" | "accepted" | "rejected" | string;
-  date: string;
-  notes?: string;
+  quoteNumber?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  companyName?: string;
+  serviceType?: string;
+  industry?: string;
+  equipmentType?: string;
+  quantity?: number;
+  budget?: string;
+  description?: string;
+  urgency?: string;
+  status: "pending" | "reviewed" | "quoted" | "closed" | string;
+  createdAt?: string;
 }
 
-const STATUS_COLOR: Record<string, "yellow" | "green" | "red" | "gray"> = {
+const STATUS_COLOR: Record<string, "yellow" | "blue" | "green" | "gray"> = {
   pending: "yellow",
-  accepted: "green",
-  rejected: "red",
+  reviewed: "blue",
+  quoted: "green",
+  closed: "gray",
 };
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
   <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
 
-const QuoteListPage: React.FC = () => {
-  const navigate = useNavigate();
-
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+const QuoteRequestListPage: React.FC = () => {
+  const [requests, setRequests] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+
+  const [retryKey, setRetryKey] = useState(0);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  // View modal
+  const [viewItem, setViewItem] = useState<QuoteRequest | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
 
   useEffect(() => {
-    getQuotes({ search, status })
-      .then(({ data, count }) => {
-        setQuotes(data);
-        setCount(count);
+    let cancelled = false;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const res: { data: QuoteRequest[]; hasMore?: boolean } = await getQuoteRequests({ page, status });
+        if (cancelled) return;
+        setRequests(res.data ?? []);
+        setHasMore(res.hasMore ?? false);
         setError(null);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [search, status]);
+      } catch (err: unknown) {
+        if (!cancelled) setError((err as Error).message ?? "Something went wrong.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [page, status, retryKey]);
 
-  const handleDelete = async (id: number, quoteNumber: string) => {
-    if (!confirm(`Delete quote "${quoteNumber}"?`)) return;
+  const handleView = async (id: number) => {
+    setViewLoading(true);
+    setViewItem(null);
     try {
-      setDeletingId(id);
-      await deleteQuote(id);
-      setQuotes((prev) => prev.filter((q) => q.id !== id));
+      const res = await getQuoteRequest(id);
+      setViewItem(res.data);
     } catch {
-      alert("Failed to delete quote.");
+      alert("Failed to load quote request.");
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    setUpdatingId(id);
+    try {
+      await updateQuoteRequestStatus(id, newStatus);
+      setRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
+      );
+      if (viewItem?.id === id) setViewItem((v) => v ? { ...v, status: newStatus } : v);
+    } catch {
+      alert("Failed to update status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (id: number, customerName: string) => {
+    if (!confirm(`Delete quote request from "${customerName}"?`)) return;
+    setDeletingId(id);
+    try {
+      await deleteQuoteRequest(id);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch {
+      alert("Failed to delete quote request.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  const getClientName = (client: Quote["client"]) => {
-    if (!client) return "—";
-    if (typeof client === "object") return client.name;
-    return client;
-  };
+  // Client-side search filter
+  const filtered = requests.filter(
+    (r) =>
+      r.customerName?.toLowerCase().includes(search.toLowerCase()) ||
+      r.customerEmail?.toLowerCase().includes(search.toLowerCase()) ||
+      r.companyName?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const headers = [
-    "Quote No",
-    "Client",
-    "Amount",
-    "Status",
-    "Date",
-    "Notes",
-    "Actions",
-  ];
+  const headers = ["Quote #", "Name", "Email", "Company", "Service Type", "Urgency", "Status", "Actions"];
 
-  const data = quotes.map((quote) => [
-    quote.quoteNumber,
-    getClientName(quote.client),
-    quote.amount !== undefined
-      ? `₦${Number(quote.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}`
-      : "—",
-    <Badge
-      key={`status-${quote.id}`}
-      color={STATUS_COLOR[quote.status] ?? "gray"}
-    >
-      {quote.status}
+  const data = filtered.map((r) => [
+    <span key={`qn-${r.id}`} className="font-mono text-xs text-gray-600">{r.quoteNumber ?? "—"}</span>,
+    r.customerName,
+    r.customerEmail,
+    r.companyName ?? "—",
+    r.serviceType ?? "—",
+    r.urgency ?? "—",
+    <Badge key={`status-${r.id}`} color={STATUS_COLOR[r.status] ?? "gray"}>
+      {r.status}
     </Badge>,
-    quote.date ? new Date(quote.date).toLocaleDateString() : "—",
-    quote.notes ?? "—",
-    <div key={`actions-${quote.id}`} className="flex space-x-2">
+    <div key={`actions-${r.id}`} className="flex items-center space-x-2">
+      <select
+        value={r.status}
+        disabled={updatingId === r.id}
+        onChange={(e) => handleStatusChange(r.id, e.target.value)}
+        className="text-xs border border-gray-300 rounded px-1 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
+      >
+        <option value="pending">Pending</option>
+        <option value="reviewed">Reviewed</option>
+        <option value="quoted">Quoted</option>
+        <option value="closed">Closed</option>
+      </select>
       <button
         className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => navigate(`/quotes/edit/${quote.id}`)}
-        disabled={deletingId === quote.id}
+        onClick={() => handleView(r.id)}
+        disabled={deletingId === r.id}
       >
-        <Edit2 size={15} />
+        <Eye size={15} />
       </button>
       <button
         className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(quote.id, quote.quoteNumber)}
-        disabled={deletingId === quote.id}
+        onClick={() => handleDelete(r.id, r.customerName)}
+        disabled={deletingId === r.id || updatingId === r.id}
       >
         <Trash2 size={15} />
       </button>
@@ -113,16 +169,8 @@ const QuoteListPage: React.FC = () => {
 
   return (
     <Layout
-      pageTitle="Quotes"
-      pageSubtitle={`Manage all quotes and their details here.${count ? ` (${count} total)` : ""}`}
-      action={
-        <Button
-          className="flex items-center"
-          onClick={() => navigate("/quotes/add")}
-        >
-          <Plus size={16} className="mr-2" /> Add Quote
-        </Button>
-      }
+      pageTitle="Quote Requests"
+      pageSubtitle="View and manage inbound quote requests from the site."
     >
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -135,33 +183,35 @@ const QuoteListPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Search by quote number..."
+            placeholder="Search by name, email or company..."
           />
         </div>
         <select
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
           className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
-          <option value="accepted">Accepted</option>
-          <option value="rejected">Rejected</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="quoted">Quoted</option>
+          <option value="closed">Closed</option>
         </select>
       </div>
 
       {/* Loading Skeleton */}
       {loading && (
         <Card>
+          <Skeleton className="h-5 w-40 mb-6" />
           <div className="space-y-3">
-            <div className="grid grid-cols-7 gap-4">
-              {Array.from({ length: 7 }).map((_, i) => (
+            <div className="grid grid-cols-8 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-4" />
               ))}
             </div>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-7 gap-4">
-                {Array.from({ length: 7 }).map((_, j) => (
+              <div key={i} className="grid grid-cols-8 gap-4">
+                {Array.from({ length: 8 }).map((_, j) => (
                   <Skeleton key={j} className="h-8" />
                 ))}
               </div>
@@ -173,11 +223,11 @@ const QuoteListPage: React.FC = () => {
       {/* Error State */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
-          <p className="text-gray-700 font-medium">Failed to load quotes</p>
+          <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
+          <p className="text-gray-700 font-medium">Failed to load quote requests</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => setRetryKey((k) => k + 1)}
             className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Retry
@@ -185,20 +235,114 @@ const QuoteListPage: React.FC = () => {
         </div>
       )}
 
-      {/* Quotes Table */}
+      {/* Table */}
       {!loading && !error && (
         <Card>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">All Quote Requests</h3>
           {data.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
-              No quotes found.
-            </p>
+            <p className="text-sm text-gray-500 text-center py-8">No quote requests found.</p>
           ) : (
             <Table headers={headers} data={data} />
           )}
+
+          {/* Pagination */}
+          <div className="flex items-center justify-end gap-2 mt-4">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || loading}
+              className="p-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-sm text-gray-600">Page {page}</span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasMore || loading}
+              className="p-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </Card>
+      )}
+
+      {/* View Modal */}
+      {(viewItem || viewLoading) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 relative">
+            <button
+              onClick={() => setViewItem(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+
+            {viewLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-6 w-48 mb-4" />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-4 w-full" />
+                ))}
+              </div>
+            ) : viewItem ? (
+              <>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Quote Request Details</h2>
+                <dl className="space-y-3 text-sm">
+                  {[
+                    ["Quote #",        viewItem.quoteNumber    ?? "—"],
+                    ["Name",           viewItem.customerName],
+                    ["Email",          viewItem.customerEmail],
+                    ["Phone",          viewItem.customerPhone  ?? "—"],
+                    ["Company",        viewItem.companyName    ?? "—"],
+                    ["Service Type",   viewItem.serviceType    ?? "—"],
+                    ["Industry",       viewItem.industry       ?? "—"],
+                    ["Equipment Type", viewItem.equipmentType  ?? "—"],
+                    ["Quantity",       viewItem.quantity != null ? String(viewItem.quantity) : "—"],
+                    ["Budget",         viewItem.budget         ?? "—"],
+                    ["Urgency",        viewItem.urgency        ?? "—"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex gap-2">
+                      <dt className="w-28 shrink-0 font-medium text-gray-500">{label}</dt>
+                      <dd className="text-gray-800">{value}</dd>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <dt className="w-28 shrink-0 font-medium text-gray-500">Status</dt>
+                    <dd>
+                      <Badge color={STATUS_COLOR[viewItem.status] ?? "gray"}>
+                        {viewItem.status}
+                      </Badge>
+                    </dd>
+                  </div>
+                  {viewItem.description && (
+                    <div className="flex gap-2">
+                      <dt className="w-28 shrink-0 font-medium text-gray-500">Description</dt>
+                      <dd className="text-gray-800 whitespace-pre-wrap">{viewItem.description}</dd>
+                    </div>
+                  )}
+                </dl>
+
+                <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-3">
+                  <label className="text-sm font-medium text-gray-600">Update Status:</label>
+                  <select
+                    value={viewItem.status}
+                    disabled={updatingId === viewItem.id}
+                    onChange={(e) => handleStatusChange(viewItem.id, e.target.value)}
+                    className="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
       )}
     </Layout>
   );
 };
 
-export default QuoteListPage;
+export default QuoteRequestListPage;
