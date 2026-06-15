@@ -126,9 +126,10 @@ const QuoteRequestListPage: React.FC = () => {
       r.companyName?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const headers = ["Name", "Email", "Company", "Service Type", "Urgency", "Status", "Actions"];
+  const headers = ["Quote #", "Name", "Email", "Company", "Service Type", "Urgency", "Status", "Actions"];
 
   const data = filtered.map((r) => [
+    <span key={`qn-${r.id}`} className="font-mono text-xs text-gray-600">{r.quoteNumber ?? "—"}</span>,
     r.customerName,
     r.customerEmail,
     r.companyName ?? "—",
@@ -203,14 +204,14 @@ const QuoteRequestListPage: React.FC = () => {
         <Card>
           <Skeleton className="h-5 w-40 mb-6" />
           <div className="space-y-3">
-            <div className="grid grid-cols-7 gap-4">
-              {Array.from({ length: 7 }).map((_, i) => (
+            <div className="grid grid-cols-8 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
                 <Skeleton key={i} className="h-4" />
               ))}
             </div>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-7 gap-4">
-                {Array.from({ length: 7 }).map((_, j) => (
+              <div key={i} className="grid grid-cols-8 gap-4">
+                {Array.from({ length: 8 }).map((_, j) => (
                   <Skeleton key={j} className="h-8" />
                 ))}
               </div>
@@ -288,6 +289,7 @@ const QuoteRequestListPage: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Quote Request Details</h2>
                 <dl className="space-y-3 text-sm">
                   {[
+                    ["Quote #",        viewItem.quoteNumber    ?? "—"],
                     ["Name",           viewItem.customerName],
                     ["Email",          viewItem.customerEmail],
                     ["Phone",          viewItem.customerPhone  ?? "—"],
