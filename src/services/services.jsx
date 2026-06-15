@@ -47,12 +47,10 @@ export async function getServiceBySlug(slug) {
 
 // No GET /services/{id} exists in the API — for edit pages that load by
 // numeric id, fetch the full list and find the match client-side.
-export async function getServiceById(id) {
-  return wrap("Load service", async () => {
-    const services = await getServices();
-    const match = services.find((s) => String(s.id) === String(id));
-    if (!match) throw { status: 404, message: "Service not found." };
-    return match;
+export async function getServices() {
+  return wrap("Load services", async () => {
+    const res = await apiFetch(`/services`);
+    return { data: res.data ?? [] };
   });
 }
 
