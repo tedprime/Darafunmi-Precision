@@ -29,13 +29,6 @@ async function apiFormData(endpoint, method, formData) {
   return response.json();
 }
 
-// GET /services - list all services (public, no params)
-export async function getServices() {
-  return wrap("Load services", async () => {
-    const res = await apiFetch(`/services`);
-    return res.data ?? [];
-  });
-}
 
 // GET /services/{slug} - get a single service by slug (public)
 export async function getServiceBySlug(slug) {
