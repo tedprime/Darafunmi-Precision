@@ -30,11 +30,13 @@ export async function getOrder(orderNumber) {
   });
 }
 
-export async function updateOrderStatus(id, status) {
+export async function updateOrderStatus(id, status, adminNotes = "") {
   return wrap("Update order", async () => {
+    const body = { status };
+    if (adminNotes.trim()) body.adminNotes = adminNotes.trim();
     const res = await apiFetch(`/orders/${id}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
     return res?.data ?? res;
   });
@@ -44,5 +46,22 @@ export async function deleteOrder(id) {
   return wrap("Delete order", async () => {
     const res = await apiFetch(`/orders/${id}`, { method: "DELETE" });
     return res?.data ?? res;
+  });
+}
+
+export async function getOrderById(id) {
+  return wrap("Load order details", async () => {
+    const res = await apiFetch(`/orders/id/${id}`);
+    return res?.data ?? res;
+  });
+}
+
+export async function generateInvoice(id, { lpoNumber = "", tinNumber = "", send = false } = {}) {
+  return wrap("Generate invoice", async () => {
+    const res = await apiFetch(`/orders/${id}/invoice`, {
+      method: "POST",
+      body: JSON.stringify({ lpoNumber, tinNumber, send }),
+    });
+    return res;
   });
 }

@@ -131,6 +131,14 @@ const CertificationListPage: React.FC = () => {
     setSending(true);
     try {
       await sendCertificateEmail(emailModal.id, emailTo.trim());
+      // Auto-activate the certificate locally after successful send
+      setCerts((prev) =>
+        prev.map((c) =>
+          c.id === emailModal.id && c.status === "draft"
+            ? { ...c, status: "active" as Certificate["status"] }
+            : c
+        )
+      );
       toast.success(`Certificate sent to ${emailTo} successfully!`);
       setEmailModal(null);
     } catch (err) {

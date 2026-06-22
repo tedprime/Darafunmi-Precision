@@ -49,11 +49,11 @@ export async function changePassword(currentPassword, newPassword) {
   );
 }
 
-export async function register({ name, email, password, role = "admin" }) {
+export async function register({ name, email, role = "staff" }) {
   return wrap("Register user", () =>
     apiFetch("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password, role }),
+      body: JSON.stringify({ name, email, role }),
     })
   );
 }

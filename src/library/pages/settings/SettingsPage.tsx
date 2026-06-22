@@ -3,9 +3,9 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Save } from "lucide-react";
+import { Save, UserPlus } from "lucide-react";
 import { apiFetch } from "../../../services/api.jsx";
-import { updateProfile, changePassword, getStoredUser } from "../../../services/auth.jsx";
+import { updateProfile, changePassword, getStoredUser, register } from "../../../services/auth.jsx";
 
 interface Settings {
   appName: string;
@@ -75,6 +75,14 @@ const SettingsPage: React.FC = () => {
   const [passwordStatus, setPasswordStatus] = useState<SaveStatus>("idle");
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  // Invite admin user state
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"staff" | "admin" | "superadmin">("staff");
+  const [inviteStatus, setInviteStatus] = useState<SaveStatus>("idle");
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     apiFetch("/settings")
       .then((res) => { if (res.success) setSettings(res.data); })
@@ -128,6 +136,29 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteError(null);
+    setInviteSuccess(null);
+    if (!inviteName.trim()) { setInviteError("Name is required."); return; }
+    if (!inviteEmail.trim()) { setInviteError("Email is required."); return; }
+    setInviteStatus("saving");
+    try {
+      await register({ name: inviteName.trim(), email: inviteEmail.trim(), role: inviteRole });
+      setInviteSuccess(`Account created — a temporary password has been sent to ${inviteEmail.trim()}.`);
+      setInviteName("");
+      setInviteEmail("");
+      setInviteRole("staff");
+      setInviteStatus("success");
+      setTimeout(() => { setInviteStatus("idle"); setInviteSuccess(null); }, 5000);
+    } catch (err) {
+      const error = err as { message?: string };
+      setInviteError(error.message ?? "Failed to create user.");
+      setInviteStatus("error");
+      setTimeout(() => setInviteStatus("idle"), 3000);
+    }
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
@@ -178,7 +209,7 @@ const SettingsPage: React.FC = () => {
         <>
           {/* Tab bar */}
           <div className="bg-gray-100 p-1 rounded-lg flex mb-6">
-            {["general", "company", "notifications", "profile"].map((tab) => (
+            {["general", "company", "notifications", "profile", "users"].map((tab) => (
               <button
                 key={tab}
                 className={`flex-1 py-2 px-4 text-sm font-medium rounded-md capitalize ${
@@ -301,6 +332,67 @@ const SettingsPage: React.FC = () => {
                     </Button>
                   </form>
                 </div>
+              </div>
+            )}
+            {/* Users */}
+            {activeTab === "users" && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">Invite Admin User</h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  Create a new admin account. A temporary password will be emailed to the new user automatically.
+                </p>
+
+                {inviteError && (
+                  <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+                    {inviteError}
+                  </div>
+                )}
+                {inviteSuccess && (
+                  <div className="mb-4 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">
+                    {inviteSuccess}
+                  </div>
+                )}
+
+                <form className="space-y-4 max-w-md" onSubmit={handleInvite}>
+                  <Input
+                    id="inviteName"
+                    label="Full Name"
+                    placeholder="John Doe"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                  />
+                  <Input
+                    id="inviteEmail"
+                    label="Email Address"
+                    type="email"
+                    placeholder="john@darafunmi.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as "staff" | "admin" | "superadmin")}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                      <option value="superadmin">Superadmin</option>
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Staff can manage content. Admins have full access. Superadmin can manage settings.
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={inviteStatus === "saving"}
+                    className={`flex items-center mt-2 ${saveButtonClass(inviteStatus)}`}
+                  >
+                    <UserPlus size={16} className="mr-2" />
+                    {inviteStatus === "saving" ? "Sending invite..." : inviteStatus === "success" ? "Invited!" : "Send Invite"}
+                  </Button>
+                </form>
               </div>
             )}
           </Card>

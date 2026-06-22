@@ -48,3 +48,13 @@ export const getQuoteById = (id) =>
     }
     return res.data;
   });
+
+export const dispatchQuote = (id) =>
+  wrap("Dispatch quote", () =>
+    apiFetch(`/quotes/${id}/dispatch`, { method: "POST" })
+  );
+
+export const convertQuoteToOrder = (id) =>
+  wrap("Convert quote to order", () =>
+    apiFetch(`/quotes/${id}/convert-to-order`, { method: "POST" })
+  );

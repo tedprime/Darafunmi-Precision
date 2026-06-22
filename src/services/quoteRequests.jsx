@@ -39,3 +39,11 @@ export const deleteQuoteRequest = (id) =>
   wrap("Delete quote request", () =>
     apiFetch(`/quote-requests/${id}`, { method: "DELETE" })
   );
+
+export const declineQuoteRequest = (id, reason = "") =>
+  wrap("Decline quote request", () =>
+    apiFetch(`/quote-requests/${id}/decline`, {
+      method: "PATCH",
+      body: JSON.stringify({ reason }),
+    })
+  );
