@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, Send,
 } from "lucide-react";
 import {
-  getOrders, deleteOrder, updateOrderStatus, getOrderById, generateInvoice,
+  getOrders, deleteOrder, updateOrderStatus, getOrderById,
 } from "../../../services/orders.jsx";
 import { useToast } from "../../../services/useToast";
 
