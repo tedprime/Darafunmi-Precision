@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import { getDashboardSummary } from "../../../services/dashboard";
 import {
-  Users, FileCheck, Clock, AlertTriangle,
+  Users, FileCheck, AlertTriangle,
   ShoppingCart, Calendar, FileText, MessageSquare,
-  PackageCheck, ArrowUpRight, RefreshCw,
+  ArrowUpRight, RefreshCw,
 } from "lucide-react";
 
 interface DashboardSummary {
