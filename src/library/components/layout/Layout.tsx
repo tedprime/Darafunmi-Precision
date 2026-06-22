@@ -40,7 +40,7 @@ const Layout: React.FC<LayoutProps> = ({
       >
         <Header />
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">

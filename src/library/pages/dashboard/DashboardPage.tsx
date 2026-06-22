@@ -5,7 +5,7 @@ import { getDashboardSummary } from "../../../services/dashboard";
 import {
   Users, FileCheck, AlertTriangle,
   ShoppingCart, Calendar, FileText, MessageSquare,
-  ArrowUpRight, RefreshCw,
+  ArrowUpRight, RefreshCw, Package, Mail, Award, Wrench,
 } from "lucide-react";
 
 interface DashboardSummary {
@@ -72,12 +72,12 @@ const KpiCard = ({ label, value, note, icon, accent = "gray", onClick }: KpiCard
       className={`group w-full text-left rounded-2xl border p-5 transition-all hover:shadow-md ${styles.wrap}`}
     >
       <div className="flex items-start justify-between gap-3 mb-4">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${styles.icon}`}>
+        <div className={`w-10 h-10 p-2 rounded-xl flex items-center justify-center shrink-0 ${styles.icon}`}>
           {icon}
         </div>
         <ArrowUpRight
           size={15}
-          className="opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0 mt-1 text-gray-400"
+          className="opacity-0 group-hover:opacity-40 transition-opacity shrink-0 mt-1 text-gray-400"
         />
       </div>
       <p className={`text-3xl font-bold tabular-nums leading-none mb-1.5 ${styles.value}`}>
@@ -126,23 +126,26 @@ const ModuleCard = ({ title, icon, stats, onClick }: ModuleCardProps) => (
 );
 
 /* ─── Activity item ────────────────────────────────────────── */
-const CATEGORY_DOT: Record<string, string> = {
-  orders:        "bg-blue-500",
-  bookings:      "bg-amber-500",
-  quotes:        "bg-purple-500",
-  certifications:"bg-green-500",
-  clients:       "bg-cyan-500",
-  products:      "bg-pink-500",
-  contacts:      "bg-orange-500",
+const CATEGORY_CONFIG: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
+  orders:         { icon: <ShoppingCart size={13} />, bg: "bg-blue-100",   text: "text-blue-600",   label: "Order"         },
+  bookings:       { icon: <Calendar     size={13} />, bg: "bg-amber-100",  text: "text-amber-600",  label: "Booking"       },
+  quotes:         { icon: <FileText     size={13} />, bg: "bg-purple-100", text: "text-purple-600", label: "Quote"         },
+  certifications: { icon: <Award        size={13} />, bg: "bg-green-100",  text: "text-green-600",  label: "Certificate"   },
+  clients:        { icon: <Users        size={13} />, bg: "bg-cyan-100",   text: "text-cyan-600",   label: "Client"        },
+  products:       { icon: <Package      size={13} />, bg: "bg-pink-100",   text: "text-pink-600",   label: "Product"       },
+  contacts:       { icon: <Mail         size={13} />, bg: "bg-orange-100", text: "text-orange-600", label: "Contact"       },
+  calibrations:   { icon: <Wrench       size={13} />, bg: "bg-rose-100",   text: "text-rose-600",   label: "Calibration"   },
 };
 
+const FALLBACK_CAT = { icon: <FileCheck size={13} />, bg: "bg-gray-100", text: "text-gray-500", label: "Activity" };
+
 const STATUS_BADGE: Record<string, string> = {
-  completed: "bg-green-100 text-green-700",
-  pending:   "bg-yellow-100 text-yellow-700",
-  cancelled: "bg-red-100 text-red-700",
-  active:    "bg-blue-100 text-blue-700",
-  draft:     "bg-gray-100 text-gray-600",
-  sent:      "bg-purple-100 text-purple-700",
+  completed: "bg-green-50 text-green-700 border border-green-200",
+  pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200",
+  cancelled: "bg-red-50 text-red-700 border border-red-200",
+  active:    "bg-blue-50 text-blue-700 border border-blue-200",
+  draft:     "bg-gray-100 text-gray-600 border border-gray-200",
+  sent:      "bg-purple-50 text-purple-700 border border-purple-200",
 };
 
 const timeAgo = (dateStr: string) => {
@@ -154,6 +157,13 @@ const timeAgo = (dateStr: string) => {
   if (hours < 24)  return `${hours}h ago`;
   if (days  < 7)   return `${days}d ago`;
   return new Date(dateStr).toLocaleDateString("en-NG", { day: "2-digit", month: "short" });
+};
+
+// Insert zero-width break opportunities for long tokens (emails, urls)
+const insertSoftBreaks = (s?: string) => {
+  if (!s) return s ?? "";
+  // add a zero-width space before @, ., / and - so browsers can wrap there
+  return s.replace(/([@\.\/\-])/g, '\u200B$1');
 };
 
 /* ─── Main page ────────────────────────────────────────────── */
@@ -293,37 +303,56 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* ── Row 3: Activity feed ───────────────────────────────
-          Card-based list — no table, no horizontal scroll.               */}
+      {/* ── Row 3: Activity feed ───────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-800">Recent Activity</h3>
+          <span className="text-xs text-gray-400">{s.recentActivity?.length ?? 0} events</span>
         </div>
 
         {(!s.recentActivity || s.recentActivity.length === 0) ? (
-          <p className="text-sm text-gray-400 text-center py-12 italic">No recent activity.</p>
+          <div className="flex flex-col items-center justify-center py-14 text-center">
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+              <FileCheck size={18} className="text-gray-300" />
+            </div>
+            <p className="text-sm text-gray-400">No activity yet</p>
+          </div>
         ) : (
-          <ul className="divide-y divide-gray-50">
-            {s.recentActivity.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                {/* Colored category dot */}
-                <span
-                  className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${CATEGORY_DOT[item.category] ?? "bg-gray-400"}`}
-                />
-                {/* Event text */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 leading-snug truncate">{item.event}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.user}</p>
-                </div>
-                {/* Status badge + time */}
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_BADGE[item.status] ?? "bg-gray-100 text-gray-500"}`}>
-                    {item.status}
-                  </span>
-                  <span className="text-xs text-gray-400 tabular-nums">{timeAgo(item.createdAt)}</span>
-                </div>
-              </li>
-            ))}
+          <ul className="px-5 py-3">
+            {s.recentActivity.map((item, idx) => {
+              // case-insensitive + partial match so "Activity", "orders", "Certifications" all resolve
+              const catKey = Object.keys(CATEGORY_CONFIG).find(
+                (k) => item.category?.toLowerCase().includes(k) || k.includes(item.category?.toLowerCase())
+              );
+              const cat    = catKey ? CATEGORY_CONFIG[catKey] : FALLBACK_CAT;
+              const isLast = idx === s.recentActivity.length - 1;
+              return (
+                <li key={idx} className="flex gap-4 min-w-0 py-4">
+                  {/* Icon node + connecting line */}
+                  <div className="flex flex-col items-center shrink-0 pt-1">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${cat.bg} ${cat.text}`}>
+                      {cat.icon}
+                    </div>
+                    {!isLast && <div className="w-px flex-1 min-h-4 bg-gray-100 my-1" />}
+                  </div>
+
+                  {/* Content */}
+                  <div className={`flex-1 min-w-0 w-full ${!isLast ? "pb-5" : "pb-2"}`}>
+                    {/* Timestamp sits above the text on its own line */}
+                    <span className="text-xs text-gray-400 tabular-nums">{timeAgo(item.createdAt)}</span>
+                    <p className="text-sm text-gray-800 leading-snug mt-0.5 whitespace-normal wrap-break-word">{insertSoftBreaks(item.event)}</p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_BADGE[item.status] ?? "bg-gray-100 text-gray-600 border border-gray-200"}`}>
+                        {item.status}
+                      </span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cat.bg} ${cat.text}`}>
+                        {cat.label}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
