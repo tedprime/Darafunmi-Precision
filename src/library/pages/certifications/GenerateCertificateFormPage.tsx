@@ -27,7 +27,6 @@ import {
   Wrench,
   Thermometer,
   FlaskConical,
-  TableProperties,
   Info,
   Hash,
   FileText,

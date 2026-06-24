@@ -36,7 +36,9 @@ const LoginPage: React.FC = () => {
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-blue-500 rounded-full opacity-40" />
         <div className="absolute -bottom-16 -right-16 w-80 h-80 bg-blue-700 rounded-full opacity-40" />
         <div className="relative z-10 text-center px-12">
-          <img src="/dpt-logo.png" alt="DPT" className="h-24 w-auto object-contain mb-6 drop-shadow-lg" />
+          <div className="bg-white rounded-2xl px-8 py-5 inline-flex items-center justify-center mb-8 shadow-xl">
+            <img src="/dpt-logo.png" alt="DPT" className="h-24 w-auto object-contain" />
+          </div>
           <h1 className="text-white text-4xl font-bold leading-tight mb-4">
             Darafunmi Precision
             <br />

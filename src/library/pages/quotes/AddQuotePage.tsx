@@ -19,7 +19,6 @@ import {
   Link2,
   Receipt,
   StickyNote,
-  GripVertical,
 } from "lucide-react";
 import { createQuote } from "../../../services/quote.jsx";
 import { getClients } from "../../../services/client.jsx";
