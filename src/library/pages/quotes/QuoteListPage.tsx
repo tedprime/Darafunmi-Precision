@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
+import { confirmDialog } from "../../components/common/confirmDialog";
 import { Plus, Trash2, Search, Edit2, TriangleAlert, Send, Eye, X, RefreshCw, PackagePlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getQuotes, deleteQuote, dispatchQuote, getQuoteById, convertQuoteToOrder } from "../../../services/quote.jsx";
@@ -40,8 +39,7 @@ const STATUS_COLOR: Record<string, "yellow" | "blue" | "green" | "red" | "gray">
   accepted:           "green",
   rejected:           "red",
   revision_requested: "yellow",
-  // legacy
-  pending:  "yellow",
+  pending:            "yellow",
 };
 
 const ALL_STATUSES = ["draft", "sent", "accepted", "rejected", "revision_requested"];
@@ -69,7 +67,6 @@ const QuoteListPage: React.FC = () => {
   const [dispatchingId, setDispatchingId] = useState<number | null>(null);
   const [convertingId, setConvertingId] = useState<number | null>(null);
 
-  // View modal
   const [viewQuote, setViewQuote] = useState<Quote | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
 
@@ -86,7 +83,11 @@ const QuoteListPage: React.FC = () => {
   }, [search, status]);
 
   const handleDelete = async (id: number, quoteNumber: string) => {
-    if (!confirm(`Delete quote "${quoteNumber}"?`)) return;
+    if (!(await confirmDialog({
+      title: "Delete quote?",
+      description: `Delete quote "${quoteNumber}"?`,
+      confirmLabel: "Delete",
+    }))) return;
     setDeletingId(id);
     try {
       await deleteQuote(id);
@@ -99,7 +100,12 @@ const QuoteListPage: React.FC = () => {
   };
 
   const handleDispatch = async (id: number) => {
-    if (!confirm("Send this quote to the customer?")) return;
+    if (!(await confirmDialog({
+      title: "Send quote?",
+      description: "Send this quote to the customer?",
+      confirmLabel: "Send",
+      variant: "primary",
+    }))) return;
     setDispatchingId(id);
     try {
       await dispatchQuote(id);
@@ -127,13 +133,17 @@ const QuoteListPage: React.FC = () => {
   };
 
   const handleConvert = async (id: number, quoteNumber: string) => {
-    if (!confirm(`Convert quote ${quoteNumber} to a new order? A pending order will be created from this quote's line items.`)) return;
+    if (!(await confirmDialog({
+      title: "Convert quote?",
+      description: `Convert quote ${quoteNumber} to a new order? A pending order will be created from this quote's line items.`,
+      confirmLabel: "Convert",
+      variant: "primary",
+    }))) return;
     setConvertingId(id);
     try {
       const res = await convertQuoteToOrder(id);
       const orderNumber = res?.data?.orderNumber;
       toast?.success?.(`Order ${orderNumber ?? ""} created successfully.`);
-      // Optionally navigate to orders: navigate("/orders");
     } catch {
       toast?.error?.("Failed to convert quote to order.");
     } finally {
@@ -147,113 +157,34 @@ const QuoteListPage: React.FC = () => {
     return client;
   };
 
-  const headers = ["Quote No", "Client", "Total", "Status", "Date", "Actions"];
-
-  const data = quotes.map((quote) => [
-    <span key={`qn-${quote.id}`} className="font-mono text-xs font-medium text-gray-700">{quote.quoteNumber}</span>,
-    getClientName(quote.client),
-    fmtMoney(quote.total),
-    <Badge key={`status-${quote.id}`} color={STATUS_COLOR[quote.status] ?? "gray"}>
-      {quote.status.replace("_", " ")}
-    </Badge>,
-    quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "—",
-    <div key={`actions-${quote.id}`} className="flex items-center gap-1.5 flex-wrap">
-      {/* View */}
-      <button
-        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => handleView(quote.id)}
-        title="View details"
-      >
-        <Eye size={14} />
-      </button>
-      {/* Edit & Re-send — highlighted for revision_requested */}
-      {quote.status === "revision_requested" ? (
-        <button
-          className="flex items-center gap-1 px-2 py-0.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded disabled:opacity-40"
-          onClick={() => navigate(`/quotes/edit/${quote.id}`)}
-          disabled={deletingId === quote.id}
-          title="Customer requested revision — edit and re-send"
-        >
-          <RefreshCw size={11} /> Edit & Re-send
-        </button>
-      ) : (
-        <button
-          className="p-1 border border-gray-200 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-          onClick={() => navigate(`/quotes/edit/${quote.id}`)}
-          disabled={deletingId === quote.id}
-          title="Edit"
-        >
-          <Edit2 size={14} />
-        </button>
-      )}
-      {/* Dispatch — only for draft */}
-      {quote.status === "draft" && (
-        <button
-          className="p-1 border border-green-200 rounded text-green-600 hover:bg-green-50 disabled:opacity-40"
-          onClick={() => handleDispatch(quote.id)}
-          disabled={dispatchingId === quote.id || deletingId === quote.id}
-          title="Send to customer"
-        >
-          {dispatchingId === quote.id
-            ? <span className="w-3.5 h-3.5 border-2 border-green-400/40 border-t-green-600 rounded-full animate-spin block" />
-            : <Send size={14} />
-          }
-        </button>
-      )}
-      {/* Convert to order — only for accepted */}
-      {quote.status === "accepted" && (
-        <button
-          className="p-1 border border-purple-200 rounded text-purple-600 hover:bg-purple-50 disabled:opacity-40"
-          onClick={() => handleConvert(quote.id, quote.quoteNumber)}
-          disabled={convertingId === quote.id || deletingId === quote.id}
-          title="Convert to order"
-        >
-          {convertingId === quote.id
-            ? <span className="w-3.5 h-3.5 border-2 border-purple-400/40 border-t-purple-600 rounded-full animate-spin block" />
-            : <PackagePlus size={14} />
-          }
-        </button>
-      )}
-      {/* Delete */}
-      <button
-        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(quote.id, quote.quoteNumber)}
-        disabled={deletingId === quote.id || dispatchingId === quote.id}
-        title="Delete"
-      >
-        <Trash2 size={14} />
-      </button>
-    </div>,
-  ]);
+  const revisionQuotes = quotes.filter((q) => q.status === "revision_requested");
 
   return (
     <Layout
       pageTitle="Quotes"
       pageSubtitle={`Manage all quotes.${count ? ` (${count} total)` : ""}`}
       action={
-        <Button className="flex items-center" onClick={() => navigate("/quotes/add")}>
-          <Plus size={16} className="mr-2" /> Add Quote
+        <Button onClick={() => navigate("/quotes/add")}>
+          <Plus size={16} /> Add Quote
         </Button>
       }
     >
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
             placeholder="Search by quote number..."
           />
         </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
         >
           <option value="">All Statuses</option>
           {ALL_STATUSES.map((s) => (
@@ -263,31 +194,28 @@ const QuoteListPage: React.FC = () => {
       </div>
 
       {/* Revision alert banner */}
-      {!loading && !error && (() => {
-        const revisionQuotes = quotes.filter((q) => q.status === "revision_requested");
-        return revisionQuotes.length > 0 ? (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-            <RefreshCw size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-amber-800">
-                {revisionQuotes.length} quote{revisionQuotes.length !== 1 ? "s" : ""} need{revisionQuotes.length === 1 ? "s" : ""} revision
-              </p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                {revisionQuotes.map((q) => q.quoteNumber).join(", ")} — open each and use <span className="font-semibold">Edit & Re-send</span> to update and re-dispatch to the customer.
-              </p>
-            </div>
-            <button
-              onClick={() => setStatus("revision_requested")}
-              className="text-xs font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap"
-            >
-              Filter view →
-            </button>
+      {!loading && !error && revisionQuotes.length > 0 && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <RefreshCw size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">
+              {revisionQuotes.length} quote{revisionQuotes.length !== 1 ? "s" : ""} need{revisionQuotes.length === 1 ? "s" : ""} revision
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {revisionQuotes.map((q) => q.quoteNumber).join(", ")} — use <span className="font-semibold">Edit & Re-send</span> to update and re-dispatch.
+            </p>
           </div>
-        ) : null;
-      })()}
+          <button
+            onClick={() => setStatus("revision_requested")}
+            className="text-xs font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap"
+          >
+            Filter →
+          </button>
+        </div>
+      )}
 
       {loading && (
-        <Card>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="space-y-3">
             {Array.from({ length: 7 }).map((_, i) => (
               <div key={i} className="grid grid-cols-6 gap-4">
@@ -295,7 +223,7 @@ const QuoteListPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {!loading && error && (
@@ -303,17 +231,161 @@ const QuoteListPage: React.FC = () => {
           <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load quotes</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Retry</button>
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Retry</button>
         </div>
       )}
 
       {!loading && !error && (
-        <Card>
-          {data.length === 0
-            ? <p className="text-sm text-gray-500 text-center py-8">No quotes found.</p>
-            : <Table headers={headers} data={data} />
-          }
-        </Card>
+        <>
+          {/* Desktop Table */}
+          <div className="max-md:hidden bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            {quotes.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No quotes found.</p>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
+                  <tr>
+                    {["Quote No", "Client", "Total", "Status", "Date", "Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {quotes.map((quote) => (
+                    <tr key={quote.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3.5">
+                        <span className="font-mono text-xs font-medium text-gray-700">{quote.quoteNumber}</span>
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-gray-700 whitespace-normal break-words">{getClientName(quote.client)}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-700">{fmtMoney(quote.total)}</td>
+                      <td className="px-4 py-3.5">
+                        <Badge color={STATUS_COLOR[quote.status] ?? "gray"}>{quote.status.replace("_", " ")}</Badge>
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600">
+                        {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            className="p-1.5 border border-blue-200 rounded-md text-blue-500 hover:bg-blue-50 disabled:opacity-40 transition-colors"
+                            onClick={() => handleView(quote.id)}
+                            title="View details"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          {quote.status === "revision_requested" ? (
+                            <button
+                              className="flex items-center gap-1 px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-md disabled:opacity-40"
+                              onClick={() => navigate(`/quotes/edit/${quote.id}`)}
+                              disabled={deletingId === quote.id}
+                              title="Customer requested revision — edit and re-send"
+                            >
+                              <RefreshCw size={11} /> Edit & Re-send
+                            </button>
+                          ) : (
+                            <button
+                              className="p-1.5 border border-gray-200 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                              onClick={() => navigate(`/quotes/edit/${quote.id}`)}
+                              disabled={deletingId === quote.id}
+                              title="Edit"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                          )}
+                          {quote.status === "draft" && (
+                            <button
+                              className="p-1.5 border border-green-200 rounded-md text-green-600 hover:bg-green-50 disabled:opacity-40 transition-colors"
+                              onClick={() => handleDispatch(quote.id)}
+                              disabled={dispatchingId === quote.id || deletingId === quote.id}
+                              title="Send to customer"
+                            >
+                              {dispatchingId === quote.id
+                                ? <span className="w-3.5 h-3.5 border-2 border-green-400/40 border-t-green-600 rounded-full animate-spin block" />
+                                : <Send size={14} />
+                              }
+                            </button>
+                          )}
+                          {quote.status === "accepted" && (
+                            <button
+                              className="p-1.5 border border-purple-200 rounded-md text-purple-600 hover:bg-purple-50 disabled:opacity-40 transition-colors"
+                              onClick={() => handleConvert(quote.id, quote.quoteNumber)}
+                              disabled={convertingId === quote.id || deletingId === quote.id}
+                              title="Convert to order"
+                            >
+                              {convertingId === quote.id
+                                ? <span className="w-3.5 h-3.5 border-2 border-purple-400/40 border-t-purple-600 rounded-full animate-spin block" />
+                                : <PackagePlus size={14} />
+                              }
+                            </button>
+                          )}
+                          <button
+                            className="p-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors"
+                            onClick={() => handleDelete(quote.id, quote.quoteNumber)}
+                            disabled={deletingId === quote.id || dispatchingId === quote.id}
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {quotes.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No quotes found.</p>
+            ) : quotes.map((quote) => (
+              <div key={quote.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-mono font-semibold text-gray-700">{quote.quoteNumber}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-0.5 break-words">{getClientName(quote.client)}</p>
+                  </div>
+                  <Badge color={STATUS_COLOR[quote.status] ?? "gray"}>{quote.status.replace("_", " ")}</Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <span className="font-medium text-gray-800">{fmtMoney(quote.total)}</span>
+                  <span>{quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "—"}</span>
+                </div>
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-blue-200 rounded-md text-blue-500 hover:bg-blue-50 text-xs"
+                    onClick={() => handleView(quote.id)}
+                  >
+                    <Eye size={12} /> View
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-gray-200 rounded-md text-gray-500 hover:bg-gray-50 text-xs"
+                    onClick={() => navigate(`/quotes/edit/${quote.id}`)}
+                  >
+                    <Edit2 size={12} /> Edit
+                  </button>
+                  {quote.status === "draft" && (
+                    <button
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-green-200 rounded-md text-green-600 hover:bg-green-50 text-xs disabled:opacity-40"
+                      onClick={() => handleDispatch(quote.id)}
+                      disabled={dispatchingId === quote.id}
+                    >
+                      <Send size={12} /> Send
+                    </button>
+                  )}
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 text-xs disabled:opacity-40"
+                    onClick={() => handleDelete(quote.id, quote.quoteNumber)}
+                    disabled={deletingId === quote.id}
+                  >
+                    <Trash2 size={12} /> Del
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* ── VIEW MODAL ──────────────────────────────────────── */}
@@ -321,7 +393,7 @@ const QuoteListPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-800">Quote Details</h2>
+              <h2 className="text-base font-semibold text-gray-800">Quote Details</h2>
               <button onClick={() => setViewQuote(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="p-6">
@@ -331,7 +403,7 @@ const QuoteListPage: React.FC = () => {
               {viewQuote && (
                 <>
                   {viewQuote.status === "revision_requested" && (
-                    <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                    <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
                       <RefreshCw size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="text-sm font-semibold text-amber-800">Revision requested</p>
@@ -349,7 +421,7 @@ const QuoteListPage: React.FC = () => {
                     ] as [string, string][]).map(([label, value]) => (
                       <div key={label}>
                         <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{label}</p>
-                        <p className="text-sm text-gray-800 font-medium mt-0.5 capitalize">{value}</p>
+                        <p className="text-sm text-gray-800 font-medium mt-0.5 capitalize break-words">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -370,7 +442,7 @@ const QuoteListPage: React.FC = () => {
                           <tbody className="divide-y divide-gray-100">
                             {viewQuote.items.map((item, idx) => (
                               <tr key={idx} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 text-gray-800">{item.description}</td>
+                                <td className="px-3 py-2 text-gray-800 whitespace-normal break-words">{item.description}</td>
                                 <td className="text-center px-3 py-2 text-gray-700">{item.quantity}</td>
                                 <td className="text-right px-3 py-2 text-gray-700">{fmtMoney(item.unitPrice)}</td>
                                 <td className="text-right px-3 py-2 font-medium text-gray-800">{fmtMoney(item.totalPrice ?? (Number(item.unitPrice) * item.quantity))}</td>
@@ -406,14 +478,14 @@ const QuoteListPage: React.FC = () => {
                     {viewQuote.status === "revision_requested" ? (
                       <button
                         onClick={() => { setViewQuote(null); navigate(`/quotes/edit/${viewQuote.id}`); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-md"
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg"
                       >
                         <RefreshCw size={14} /> Edit & Re-send
                       </button>
                     ) : (
                       <button
                         onClick={() => { setViewQuote(null); navigate(`/quotes/edit/${viewQuote.id}`); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
                       >
                         <Edit2 size={14} /> Edit Quote
                       </button>
@@ -421,7 +493,7 @@ const QuoteListPage: React.FC = () => {
                     {viewQuote.status === "draft" && (
                       <button
                         onClick={() => { setViewQuote(null); handleDispatch(viewQuote.id); }}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700"
                       >
                         <Send size={14} /> Send to Customer
                       </button>
@@ -430,12 +502,12 @@ const QuoteListPage: React.FC = () => {
                       <button
                         onClick={() => { setViewQuote(null); handleConvert(viewQuote.id, viewQuote.quoteNumber); }}
                         disabled={convertingId === viewQuote.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-md disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50"
                       >
                         <PackagePlus size={14} /> Convert to Order
                       </button>
                     )}
-                    <button onClick={() => setViewQuote(null)} className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
+                    <button onClick={() => setViewQuote(null)} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50">
                       Close
                     </button>
                   </div>

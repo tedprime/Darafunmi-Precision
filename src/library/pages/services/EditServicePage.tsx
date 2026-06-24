@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import { Image as ImageIcon, Save, X, TriangleAlert } from "lucide-react";
+import { AlertCircle, Loader2, Save, Upload, X, TriangleAlert } from "lucide-react";
 import { updateService } from "../../../services/services.jsx";
 import { apiFetch } from "../../../services/api";
 
@@ -79,14 +76,33 @@ const EditServicePage: React.FC = () => {
   if (loading) {
     return (
       <Layout pageTitle="Edit Service" pageSubtitle="Loading...">
-        <Card className="w-full">
-          <Skeleton className="h-5 w-40 mb-6" />
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i}><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-10 w-full" /></div>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-5">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <Skeleton className="h-4 w-32 mb-5" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i}><Skeleton className="h-3.5 w-24 mb-2" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <Skeleton className="h-4 w-24 mb-5" />
+              <Skeleton className="h-20 w-full rounded-lg mb-5" />
+              <Skeleton className="h-48 w-full rounded-lg" />
+            </div>
           </div>
-        </Card>
+          <div className="space-y-5">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <Skeleton className="h-4 w-28 mb-4" />
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <Skeleton className="h-4 w-20 mb-4" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
       </Layout>
     );
   }
@@ -98,7 +114,7 @@ const EditServicePage: React.FC = () => {
           <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load service</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             Retry
           </button>
         </div>
@@ -109,83 +125,120 @@ const EditServicePage: React.FC = () => {
   return (
     <Layout pageTitle="Edit Service" pageSubtitle="Update this service offering">
       {error && (
-        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">{error}</div>
+        <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 mb-5">
+          <AlertCircle size={16} className="shrink-0" />
+          {error}
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <Input id="title" label="Service Title" placeholder="e.g. Calibration Services" value={title} onChange={(e) => setTitle(e.target.value)} />
-          </Card>
+        {/* Left — main content */}
+        <div className="lg:col-span-2 space-y-5">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Service Details</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Service Title</label>
+              <input
+                type="text"
+                placeholder="e.g. Calibration Services"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
+              />
+            </div>
+          </div>
 
-          <Card>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              id="description"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Short summary shown in service listings"
-            />
-          </Card>
-
-          <Card>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-            <textarea
-              id="content"
-              rows={10}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
-              placeholder="Full service page content — supports markdown"
-            />
-          </Card>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Content</h3>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                <textarea
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Short summary shown in service listings"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
+                <textarea
+                  rows={10}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Full service page content — supports markdown"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400 resize-none font-mono"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Right */}
-        <div className="space-y-6">
-          <Card>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Service Image</h3>
-            {imagePreview ? (
-              <div className="relative">
-                <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
-                <button onClick={removeImage} className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100">
-                  <X size={14} className="text-gray-600" />
-                </button>
-                <p className="text-xs text-gray-500 mt-2 truncate">{image?.name ?? "Current image"}</p>
-              </div>
-            ) : (
-              <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 cursor-pointer">
-                <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-900">Click to upload</p>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-              </div>
-            )}
-            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={handleImageChange} />
-          </Card>
-
-          <Card>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+        {/* Right — sidebar */}
+        <div className="space-y-5">
+          {/* Image upload */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Service Image</h3>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
             >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </Card>
+              {imagePreview ? (
+                <div className="relative inline-block">
+                  <img src={imagePreview} className="h-32 w-32 object-cover rounded-lg mx-auto" alt="Preview" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <Upload size={24} className="mx-auto mb-2 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                  <p className="text-sm text-gray-400">Click to upload image</p>
+                  <p className="text-xs text-gray-300 mt-1">PNG, JPG up to 5MB</p>
+                </div>
+              )}
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+          </div>
 
-          <Button className="w-full flex justify-center items-center mb-3" onClick={handleSubmit} disabled={submitting}>
-            <Save size={16} className="mr-2" />
-            {submitting ? "Saving..." : "Save Changes"}
-          </Button>
-          <Button variant="secondary" className="w-full" onClick={() => navigate("/services")} disabled={submitting}>
-            Cancel
-          </Button>
+          {/* Status */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Publish</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors appearance-none"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {submitting ? <><Loader2 size={15} className="animate-spin" />Saving...</> : <><Save size={15} />Save Changes</>}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/services")}
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-center"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </Layout>

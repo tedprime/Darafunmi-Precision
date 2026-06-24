@@ -24,6 +24,9 @@ export const getClients = ({ page = 1, limit = 20, search = "", status = "" } = 
     return { data: res.data, count: res.count };
   });
 
+export const getClientById = (id) =>
+  wrap("Load client details", () => apiFetch(`/clients/${id}`));
+
 export const createClient = (body) =>
   wrap("Create client", () =>
     apiFetch("/clients", {

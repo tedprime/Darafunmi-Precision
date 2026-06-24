@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
 import { Plus, Search, TriangleAlert } from "lucide-react";
@@ -49,57 +47,32 @@ const CalibrationHistoryPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [search, status]);
 
-  const headers = [
-    "Equipment",
-    "Serial No",
-    "Calibrated On",
-    "Next Due",
-    "Technician",
-    "Status",
-  ];
-
-  const data = calibrations.map((c) => [
-    c.equipmentName,
-    c.serialNumber,
-    new Date(c.calibrationDate).toLocaleDateString(),
-    new Date(c.nextDueDate).toLocaleDateString(),
-    c.technician,
-    <Badge key={c.id} color={STATUS_COLOR[c.status] ?? "gray"}>
-      {c.status}
-    </Badge>,
-  ]);
-
   return (
     <Layout
       pageTitle="Calibration History"
       pageSubtitle={`View all past calibration records. ${count ? `(${count} total)` : ""}`}
       action={
-        <Button
-          className="flex items-center"
-          onClick={() => navigate("/calibrations/add")}
-        >
-          <Plus size={16} className="mr-2" /> Add Calibration
+        <Button onClick={() => navigate("/calibrations/add")}>
+          <Plus size={16} /> Add Calibration
         </Button>
       }
     >
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
             placeholder="Search equipment or serial number..."
           />
         </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
         >
           <option value="">All Statuses</option>
           <option value="passed">Passed</option>
@@ -110,13 +83,8 @@ const CalibrationHistoryPage: React.FC = () => {
 
       {/* Loading Skeleton */}
       {loading && (
-        <Card>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="space-y-3">
-            <div className="grid grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-4" />
-              ))}
-            </div>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="grid grid-cols-6 gap-4">
                 {Array.from({ length: 6 }).map((_, j) => (
@@ -125,35 +93,79 @@ const CalibrationHistoryPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Error State */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4"><TriangleAlert className="w-8 h-8"/></p>
+          <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load calibration records</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Calibrations Table */}
       {!loading && !error && (
-        <Card>
-          {data.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
-              No calibration records found.
-            </p>
-          ) : (
-            <Table headers={headers} data={data} />
-          )}
-        </Card>
+        <>
+          {/* Desktop Table */}
+          <div className="max-md:hidden bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            {calibrations.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No calibration records found.</p>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
+                  <tr>
+                    {["Equipment", "Serial No", "Calibrated On", "Next Due", "Technician", "Status"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {calibrations.map((c) => (
+                    <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal break-words">{c.equipmentName}</td>
+                      <td className="px-4 py-3.5 text-sm font-mono text-gray-600">{c.serialNumber}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(c.calibrationDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(c.nextDueDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{c.technician}</td>
+                      <td className="px-4 py-3.5">
+                        <Badge color={STATUS_COLOR[c.status] ?? "gray"}>{c.status}</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {calibrations.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No calibration records found.</p>
+            ) : calibrations.map((c) => (
+              <div key={c.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 break-words">{c.equipmentName}</p>
+                    <p className="text-xs font-mono text-gray-500 mt-0.5">{c.serialNumber}</p>
+                  </div>
+                  <Badge color={STATUS_COLOR[c.status] ?? "gray"}>{c.status}</Badge>
+                </div>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <p>Calibrated: {new Date(c.calibrationDate).toLocaleDateString()}</p>
+                  <p>Next due: {new Date(c.nextDueDate).toLocaleDateString()}</p>
+                  <p>Technician: {c.technician}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </Layout>
   );

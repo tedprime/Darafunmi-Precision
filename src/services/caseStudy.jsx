@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import { apiFetch } from "./api.jsx";
 import { toastError, toastSuccess } from "./useToast";
 
@@ -13,7 +14,7 @@ const wrap = async (label, fn) => {
 };
 
 async function apiFormData(endpoint, method, formData) {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers: { ...(token && { Authorization: `Bearer ${token}` }) },

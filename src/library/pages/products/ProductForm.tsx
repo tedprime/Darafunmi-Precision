@@ -1,9 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import Card from "../../components/common/Card";
-import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import { Upload, X } from "lucide-react";
+import { AlertCircle, ImageIcon, Loader2, Package, Save, Upload, X } from "lucide-react";
 import { getCategories } from "../../../services/categories";
 
 interface Category {
@@ -34,10 +32,13 @@ interface ProductFormProps {
 }
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
-  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
+  <div className={`animate-pulse rounded-md bg-gray-200 ${className}`} />
 );
 
-const ProductForm: React.FC<ProductFormProps> = ({
+const fieldClass =
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+
+const ProductForm = ({
   initialName = "",
   initialCategoryId = "",
   initialPrice = "",
@@ -48,7 +49,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   submitting,
   error,
   onSubmit,
-}) => {
+}: ProductFormProps) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,19 +60,19 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [description, setDescription] = useState(initialDescription);
   const [status, setStatus] = useState(initialStatus);
   const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(initialImageUrl);
+  const [imagePreview, setImagePreview] = useState(initialImageUrl);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   useEffect(() => {
     getCategories()
-      .then(({ data }) => setCategories(data))
-      .catch(() => {})
+      .then(({ data }) => setCategories(data ?? []))
+      .catch(() => setCategories([]))
       .finally(() => setCategoriesLoading(false));
   }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
     setImage(file);
     setImagePreview(URL.createObjectURL(file));
@@ -83,167 +84,217 @@ const ProductForm: React.FC<ProductFormProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
     onSubmit({ name, categoryId, price, stock, description, image, status });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+          <AlertCircle size={16} className="shrink-0" />
           {error}
         </div>
       )}
 
-      {/* Product Details Card */}
-      <Card className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Product Details
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-          <Input
-            id="productName"
-            label="Product Name"
-            placeholder="Enter product name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-5">
+          <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
+                <Package size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Product details</h3>
+                <p className="text-xs text-gray-500">Core information shown in the product catalog.</p>
+              </div>
+            </div>
 
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Category
-            </label>
-            {categoriesLoading ? (
-              <Skeleton className="h-10 w-full mt-1" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label htmlFor="productName" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Product Name
+                </label>
+                <input
+                  id="productName"
+                  type="text"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Enter product name"
+                  className={fieldClass}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="category" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Category
+                </label>
+                {categoriesLoading ? (
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                ) : (
+                  <select
+                    id="category"
+                    value={categoryId}
+                    onChange={(event) => setCategoryId(event.target.value)}
+                    className={fieldClass}
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={String(category.id)}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="price" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Price
+                </label>
+                <input
+                  id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={price}
+                  onChange={(event) => setPrice(event.target.value)}
+                  placeholder="0.00"
+                  className={fieldClass}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="stock" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Stock Quantity
+                </label>
+                <input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={stock}
+                  onChange={(event) => setStock(event.target.value)}
+                  placeholder="0"
+                  className={fieldClass}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  rows={5}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Enter product description"
+                  className={`${fieldClass} resize-none leading-6`}
+                />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-5">
+          <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="rounded-lg bg-gray-50 p-2 text-gray-600">
+                <ImageIcon size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Product image</h3>
+                <p className="text-xs text-gray-500">PNG or JPG image for this product.</p>
+              </div>
+            </div>
+
+            {imagePreview ? (
+              <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                <img src={imagePreview} alt="Product preview" className="aspect-[4/3] w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute right-2 top-2 rounded-full bg-white p-1.5 text-gray-600 shadow hover:bg-gray-100"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             ) : (
-              <select
-                id="category"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex aspect-[4/3] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-center transition-colors hover:border-blue-300 hover:bg-blue-50/40"
               >
-                <option value="">Select category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                <Upload className="mb-3 h-8 w-8 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">Upload image</span>
+                <span className="mt-1 text-xs text-gray-400">Click to browse files</span>
+              </button>
             )}
-          </div>
 
-          <Input
-            id="price"
-            label="Price"
-            placeholder="Enter price"
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-          />
-          <Input
-            id="stock"
-            label="Stock Quantity"
-            placeholder="Enter stock quantity"
-            type="number"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-          />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg"
+              className="hidden"
+              onChange={handleImageChange}
+            />
 
-          <div>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            {imagePreview && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                Replace image
+              </button>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900">Publishing</h3>
+            <label htmlFor="status" className="mb-1.5 block text-sm font-medium text-gray-700">
               Status
             </label>
             <select
               id="status"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+              onChange={(event) => setStatus(event.target.value)}
+              className={fieldClass}
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="low-stock">Low Stock</option>
             </select>
-          </div>
-        </div>
+          </section>
 
-        <div className="mb-4">
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Description
-          </label>
-          <textarea
-            id="description"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Enter product description"
-          />
-        </div>
-      </Card>
-
-      {/* Product Image Card */}
-      <Card className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Product Image
-        </h3>
-        {imagePreview ? (
-          <div className="relative">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="w-full h-48 object-cover rounded-lg"
-            />
-            <button
-              type="button"
-              onClick={removeImage}
-              className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100"
-            >
-              <X size={14} className="text-gray-600" />
-            </button>
+          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-3">
+              <Button type="submit" disabled={submitting || categoriesLoading}>
+                {submitting ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={15} />
+                    Save Product
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/products")}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
-        ) : (
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-sm text-gray-600">
-              Drag and drop your image here
-            </p>
-            <p className="text-xs text-gray-500 mt-1">or click to browse</p>
-          </div>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg"
-          className="hidden"
-          onChange={handleImageChange}
-        />
-      </Card>
-
-      <div className="flex space-x-4">
-        <Button type="submit" disabled={submitting || categoriesLoading}>
-          {submitting ? "Saving..." : "Save Product"}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => navigate("/products")}
-          disabled={submitting}
-        >
-          Cancel
-        </Button>
+        </aside>
       </div>
     </form>
   );

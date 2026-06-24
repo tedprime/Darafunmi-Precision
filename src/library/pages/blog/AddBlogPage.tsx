@@ -1,9 +1,6 @@
 import React, { useState, useRef } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import { Image as ImageIcon, Save, X, Plus } from "lucide-react";
+import { AlertCircle, Loader2, Save, Upload, X, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createBlog } from "../../../services/blog";
 
@@ -27,7 +24,6 @@ const AddBlogPage: React.FC = () => {
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Tags
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
@@ -88,8 +84,7 @@ const AddBlogPage: React.FC = () => {
       });
       navigate("/blog");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create blog post.";
+      const message = err instanceof Error ? err.message : "Failed to create blog post.";
       setError(message);
     } finally {
       setSubmitting(false);
@@ -97,78 +92,64 @@ const AddBlogPage: React.FC = () => {
   };
 
   return (
-    <Layout
-      pageTitle="Add Blog Post"
-      pageSubtitle="Write and publish a new blog post"
-    >
+    <Layout pageTitle="Add Blog Post" pageSubtitle="Write and publish a new blog post">
       {error && (
-        <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-600">
+        <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 mb-5">
+          <AlertCircle size={16} className="shrink-0" />
           {error}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <Input
-              id="title"
-              label="Blog Title"
-              placeholder="Enter blog post title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Make it compelling and descriptive for better SEO
-            </p>
-          </Card>
+        <div className="lg:col-span-2 space-y-5">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Post Details</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Blog Title</label>
+              <input
+                type="text"
+                placeholder="Enter blog post title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
+              />
+              <p className="text-xs text-gray-400 mt-1">Make it compelling and descriptive for better SEO</p>
+            </div>
+          </div>
 
-          <Card>
-            <label
-              htmlFor="excerpt"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Excerpt
-            </label>
-            <textarea
-              id="excerpt"
-              rows={3}
-              maxLength={160}
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Brief summary of the blog post (shown in listings)"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {excerpt.length}/160 characters
-            </p>
-          </Card>
-
-          <Card>
-            <label
-              htmlFor="content"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Content
-            </label>
-            <textarea
-              id="content"
-              rows={10}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
-              placeholder="Write your blog post content here..."
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Supports markdown formatting
-            </p>
-          </Card>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Content</h3>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Excerpt</label>
+                <textarea
+                  rows={3}
+                  maxLength={160}
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                  placeholder="Brief summary of the blog post (shown in listings)"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400 resize-none"
+                />
+                <p className="text-xs text-gray-400 mt-1">{excerpt.length}/160 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
+                <textarea
+                  rows={10}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write your blog post content here..."
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400 resize-none font-mono"
+                />
+                <p className="text-xs text-gray-400 mt-1">Supports markdown formatting</p>
+              </div>
+            </div>
+          </div>
 
           {/* Tags */}
-          <Card>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags
-            </label>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Tags</h3>
             <div className="flex gap-2 mb-3">
               <input
                 type="text"
@@ -176,167 +157,122 @@ const AddBlogPage: React.FC = () => {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
                 placeholder="Add a tag and press Enter"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
               />
               <button
                 type="button"
                 onClick={addTag}
-                className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                className="px-3 py-2.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
               >
                 <Plus size={16} />
               </button>
             </div>
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
                   >
                     {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-blue-900"
-                    >
+                    <button onClick={() => removeTag(tag)} className="hover:text-blue-900">
                       <X size={12} />
                     </button>
                   </span>
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-500 mt-2">
-              Press Enter or click + to add a tag
-            </p>
-          </Card>
+            <p className="text-xs text-gray-400">Press Enter or click + to add a tag</p>
+          </div>
         </div>
 
         {/* Right column */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Featured Image */}
-          <Card>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Featured Image
-            </h3>
-            {imagePreview ? (
-              <div className="relative rounded-lg overflow-hidden">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-40 object-cover rounded-lg"
-                />
-                <button
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-100"
-                >
-                  <X size={14} className="text-gray-600" />
-                </button>
-                <p className="text-xs text-gray-500 mt-2 truncate">
-                  {featuredImage?.name}
-                </p>
-              </div>
-            ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-900">
-                  Click to upload image
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPG up to 10MB
-                </p>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-          </Card>
-
-          {/* Category */}
-          <Card>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Featured Image</h3>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
             >
-              Category
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
-            >
-              <option value="">Select category</option>
-              {BLOG_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </Card>
-
-          {/* Status */}
-          <Card>
-            <label
-              htmlFor="status"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Status
-            </label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-          </Card>
-
-          {/* Featured */}
-          <Card>
-            <div className="flex items-center mb-2">
-              <input
-                id="featured"
-                type="checkbox"
-                checked={isFeatured}
-                onChange={(e) => setIsFeatured(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="featured"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Mark as Featured
-              </label>
+              {imagePreview ? (
+                <div className="relative inline-block">
+                  <img src={imagePreview} className="h-32 w-32 object-cover rounded-lg mx-auto" alt="Preview" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <Upload size={24} className="mx-auto mb-2 text-gray-300 group-hover:text-blue-400 transition-colors" />
+                  <p className="text-sm text-gray-400">Click to upload image</p>
+                  <p className="text-xs text-gray-300 mt-1">PNG, JPG up to 5MB</p>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-gray-500">
-              Featured posts appear prominently on the blog homepage
-            </p>
-          </Card>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+          </div>
 
-          <Button
-            className="w-full flex justify-center items-center mb-3"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            <Save size={16} className="mr-2" />
-            {submitting ? "Publishing..." : "Publish Blog Post"}
-          </Button>
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => navigate("/blog")}
-            disabled={submitting}
-          >
-            Cancel
-          </Button>
+          {/* Publish settings */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Publish</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors appearance-none"
+                >
+                  <option value="">Select category</option>
+                  {BLOG_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors appearance-none"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className={`relative w-10 h-5 rounded-full transition-colors ${isFeatured ? 'bg-blue-600' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isFeatured ? 'translate-x-5' : ''}`} />
+                </div>
+                <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="sr-only" />
+                <span className="text-sm text-gray-700">Mark as Featured</span>
+              </label>
+              <p className="text-xs text-gray-400">Featured posts appear prominently on the blog homepage</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {submitting ? <><Loader2 size={15} className="animate-spin" />Publishing...</> : <><Save size={15} />Publish Blog Post</>}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/blog")}
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-center"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </Layout>

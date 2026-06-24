@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
+import { confirmDialog } from "../../components/common/confirmDialog";
 import { Search, Trash2, TriangleAlert, Eye, X } from "lucide-react";
 import {
   getContactSubmissions,
@@ -160,16 +159,16 @@ const ContactSubmissionsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  
+
   const [page, setPage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
-  
+
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -181,7 +180,6 @@ const ContactSubmissionsPage: React.FC = () => {
         }
       } catch (err) {
         if (isMounted) {
-          // Safeguard the unknown error assignment to read the message reliably
           const errorMessage = err instanceof Error ? err.message : "An error occurred";
           setError(errorMessage);
         }
@@ -200,7 +198,11 @@ const ContactSubmissionsPage: React.FC = () => {
   }, [status, page]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Delete this contact submission?")) return;
+    if (!(await confirmDialog({
+      title: "Delete contact submission?",
+      description: "Delete this contact submission?",
+      confirmLabel: "Delete",
+    }))) return;
     setDeletingId(id);
     try {
       await deleteContactSubmission(id);
@@ -224,35 +226,6 @@ const ContactSubmissionsPage: React.FC = () => {
       s.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const headers = ["Name", "Email", "Company", "Subject", "Status", "Actions"];
-
-  const data = filtered.map((s) => [
-    <span key={`name-${s.id}`} className="font-medium text-gray-900">{s.name}</span>,
-    s.email,
-    s.company ?? "—",
-    s.subject ?? "—",
-    <Badge key={`status-${s.id}`} color={statusColors[s.status] ?? "gray"}>
-      {s.status}
-    </Badge>,
-    <div key={`actions-${s.id}`} className="flex space-x-2">
-      <button
-        className="p-1 border border-gray-200 rounded text-gray-500 hover:bg-gray-50"
-        onClick={() => setViewingId(s.id)}
-        title="View"
-      >
-        <Eye size={15} />
-      </button>
-      <button
-        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(s.id)}
-        disabled={deletingId === s.id}
-        title="Delete"
-      >
-        <Trash2 size={15} />
-      </button>
-    </div>,
-  ]);
-
   return (
     <>
       {viewingId !== null && (
@@ -267,17 +240,15 @@ const ContactSubmissionsPage: React.FC = () => {
         pageTitle="Contact Submissions"
         pageSubtitle={`Manage incoming contact form submissions.${paginationMeta.total ? ` (${paginationMeta.total} total)` : ""}`}
       >
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-gray-400" />
-            </div>
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
               placeholder="Search by name or email..."
             />
           </div>
@@ -287,7 +258,7 @@ const ContactSubmissionsPage: React.FC = () => {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
           >
             <option value="">All Statuses</option>
             <option value="new">New</option>
@@ -298,71 +269,150 @@ const ContactSubmissionsPage: React.FC = () => {
 
         {/* Skeleton */}
         {loading && (
-          <Card>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <Skeleton className="h-5 w-40 mb-6" />
             <div className="space-y-3">
-              <div className="grid grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-4" />)}
-              </div>
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="grid grid-cols-6 gap-4">
                   {Array.from({ length: 6 }).map((_, j) => <Skeleton key={j} className="h-8" />)}
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Error */}
-        {error && (
+        {error && !loading && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
             <p className="text-gray-700 font-medium">Failed to load submissions</p>
             <p className="text-sm text-gray-400 mt-1">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Table */}
+        {/* Desktop Table */}
         {!loading && !error && (
-          <Card>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">All Submissions</h3>
-            {data.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-8">No submissions found.</p>
-            ) : (
-              <Table headers={headers} data={data} />
-            )}
-
-            {/* Pagination */}
-            {paginationMeta.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                <p className="text-sm text-gray-500">
-                  Page {page} of {paginationMeta.totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    disabled={page >= paginationMeta.totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
+          <>
+            <div className="max-md:hidden bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700">All Submissions</h3>
               </div>
-            )}
-          </Card>
+              {filtered.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-12">No submissions found.</p>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-gray-50/80 border-b border-gray-100">
+                    <tr>
+                      {["Name", "Email", "Company", "Subject", "Status", "Actions"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filtered.map((s) => (
+                      <tr key={s.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal break-words">{s.name}</td>
+                        <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{s.email}</td>
+                        <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{s.company ?? "—"}</td>
+                        <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{s.subject ?? "—"}</td>
+                        <td className="px-4 py-3.5">
+                          <Badge color={statusColors[s.status] ?? "gray"}>{s.status}</Badge>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              className="p-1.5 border border-gray-200 rounded-md text-gray-500 hover:bg-gray-50 transition-colors"
+                              onClick={() => setViewingId(s.id)}
+                              title="View"
+                            >
+                              <Eye size={14} />
+                            </button>
+                            <button
+                              className="p-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors"
+                              onClick={() => handleDelete(s.id)}
+                              disabled={deletingId === s.id}
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+
+              {/* Pagination */}
+              {paginationMeta.totalPages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">
+                    Page {page} of {paginationMeta.totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => p - 1)}
+                      className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      disabled={page >= paginationMeta.totalPages}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+              {filtered.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-12">No submissions found.</p>
+              ) : filtered.map((s) => (
+                <div key={s.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{s.name}</p>
+                      <p className="text-xs text-gray-500 break-words">{s.email}</p>
+                    </div>
+                    <Badge color={statusColors[s.status] ?? "gray"}>{s.status}</Badge>
+                  </div>
+                  {(s.company || s.subject) && (
+                    <div className="text-xs text-gray-500 space-y-0.5 mb-3">
+                      {s.company && <p>Company: {s.company}</p>}
+                      {s.subject && <p>Subject: {s.subject}</p>}
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <button
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 text-xs font-medium"
+                      onClick={() => setViewingId(s.id)}
+                    >
+                      <Eye size={13} /> View
+                    </button>
+                    <button
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 text-xs font-medium disabled:opacity-40"
+                      onClick={() => handleDelete(s.id)}
+                      disabled={deletingId === s.id}
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </Layout>
     </>

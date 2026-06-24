@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
+import { confirmDialog } from "../../components/common/confirmDialog";
 import { Search, TriangleAlert, Eye, Trash2, X, ChevronLeft, ChevronRight, XCircle } from "lucide-react";
 import {
   getQuoteRequests,
@@ -41,7 +40,6 @@ const STATUS_COLOR: Record<string, "yellow" | "blue" | "green" | "gray" | "red">
   declined: "red",
 };
 
-// Statuses that can be set via the inline dropdown (declined is set via Decline action only)
 const INLINE_STATUSES = ["pending", "reviewed", "quoted", "closed"];
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
@@ -60,11 +58,9 @@ const QuoteRequestListPage: React.FC = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
-  // View modal
   const [viewItem, setViewItem] = useState<QuoteRequest | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
 
-  // Decline modal
   const [declineTarget, setDeclineTarget] = useState<QuoteRequest | null>(null);
   const [declineReason, setDeclineReason] = useState("");
   const [declining, setDeclining] = useState(false);
@@ -113,7 +109,11 @@ const QuoteRequestListPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number, customerName: string) => {
-    if (!confirm(`Delete quote request from "${customerName}"?`)) return;
+    if (!(await confirmDialog({
+      title: "Delete quote request?",
+      description: `Delete quote request from "${customerName}"?`,
+      confirmLabel: "Delete",
+    }))) return;
     setDeletingId(id);
     try {
       await deleteQuoteRequest(id);
@@ -150,77 +150,24 @@ const QuoteRequestListPage: React.FC = () => {
       r.companyName?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const headers = ["Quote #", "Name", "Email", "Company", "Service Type", "Status", "Actions"];
-
-  const data = filtered.map((r) => [
-    <span key={`qn-${r.id}`} className="font-mono text-xs text-gray-600">{r.quoteNumber ?? "—"}</span>,
-    r.customerName,
-    r.customerEmail,
-    r.companyName ?? "—",
-    r.serviceType ?? "—",
-    <Badge key={`status-${r.id}`} color={STATUS_COLOR[r.status] ?? "gray"}>{r.status}</Badge>,
-    <div key={`actions-${r.id}`} className="flex items-center gap-1.5 flex-wrap">
-      {r.status !== "declined" && (
-        <select
-          value={r.status}
-          disabled={updatingId === r.id}
-          onChange={(e) => handleStatusChange(r.id, e.target.value)}
-          className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
-        >
-          {INLINE_STATUSES.map((s) => (
-            <option key={s} value={s} className="capitalize">{s}</option>
-          ))}
-        </select>
-      )}
-      <button
-        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => handleView(r.id)}
-        disabled={deletingId === r.id}
-        title="View details"
-      >
-        <Eye size={15} />
-      </button>
-      {r.status !== "declined" && (
-        <button
-          className="p-1 border border-orange-200 rounded text-orange-500 hover:bg-orange-50 disabled:opacity-40"
-          onClick={() => { setDeclineTarget(r); setDeclineReason(""); }}
-          disabled={deletingId === r.id || updatingId === r.id}
-          title="Decline request"
-        >
-          <XCircle size={15} />
-        </button>
-      )}
-      <button
-        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(r.id, r.customerName)}
-        disabled={deletingId === r.id || updatingId === r.id}
-        title="Delete"
-      >
-        <Trash2 size={15} />
-      </button>
-    </div>,
-  ]);
-
   return (
     <Layout pageTitle="Quote Requests" pageSubtitle="View and manage inbound quote requests from the site.">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
             placeholder="Search by name, email or company..."
           />
         </div>
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
         >
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
@@ -232,8 +179,7 @@ const QuoteRequestListPage: React.FC = () => {
       </div>
 
       {loading && (
-        <Card>
-          <Skeleton className="h-5 w-40 mb-6" />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="grid grid-cols-7 gap-4">
@@ -241,7 +187,7 @@ const QuoteRequestListPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {!loading && error && (
@@ -249,25 +195,145 @@ const QuoteRequestListPage: React.FC = () => {
           <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load quote requests</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
-          <button onClick={() => setRetryKey((k) => k + 1)} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <button onClick={() => setRetryKey((k) => k + 1)} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Retry
           </button>
         </div>
       )}
 
       {!loading && !error && (
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">All Quote Requests</h3>
-          {data.length === 0
-            ? <p className="text-sm text-gray-500 text-center py-8">No quote requests found.</p>
-            : <Table headers={headers} data={data} />
-          }
-          <div className="flex items-center justify-end gap-2 mt-4">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || loading} className="p-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"><ChevronLeft size={16} /></button>
-            <span className="text-sm text-gray-600">Page {page}</span>
-            <button onClick={() => setPage((p) => p + 1)} disabled={!hasMore || loading} className="p-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"><ChevronRight size={16} /></button>
+        <>
+          {/* Desktop Table */}
+          <div className="max-md:hidden bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700">All Quote Requests</h3>
+            </div>
+            {filtered.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No quote requests found.</p>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
+                  <tr>
+                    {["Quote #", "Name", "Company", "Service Type", "Status", "Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filtered.map((r) => (
+                    <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3.5">
+                        <span className="font-mono text-xs text-gray-600">{r.quoteNumber ?? "—"}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="text-sm font-medium text-gray-900 whitespace-normal break-words">{r.customerName}</p>
+                        <p className="text-xs text-gray-400 whitespace-normal break-words">{r.customerEmail}</p>
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{r.companyName ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{r.serviceType ?? "—"}</td>
+                      <td className="px-4 py-3.5">
+                        <Badge color={STATUS_COLOR[r.status] ?? "gray"}>{r.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {r.status !== "declined" && (
+                            <select
+                              value={r.status}
+                              disabled={updatingId === r.id}
+                              onChange={(e) => handleStatusChange(r.id, e.target.value)}
+                              className="text-xs border border-gray-200 rounded-md px-1.5 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
+                            >
+                              {INLINE_STATUSES.map((s) => (
+                                <option key={s} value={s} className="capitalize">{s}</option>
+                              ))}
+                            </select>
+                          )}
+                          <button
+                            className="p-1.5 border border-blue-200 rounded-md text-blue-500 hover:bg-blue-50 disabled:opacity-40 transition-colors"
+                            onClick={() => handleView(r.id)}
+                            disabled={deletingId === r.id}
+                            title="View details"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          {r.status !== "declined" && (
+                            <button
+                              className="p-1.5 border border-orange-200 rounded-md text-orange-500 hover:bg-orange-50 disabled:opacity-40 transition-colors"
+                              onClick={() => { setDeclineTarget(r); setDeclineReason(""); }}
+                              disabled={deletingId === r.id || updatingId === r.id}
+                              title="Decline request"
+                            >
+                              <XCircle size={14} />
+                            </button>
+                          )}
+                          <button
+                            className="p-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors"
+                            onClick={() => handleDelete(r.id, r.customerName)}
+                            disabled={deletingId === r.id || updatingId === r.id}
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {/* Pagination */}
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-gray-100">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || loading} className="p-1.5 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40"><ChevronLeft size={16} /></button>
+              <span className="text-sm text-gray-600">Page {page}</span>
+              <button onClick={() => setPage((p) => p + 1)} disabled={!hasMore || loading} className="p-1.5 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-40"><ChevronRight size={16} /></button>
+            </div>
           </div>
-        </Card>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {filtered.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No quote requests found.</p>
+            ) : filtered.map((r) => (
+              <div key={r.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 break-words">{r.customerName}</p>
+                    <p className="text-xs text-gray-500 break-words">{r.customerEmail}</p>
+                    {r.companyName && <p className="text-xs text-gray-400 mt-0.5">{r.companyName}</p>}
+                  </div>
+                  <Badge color={STATUS_COLOR[r.status] ?? "gray"}>{r.status}</Badge>
+                </div>
+                {r.serviceType && (
+                  <p className="text-xs text-gray-500 mb-3">Service: {r.serviceType}</p>
+                )}
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-blue-200 rounded-md text-blue-500 hover:bg-blue-50 text-xs"
+                    onClick={() => handleView(r.id)}
+                  >
+                    <Eye size={12} /> View
+                  </button>
+                  {r.status !== "declined" && (
+                    <button
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-orange-200 rounded-md text-orange-500 hover:bg-orange-50 text-xs"
+                      onClick={() => { setDeclineTarget(r); setDeclineReason(""); }}
+                    >
+                      <XCircle size={12} /> Decline
+                    </button>
+                  )}
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 text-xs disabled:opacity-40"
+                    onClick={() => handleDelete(r.id, r.customerName)}
+                    disabled={deletingId === r.id}
+                  >
+                    <Trash2 size={12} /> Del
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* ── VIEW MODAL ──────────────────────────────────────── */}
@@ -275,7 +341,7 @@ const QuoteRequestListPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-800">Quote Request Details</h2>
+              <h2 className="text-base font-semibold text-gray-800">Quote Request Details</h2>
               <button onClick={() => setViewItem(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="p-6">
@@ -297,7 +363,7 @@ const QuoteRequestListPage: React.FC = () => {
                     ] as [string, string][]).map(([label, value]) => (
                       <div key={label} className="flex gap-2">
                         <dt className="w-28 shrink-0 font-medium text-gray-500">{label}</dt>
-                        <dd className="text-gray-800">{value}</dd>
+                        <dd className="text-gray-800 break-words">{value}</dd>
                       </div>
                     ))}
                     <div className="flex gap-2">
@@ -307,12 +373,11 @@ const QuoteRequestListPage: React.FC = () => {
                     {viewItem.description && (
                       <div className="flex gap-2">
                         <dt className="w-28 shrink-0 font-medium text-gray-500">Description</dt>
-                        <dd className="text-gray-800 whitespace-pre-wrap">{viewItem.description}</dd>
+                        <dd className="text-gray-800 whitespace-pre-wrap break-words">{viewItem.description}</dd>
                       </div>
                     )}
                   </dl>
 
-                  {/* Requested Items */}
                   {viewItem.requestItems && viewItem.requestItems.length > 0 && (
                     <div className="mt-5">
                       <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Requested Equipment</p>
@@ -328,9 +393,9 @@ const QuoteRequestListPage: React.FC = () => {
                           <tbody className="divide-y divide-gray-100">
                             {viewItem.requestItems.map((item, idx) => (
                               <tr key={idx} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 font-medium text-gray-800">{item.equipmentName}</td>
+                                <td className="px-3 py-2 font-medium text-gray-800 whitespace-normal break-words">{item.equipmentName}</td>
                                 <td className="text-center px-3 py-2 text-gray-700">{item.quantity ?? "—"}</td>
-                                <td className="px-3 py-2 text-gray-500 text-xs">{item.note ?? "—"}</td>
+                                <td className="px-3 py-2 text-gray-500 text-xs whitespace-normal break-words">{item.note ?? "—"}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -346,7 +411,7 @@ const QuoteRequestListPage: React.FC = () => {
                         value={viewItem.status}
                         disabled={updatingId === viewItem.id}
                         onChange={(e) => handleStatusChange(viewItem.id, e.target.value)}
-                        className="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
+                        className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
                       >
                         {INLINE_STATUSES.map((s) => (
                           <option key={s} value={s} className="capitalize">{s}</option>
@@ -354,7 +419,7 @@ const QuoteRequestListPage: React.FC = () => {
                       </select>
                       <button
                         onClick={() => { setDeclineTarget(viewItem); setViewItem(null); setDeclineReason(""); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-orange-300 text-orange-600 rounded-md hover:bg-orange-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-orange-300 text-orange-600 rounded-lg hover:bg-orange-50"
                       >
                         <XCircle size={14} /> Decline
                       </button>
@@ -372,7 +437,7 @@ const QuoteRequestListPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md relative">
             <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-800">Decline Quote Request</h2>
+              <h2 className="text-base font-semibold text-gray-800">Decline Quote Request</h2>
               <button onClick={() => setDeclineTarget(null)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4">
@@ -380,7 +445,7 @@ const QuoteRequestListPage: React.FC = () => {
                 Declining request from <span className="font-semibold">{declineTarget.customerName}</span>.
               </p>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Reason <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <textarea
@@ -388,7 +453,7 @@ const QuoteRequestListPage: React.FC = () => {
                   onChange={(e) => setDeclineReason(e.target.value)}
                   rows={3}
                   placeholder="e.g. Equipment not available, out of scope..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none"
                 />
               </div>
             </div>
@@ -396,14 +461,14 @@ const QuoteRequestListPage: React.FC = () => {
               <button
                 onClick={handleDecline}
                 disabled={declining}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-md hover:bg-orange-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm font-semibold rounded-lg hover:bg-orange-700 disabled:opacity-50"
               >
                 {declining
                   ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Declining...</>
                   : <><XCircle size={15} /> Decline Request</>
                 }
               </button>
-              <button onClick={() => setDeclineTarget(null)} disabled={declining} className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
+              <button onClick={() => setDeclineTarget(null)} disabled={declining} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50">
                 Cancel
               </button>
             </div>

@@ -5,13 +5,12 @@ import {
   Navigate,
 } from "react-router-dom";
 import { ToastProvider } from "./services/useToast";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./library/pages/auth/LoginPage";
 import DashboardPage from "./library/pages/dashboard/DashboardPage";
 import BookingListPage from "./library/pages/bookings/BookingListPage";
 import QuoteRequestListPage from "./library/pages/quotes/QuoteRequestsListPage";
 import ClientListPage from "./library/pages/clients/ClientListPage";
-import AddClientPage from "./library/pages/clients/AddClientPage";
-import EditClientPage from "./library/pages/clients/EditClientPage";
 import ContactSubmissionsPage from "./library/pages/clients/ContactSubmissioinsPage";
 import ProductListPage from "./library/pages/products/ProductListPage";
 import AddProductPage from "./library/pages/products/AddProductPage";
@@ -33,7 +32,6 @@ import EditCaseStudyPage from "./library/pages/caseStudy/EditCaseStudyPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
 import OrderListPage from "./library/pages/orders/OrderListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
-import SiteUserAuthPage from "./library/pages/siteUsers/siteUserAuthPage";
 import ServiceListPage from "./library/pages/services/ServicesListPage";
 import AddServicePage from "./library/pages/services/AddServicePage";
 import EditServicePage from "./library/pages/services/EditServicePage";
@@ -41,16 +39,16 @@ import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
 import TeamListPage from "./library/pages/team/TeamListPage";
 import AddTeamMemberPage from "./library/pages/team/AddTeamMemberPage";
 import EditTeamMemberPage from "./library/pages/team/EditTeamMemberPage";
-import { isAuthenticated } from "./services/auth.jsx";
-
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 function App() {
   return (
     <ToastProvider>
       <Router>
+        <AuthProvider>
         <Routes>
           {/* Public */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -106,19 +104,11 @@ function App() {
           />
           <Route
             path="/clients/add"
-            element={
-              <ProtectedRoute>
-                <AddClientPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/clients" replace />}
           />
           <Route
             path="/clients/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditClientPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/clients" replace />}
           />
           <Route
             path="/clients/contact-submissions"
@@ -138,15 +128,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/site-users/auth"
-            element={
-              <ProtectedRoute>
-                <SiteUserAuthPage />
-              </ProtectedRoute>
-            }
-          />
-
           {/* Services */}
           <Route
             path="/services"
@@ -375,6 +356,7 @@ function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </AuthProvider>
       </Router>
     </ToastProvider>
   );

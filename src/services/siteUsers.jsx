@@ -30,12 +30,3 @@ export async function toggleSiteUserActive(id) {
     apiFetch(`/site-users/${id}/toggle-active`, { method: "PATCH" })
   );
 }
-
-export async function registerSiteUser({ name, email, password, phone, company }) {
-  return wrap("Register user", () =>
-    apiFetch("/user/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password, phone, company }),
-    })
-  );
-}

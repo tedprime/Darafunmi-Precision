@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 // product.jsx
 import { apiFetch } from "./api";
 import { toastError } from "./useToast";
@@ -25,13 +26,14 @@ export const getProducts = ({ page = 1, limit = 20, search = "", status = "", ca
     return { data: res.data, count: res.count };
   });
 
-const buildProductFormData = ({ name, categoryId, price, stock, description, image }) => {
+const buildProductFormData = ({ name, categoryId, price, stock, description, image, status }) => {
   const formData = new FormData();
   if (name) formData.append("name", name);
   if (categoryId) formData.append("categoryId", String(categoryId));
   if (price !== undefined && price !== "") formData.append("price", String(price));
   if (stock !== undefined && stock !== "") formData.append("stock", String(stock));
   if (description) formData.append("description", description);
+  if (status) formData.append("status", status);
   formData.append("features", "[]");
   if (image) formData.append("image", image);
   return formData;
@@ -39,7 +41,7 @@ const buildProductFormData = ({ name, categoryId, price, stock, description, ima
 
 export const createProduct = (fields) =>
   wrap("Create product", async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const response = await fetch(`${BASE_URL}/products`, {
       method: "POST",
@@ -57,7 +59,7 @@ export const createProduct = (fields) =>
 
 export const updateProduct = (id, fields) =>
   wrap("Update product", async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const response = await fetch(`${BASE_URL}/products/${id}`, {
       method: "PATCH",

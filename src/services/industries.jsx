@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 // industries.jsx
 import { apiFetch } from "./api.jsx";
 import { toastError } from "./useToast";
@@ -21,7 +22,7 @@ export async function getIndustryBySlug(slug) {
 
 export async function createIndustry({ title, slug, description, content, image, status }) {
   return wrap("Create industry", async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const form = new FormData();
@@ -49,7 +50,7 @@ export async function createIndustry({ title, slug, description, content, image,
 
 export async function updateIndustry(id, { title, description, content, image, status }) {
   return wrap("Update industry", async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const form = new FormData();

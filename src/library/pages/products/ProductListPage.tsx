@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
+import { confirmDialog } from "../../components/common/confirmDialog";
 import { Plus, Edit2, Trash2, Search, TriangleAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getProducts, deleteProduct } from "../../../services/product.jsx";
@@ -51,7 +50,11 @@ const ProductListPage: React.FC = () => {
   }, [search, status]);
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete product "${name}"?`)) return;
+    if (!(await confirmDialog({
+      title: "Delete product?",
+      description: `Delete product "${name}"?`,
+      confirmLabel: "Delete",
+    }))) return;
     try {
       setDeletingId(id);
       await deleteProduct(id);
@@ -63,70 +66,40 @@ const ProductListPage: React.FC = () => {
     }
   };
 
-  const headers = ["Name", "Category", "Price", "Stock", "Status", "Actions"];
-
-  const data = products.map((product) => [
-    product.name,
-    typeof product.category === "object" && product.category !== null
-      ? (product.category as { name: string }).name
-      : ((product.category as string) ?? "—"),
-    product.price !== undefined ? `₦${Number(product.price).toFixed(2)}` : "—",
-    product.stock ?? "—",
-    <Badge
-      key={`status-${product.id}`}
-      color={STATUS_COLOR[product.status] ?? "gray"}
-    >
-      {product.status}
-    </Badge>,
-    <div key={`actions-${product.id}`} className="flex space-x-2">
-      <button
-        className="p-1 border border-blue-200 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-40"
-        onClick={() => navigate(`/products/edit/${product.id}`)}
-        disabled={deletingId === product.id}
-      >
-        <Edit2 size={15} />
-      </button>
-      <button
-        className="p-1 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(product.id, product.name)}
-        disabled={deletingId === product.id}
-      >
-        <Trash2 size={15} />
-      </button>
-    </div>,
-  ]);
+  const getCategoryName = (category: Product["category"]) => {
+    if (!category) return "—";
+    if (typeof category === "object" && category !== null) {
+      return (category as { name: string }).name;
+    }
+    return category as string;
+  };
 
   return (
     <Layout
       pageTitle="Products"
       pageSubtitle={`Manage all your products and their details here.${count ? ` (${count} total)` : ""}`}
       action={
-        <Button
-          className="flex items-center"
-          onClick={() => navigate("/products/add")}
-        >
-          <Plus size={16} className="mr-2" /> Add Product
+        <Button onClick={() => navigate("/products/add")}>
+          <Plus size={16} /> Add Product
         </Button>
       }
     >
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
             placeholder="Search products..."
           />
         </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
         >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
@@ -137,14 +110,8 @@ const ProductListPage: React.FC = () => {
 
       {/* Loading Skeleton */}
       {loading && (
-        <Card>
-          <Skeleton className="h-5 w-32 mb-6" />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="space-y-3">
-            <div className="grid grid-cols-6 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-4" />
-              ))}
-            </div>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="grid grid-cols-6 gap-4">
                 {Array.from({ length: 6 }).map((_, j) => (
@@ -153,40 +120,118 @@ const ProductListPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Error State */}
-      {error && (
+      {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-4xl mb-4">
-            <TriangleAlert className="w-8 h-8" />
-          </p>
+          <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load products</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Products Table */}
       {!loading && !error && (
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            All Products
-          </h3>
-          {data.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
-              No products found.
-            </p>
-          ) : (
-            <Table headers={headers} data={data} />
-          )}
-        </Card>
+        <>
+          {/* Desktop Table */}
+          <div className="max-md:hidden bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700">All Products</h3>
+            </div>
+            {products.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No products found.</p>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
+                  <tr>
+                    {["Name", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {products.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal break-words">{product.name}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{getCategoryName(product.category)}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-700">
+                        {product.price !== undefined ? `₦${Number(product.price).toFixed(2)}` : "—"}
+                      </td>
+                      <td className="px-4 py-3.5 text-sm text-gray-700">{product.stock ?? "—"}</td>
+                      <td className="px-4 py-3.5">
+                        <Badge color={STATUS_COLOR[product.status] ?? "gray"}>{product.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            className="p-1.5 border border-blue-200 rounded-md text-blue-500 hover:bg-blue-50 disabled:opacity-40 transition-colors"
+                            onClick={() => navigate(`/products/edit/${product.id}`)}
+                            disabled={deletingId === product.id}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            className="p-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 disabled:opacity-40 transition-colors"
+                            onClick={() => handleDelete(product.id, product.name)}
+                            disabled={deletingId === product.id}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {products.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No products found.</p>
+            ) : products.map((product) => (
+              <div key={product.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 break-words">{product.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{getCategoryName(product.category)}</p>
+                  </div>
+                  <Badge color={STATUS_COLOR[product.status] ?? "gray"}>{product.status}</Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <span className="font-medium text-gray-800">
+                    {product.price !== undefined ? `₦${Number(product.price).toFixed(2)}` : "—"}
+                  </span>
+                  <span>Stock: {product.stock ?? "—"}</span>
+                </div>
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-blue-200 rounded-md text-blue-500 hover:bg-blue-50 text-xs font-medium disabled:opacity-40"
+                    onClick={() => navigate(`/products/edit/${product.id}`)}
+                    disabled={deletingId === product.id}
+                  >
+                    <Edit2 size={13} /> Edit
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 border border-red-100 rounded-md text-red-500 hover:bg-red-50 text-xs font-medium disabled:opacity-40"
+                    onClick={() => handleDelete(product.id, product.name)}
+                    disabled={deletingId === product.id}
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </Layout>
   );

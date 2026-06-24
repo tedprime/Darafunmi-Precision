@@ -31,16 +31,19 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar already uses fixed positioning internally */}
       <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-      <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300
-          ${isSidebarOpen ? "ml-72" : "ml-16"}`}
-      >
-        <Header />
+      {/* On desktop only: shift right by sidebar width. Mobile: no margin (sidebar is overlay). */}
+      <div className={`flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? "lg:ml-72" : "lg:ml-16"}`}>
+        {/* Sticky header */}
+        <div className="sticky top-0 z-30">
+          <Header onMenuToggle={toggleSidebar} />
+        </div>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+        {/* Page content — natural height, body scrolls */}
+        <main className="flex-1 p-6 bg-gray-50">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">

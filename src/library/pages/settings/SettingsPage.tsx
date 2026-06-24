@@ -5,7 +5,8 @@ import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { Save, UserPlus } from "lucide-react";
 import { apiFetch } from "../../../services/api.jsx";
-import { updateProfile, changePassword, getStoredUser, register } from "../../../services/auth.jsx";
+import { updateProfile, changePassword, register } from "../../../services/auth.jsx";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface Settings {
   appName: string;
@@ -51,6 +52,7 @@ const SettingsSkeleton = () => (
 );
 
 const SettingsPage: React.FC = () => {
+  const { user, setUser } = useAuth();
   const [activeTab, setActiveTab] = useState("general");
   const [settings, setSettings] = useState<Settings>({
     appName: "", timezone: "", language: "",
@@ -62,9 +64,8 @@ const SettingsPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Profile state
-  const storedUser = getStoredUser();
-  const [profileName, setProfileName] = useState(storedUser?.name ?? "");
-  const [profileEmail, setProfileEmail] = useState(storedUser?.email ?? "");
+  const [profileName, setProfileName] = useState(user?.name ?? "");
+  const [profileEmail, setProfileEmail] = useState(user?.email ?? "");
   const [profileStatus, setProfileStatus] = useState<SaveStatus>("idle");
   const [profileError, setProfileError] = useState<string | null>(null);
 
@@ -123,9 +124,9 @@ const SettingsPage: React.FC = () => {
     setProfileStatus("saving");
     try {
       await updateProfile({ name: profileName.trim(), email: profileEmail.trim() });
-      // Update stored user so header reflects new name/email immediately
-      const updated = { ...(getStoredUser() ?? {}), name: profileName.trim(), email: profileEmail.trim() };
-      localStorage.setItem("user", JSON.stringify(updated));
+      // Sync updated name/email into auth context so Header reflects immediately
+      const updated = { ...(user ?? {}), name: profileName.trim(), email: profileEmail.trim() };
+      setUser(updated as typeof user);
       setProfileStatus("success");
       setTimeout(() => setProfileStatus("idle"), 2500);
     } catch (err) {

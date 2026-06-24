@@ -1,4 +1,5 @@
 // api.jsx
+import Cookies from "js-cookie";
 import { toastError } from "./useToast";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -21,7 +22,7 @@ const getFriendlyErrorMessage = (status) => {
 };
 
 export async function apiFetch(endpoint, options = {}, retries = 3) {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -40,9 +41,12 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
       clearTimeout(timeout);
 
       if (response.status === 401) {
-        localStorage.removeItem("token");
+        Cookies.remove("token");
+        Cookies.remove("user");
         toastError(getFriendlyErrorMessage(401));
-        window.location.href = "/login";
+        // Let AuthContext handle the redirect via the event listener so
+        // React Router's navigate() is used rather than a hard reload.
+        window.dispatchEvent(new Event("auth:session-expired"));
         return;
       }
 

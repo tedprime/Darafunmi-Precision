@@ -1,13 +1,19 @@
 // auth.jsx
+import Cookies from "js-cookie";
 import { apiFetch } from "./api.jsx";
 import { toastError } from "./useToast";
+
+const COOKIE_OPTIONS = {
+  // 7-day expiry, strict same-site, secure in production
+  expires: 7,
+  sameSite: "strict",
+  secure: import.meta.env.PROD,
+};
 
 const wrap = async (label, fn) => {
   try {
     return await fn();
   } catch (err) {
-    // apiFetch already toasts HTTP errors; this catches anything else
-    // (JSON parse failures, unexpected throws, etc.)
     if (!err?.status) toastError(`${label}: an unexpected error occurred.`);
     throw err;
   }
@@ -20,8 +26,8 @@ export async function login(email, password) {
       body: JSON.stringify({ email, password }),
     });
     if (data?.token) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.data));
+      Cookies.set("token", data.token, COOKIE_OPTIONS);
+      Cookies.set("user", JSON.stringify(data.data), COOKIE_OPTIONS);
     }
     return data;
   });
@@ -58,15 +64,15 @@ export async function register({ name, email, role = "staff" }) {
   );
 }
 
-export function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  window.location.href = "/login";
+/** Clears cookies — call this from AuthContext.logout(), not directly. */
+export function clearSession() {
+  Cookies.remove("token");
+  Cookies.remove("user");
 }
 
 export function getStoredUser() {
   try {
-    const raw = localStorage.getItem("user");
+    const raw = Cookies.get("user");
     return raw ? JSON.parse(raw) : null;
   } catch {
     toastError("Failed to read user session. Please log in again.");
@@ -74,6 +80,14 @@ export function getStoredUser() {
   }
 }
 
+/** Decodes the JWT and checks the exp claim — not just cookie existence. */
 export function isAuthenticated() {
-  return !!localStorage.getItem("token");
+  const token = Cookies.get("token");
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return typeof payload.exp === "number" && payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
 }

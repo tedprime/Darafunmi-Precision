@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { login } from "../../../services/auth.jsx";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,7 +19,8 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const data = await login(email, password);
+      if (data?.data) setUser(data.data);
       navigate("/dashboard");
     } catch {
       setError("Login failed. Please check your credentials.");

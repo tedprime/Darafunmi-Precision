@@ -4,6 +4,7 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
+    "ignoreDeprecations": "6.0",
     "types": ["vite/client"],
     "skipLibCheck": true,
 
@@ -24,7 +25,13 @@
 
     /* Allow plain JS/JSX files */
     "checkJs": false,
-    "allowJs": true
+    "allowJs": true,
+
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src"]
 }

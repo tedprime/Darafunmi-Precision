@@ -1,8 +1,53 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import {
+  Search,
+  X,
+  Eye,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Mail,
+  Phone,
+  Building2,
+  MapPin,
+  Wrench,
+  FileText,
+  Clock,
+  MoreHorizontal,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Table from "../../components/ui/Table";
-import { Trash2, Eye, TriangleAlert, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
 import {
   getBookings,
   getBookingByNumber,
@@ -10,429 +55,801 @@ import {
   deleteBooking,
 } from "../../../services/booking.jsx";
 
-interface Booking {
+/* ------------------------------------------------------------------ */
+/* Types — match the shape returned by services/booking.jsx           */
+/* ------------------------------------------------------------------ */
+
+export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+export interface Booking {
   id: number;
-  bookingNumber?: string;
-  customerName?: string;
-  name?: string;
-  customerEmail?: string;
-  email?: string;
-  customerPhone?: string;
-  phone?: string;
+  bookingNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
   companyName?: string;
-  company?: string;
-  serviceType?: string;
-  scheduledDate?: string;
-  preferredDate?: string;
-  scheduledTime?: string;
-  serviceLocation?: string;
+  serviceType: string;
+  scheduledDate: string; // ISO
+  scheduledTime: string;
+  serviceLocation: string;
   equipmentDetails?: string;
   notes?: string;
   adminNotes?: string;
-  status: string;
-  createdAt?: string;
+  status: BookingStatus;
+  createdAt: string;
 }
 
-const ALL_STATUSES = ["pending", "confirmed", "completed", "cancelled"];
-
-const STATUS_COLOR: Record<string, string> = {
-  pending:   "bg-yellow-100 text-yellow-700",
-  confirmed: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+const STATUS_META: Record<
+  BookingStatus,
+  { label: string; dot: string; chip: string; ring: string }
+> = {
+  pending: {
+    label: "Pending",
+    dot: "bg-amber-500",
+    chip: "bg-amber-50 text-amber-700 ring-amber-200/70 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30",
+    ring: "ring-amber-500/40",
+  },
+  confirmed: {
+    label: "Confirmed",
+    dot: "bg-sky-500",
+    chip: "bg-sky-50 text-sky-700 ring-sky-200/70 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/30",
+    ring: "ring-sky-500/40",
+  },
+  completed: {
+    label: "Completed",
+    dot: "bg-emerald-500",
+    chip: "bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30",
+    ring: "ring-emerald-500/40",
+  },
+  cancelled: {
+    label: "Cancelled",
+    dot: "bg-rose-500",
+    chip: "bg-rose-50 text-rose-700 ring-rose-200/70 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/30",
+    ring: "ring-rose-500/40",
+  },
 };
 
-const Skeleton = ({ className = "" }: { className?: string }) => (
-  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
-);
+const ALL_STATUSES: BookingStatus[] = ["pending", "confirmed", "completed", "cancelled"];
+const PAGE_SIZE = 5;
 
-const Modal = ({
-  open, onClose, title, children,
-}: {
-  open: boolean; onClose: () => void; title: string; children: React.ReactNode;
-}) => {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-base font-semibold text-gray-800">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-        </div>
-        <div className="overflow-y-auto p-6 flex-1">{children}</div>
-      </div>
-    </div>
-  );
-};
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
 
-const InfoRow = ({ label, value }: { label: string; value?: string | null }) =>
-  value ? (
-    <div className="flex gap-2 text-sm py-1.5 border-b border-gray-50 last:border-0">
-      <span className="text-gray-500 w-36 flex-shrink-0">{label}</span>
-      <span className="text-gray-800 font-medium break-words">{value}</span>
-    </div>
-  ) : null;
+export default function BookingsPage() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const BookingListPage: React.FC = () => {
-  const [bookings, setBookings]   = useState<Booking[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const [status, setStatus]       = useState("");
-  const [search, setSearch]       = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [count, setCount]         = useState(0);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
+  const [page, setPage] = useState(1);
 
-  // View modal
-  const [viewBooking, setViewBooking]   = useState<Booking | null>(null);
-  const [viewLoading, setViewLoading]   = useState(false);
+  const [viewBooking, setViewBooking] = useState<Booking | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
 
-  // Status update modal
   const [updateTarget, setUpdateTarget] = useState<Booking | null>(null);
-  const [newStatus, setNewStatus]       = useState("");
-  const [adminNotes, setAdminNotes]     = useState("");
-  const [updatingId, setUpdatingId]     = useState<number | null>(null);
+  const [newStatus, setNewStatus] = useState<BookingStatus>("pending");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Pagination
-  const [page, setPage]           = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const LIMIT = 20;
+  const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  // Delete
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  /* --------------------------- data fetching --------------------------- */
 
-  const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadBookings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getBookings();
+      // accept either an array, or { data: [...] }, or { bookings: [...] }
+      const list: Booking[] = Array.isArray(data)
+        ? data
+        : (data?.data ?? data?.bookings ?? []);
+      setBookings(list);
+    } catch (err: any) {
+      console.error("Failed to load bookings:", err);
+      setError(err?.message ?? "Failed to load bookings.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    setLoading(true);
-    getBookings({ status, search, page, limit: LIMIT })
-      .then(({ data, count }) => {
-        setBookings(data);
-        setCount(count);
-        setTotalPages(Math.max(1, Math.ceil(count / LIMIT)));
-        setError(null);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [status, search, page]);
+    loadBookings();
+  }, [loadBookings]);
 
-  const handleSearchInput = (val: string) => {
-    setSearchInput(val);
-    if (searchRef.current) clearTimeout(searchRef.current);
-    searchRef.current = setTimeout(() => { setSearch(val.trim()); setPage(1); }, 500);
-  };
+  /* ------------------------------ derived ------------------------------ */
 
-  const handleView = async (b: Booking) => {
-    if (!b.bookingNumber) {
-      setViewBooking(b);
-      return;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return bookings.filter((b) => {
+      if (statusFilter !== "all" && b.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        b.customerName?.toLowerCase().includes(q) ||
+        b.bookingNumber?.toLowerCase().includes(q) ||
+        b.customerEmail?.toLowerCase().includes(q) ||
+        b.serviceType?.toLowerCase().includes(q) ||
+        (b.companyName ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [bookings, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageItems = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  const counts = useMemo(() => {
+    const base = { all: bookings.length, pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    for (const b of bookings) {
+      if (b.status in base) (base as any)[b.status]++;
     }
-    setViewLoading(true);
-    setViewBooking(b); // show partial while loading
+    return base;
+  }, [bookings]);
+
+  /* ------------------------------ handlers ----------------------------- */
+
+  const openView = useCallback(async (b: Booking) => {
+    setViewBooking(b);
+    // optionally refresh details from API by booking number
     try {
-      const full = await getBookingByNumber(b.bookingNumber);
-      setViewBooking(full);
-    } catch {
-      // keep partial data
+      setViewLoading(true);
+      const detailed = await getBookingByNumber(b.bookingNumber);
+      const resolved: Booking | undefined =
+        detailed?.data ?? detailed?.booking ?? detailed;
+      if (resolved && resolved.id) setViewBooking(resolved);
+    } catch (err) {
+      // soft-fail — we already show the row data
+      console.warn("getBookingByNumber failed:", err);
     } finally {
       setViewLoading(false);
     }
-  };
+  }, []);
 
-  const openUpdateModal = (b: Booking) => {
+  const openUpdate = (b: Booking) => {
     setUpdateTarget(b);
     setNewStatus(b.status);
     setAdminNotes(b.adminNotes ?? "");
   };
 
-  const handleStatusSave = async () => {
+  const saveStatus = async () => {
     if (!updateTarget) return;
-    setUpdatingId(updateTarget.id);
+    setSaving(true);
     try {
-      await updateBookingStatus(updateTarget.id, newStatus, adminNotes);
+      await updateBookingStatus(updateTarget.id, newStatus, adminNotes.trim() || undefined);
       setBookings((prev) =>
         prev.map((b) =>
           b.id === updateTarget.id
             ? { ...b, status: newStatus, adminNotes: adminNotes.trim() || b.adminNotes }
-            : b
-        )
+            : b,
+        ),
       );
       if (viewBooking?.id === updateTarget.id) {
-        setViewBooking((prev) => prev ? { ...prev, status: newStatus, adminNotes: adminNotes.trim() || prev.adminNotes } : prev);
+        setViewBooking((v) =>
+          v ? { ...v, status: newStatus, adminNotes: adminNotes.trim() || v.adminNotes } : v,
+        );
       }
       setUpdateTarget(null);
-    } catch {
-      alert("Failed to update booking status.");
+    } catch (err: any) {
+      console.error("updateBookingStatus failed:", err);
+      alert(err?.message ?? "Failed to update booking status.");
     } finally {
-      setUpdatingId(null);
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this booking? This cannot be undone.")) return;
-    setDeletingId(id);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteBooking(id);
-      setBookings((prev) => prev.filter((b) => b.id !== id));
-      if (viewBooking?.id === id) setViewBooking(null);
-    } catch {
-      alert("Failed to delete booking.");
+      await deleteBooking(deleteTarget.id);
+      setBookings((prev) => prev.filter((b) => b.id !== deleteTarget.id));
+      if (viewBooking?.id === deleteTarget.id) setViewBooking(null);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      console.error("deleteBooking failed:", err);
+      alert(err?.message ?? "Failed to delete booking.");
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   };
 
-  const displayName = (b: Booking) => b.customerName ?? b.name ?? "—";
-  const displayDate = (b: Booking) => {
-    const d = b.scheduledDate ?? b.preferredDate;
-    return d ? new Date(d).toLocaleDateString("en-NG", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-  };
-
-  const headers = ["Customer", "Service", "Date / Time", "Status", "Actions"];
-
-  const data = bookings.map((b) => [
-    <div key={`name-${b.id}`}>
-      <p className="font-medium text-gray-800 text-sm">{displayName(b)}</p>
-      {b.bookingNumber && <p className="text-xs text-gray-400 font-mono">{b.bookingNumber}</p>}
-      {(b.customerEmail ?? b.email) && <p className="text-xs text-gray-500">{b.customerEmail ?? b.email}</p>}
-    </div>,
-    <span key={`svc-${b.id}`} className="text-sm text-gray-700">{b.serviceType ?? "—"}</span>,
-    <div key={`date-${b.id}`}>
-      <p className="text-sm text-gray-700">{displayDate(b)}</p>
-      {b.scheduledTime && <p className="text-xs text-gray-400">{b.scheduledTime}</p>}
-    </div>,
-    <button
-      key={`status-${b.id}`}
-      onClick={() => openUpdateModal(b)}
-      className={`text-xs font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLOR[b.status] ?? "bg-gray-100 text-gray-600"}`}
-      title="Click to update status"
-    >
-      {b.status}
-    </button>,
-    <div key={`actions-${b.id}`} className="flex items-center gap-1.5">
-      <button
-        className="p-1.5 border border-gray-200 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-        onClick={() => handleView(b)}
-        title="View details"
-      >
-        <Eye size={14} />
-      </button>
-      <button
-        className="p-1.5 border border-red-100 rounded text-red-500 hover:bg-red-50 disabled:opacity-40"
-        onClick={() => handleDelete(b.id)}
-        disabled={deletingId === b.id}
-        title="Delete booking"
-      >
-        <Trash2 size={14} />
-      </button>
-    </div>,
-  ]);
+  /* ------------------------------- render ------------------------------ */
 
   return (
     <Layout
       pageTitle="Bookings"
-      pageSubtitle={`Manage all service booking requests.${count ? ` (${count} total)` : ""}`}
-    >
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by customer name…"
-            value={searchInput}
-            onChange={(e) => handleSearchInput(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-          {searchInput && (
-            <button
-              onClick={() => { setSearchInput(""); setSearch(""); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="">All Statuses</option>
-          {ALL_STATUSES.map((s) => (
-            <option key={s} value={s} className="capitalize">{s}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Loading */}
-      {loading && (
-        <Card>
-          <div className="space-y-3">
-            <div className="grid grid-cols-5 gap-4">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-4" />)}
-            </div>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-5 gap-4">
-                {Array.from({ length: 5 }).map((_, j) => <Skeleton key={j} className="h-10" />)}
-              </div>
-            ))}
+      pageSubtitle="Review incoming service requests, update their status, and keep your team aligned."
+      action={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadBookings}
+            disabled={loading}
+            className="h-9 gap-2"
+          >
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            Refresh
+          </Button>
+          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-card px-3 py-2 shadow-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold text-foreground">{counts.all}</span>
+            <span className="text-sm text-muted-foreground">total</span>
           </div>
-        </Card>
-      )}
-
-      {/* Error */}
-      {!loading && error && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <TriangleAlert className="w-8 h-8 mb-4 text-gray-400" />
-          <p className="text-gray-700 font-medium">Failed to load bookings</p>
-          <p className="text-sm text-gray-400 mt-1">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Retry</button>
         </div>
-      )}
+      }
+    >
+      <div>
 
-      {/* Table */}
-      {!loading && !error && (
-        <Card>
-          {data.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
-              {search ? "No bookings match your search." : "No bookings found."}
-            </p>
-          ) : (
-            <Table headers={headers} data={data} />
-          )}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => p - 1)}
-                  disabled={page <= 1 || loading}
-                  className="p-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= totalPages || loading}
-                  className="p-1.5 border border-gray-300 rounded text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* ── View Modal ── */}
-      <Modal open={!!viewBooking} onClose={() => setViewBooking(null)} title="Booking Details">
-        {viewBooking && (
-          viewLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 mb-4">
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLOR[viewBooking.status] ?? "bg-gray-100 text-gray-600"}`}>
-                  {viewBooking.status}
-                </span>
-                {viewBooking.bookingNumber && (
-                  <span className="text-xs font-mono text-gray-500">{viewBooking.bookingNumber}</span>
-                )}
-              </div>
-              <div className="space-y-0.5">
-                <InfoRow label="Customer" value={viewBooking.customerName ?? viewBooking.name} />
-                <InfoRow label="Email" value={viewBooking.customerEmail ?? viewBooking.email} />
-                <InfoRow label="Phone" value={viewBooking.customerPhone ?? viewBooking.phone} />
-                <InfoRow label="Company" value={viewBooking.companyName ?? viewBooking.company} />
-                <InfoRow label="Service Type" value={viewBooking.serviceType} />
-                <InfoRow label="Scheduled Date" value={displayDate(viewBooking)} />
-                <InfoRow label="Scheduled Time" value={viewBooking.scheduledTime} />
-                <InfoRow label="Location" value={viewBooking.serviceLocation} />
-                <InfoRow label="Equipment" value={viewBooking.equipmentDetails} />
-                <InfoRow label="Notes" value={viewBooking.notes} />
-                {viewBooking.adminNotes && (
-                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-xs font-semibold text-yellow-700 mb-1">Admin Notes</p>
-                    <p className="text-sm text-yellow-800">{viewBooking.adminNotes}</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2 mt-6">
-                <button
-                  onClick={() => { setViewBooking(null); openUpdateModal(viewBooking); }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
-                >
-                  Update Status
-                </button>
-                <button
-                  onClick={() => handleDelete(viewBooking.id)}
-                  disabled={deletingId === viewBooking.id}
-                  className="px-4 py-2 border border-red-200 text-red-500 text-sm font-medium rounded-md hover:bg-red-50 disabled:opacity-40"
-                >
-                  Delete
-                </button>
-              </div>
-            </>
-          )
-        )}
-      </Modal>
-
-      {/* ── Status Update Modal ── */}
-      <Modal open={!!updateTarget} onClose={() => setUpdateTarget(null)} title="Update Booking Status">
-        {updateTarget && (
-          <>
-            <div className="mb-4 p-3 bg-gray-50 rounded-md text-sm text-gray-700">
-              <p className="font-medium">{displayName(updateTarget)}</p>
-              {updateTarget.bookingNumber && <p className="text-xs text-gray-400 font-mono mt-0.5">{updateTarget.bookingNumber}</p>}
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {ALL_STATUSES.map((s) => (
-                  <option key={s} value={s} className="capitalize">{s}</option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Admin Notes <span className="text-gray-400 font-normal">(optional — internal only)</span>
-              </label>
-              <textarea
-                rows={3}
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="e.g. Engineer assigned, rescheduled to afternoon slot…"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+          {/* Toolbar */}
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search by customer, booking number, service…"
+                className="h-11 rounded-xl border-border/70 bg-card pl-9 pr-9 shadow-sm"
               />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleStatusSave}
-                disabled={updatingId === updateTarget.id}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {updatingId === updateTarget.id ? "Saving…" : "Save"}
-              </button>
-              <button
-                onClick={() => setUpdateTarget(null)}
-                disabled={updatingId === updateTarget.id}
-                className="px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-md hover:bg-gray-50 disabled:opacity-40"
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v as BookingStatus | "all");
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-11 w-full rounded-xl border-border/70 bg-card shadow-sm sm:w-48 py-4">
+                <SelectValue placeholder="Filter status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {ALL_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_META[s].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* List */}
+          {loading ? (
+            <LoadingState />
+          ) : error ? (
+            <ErrorState message={error} onRetry={loadBookings} />
+          ) : pageItems.length === 0 ? (
+            <EmptyState search={search} />
+          ) : (
+            <ul className="space-y-3">
+              {pageItems.map((b) => (
+                <li key={b.id}>
+                  <BookingCard
+                    booking={b}
+                    onView={() => openView(b)}
+                    onUpdate={() => openUpdate(b)}
+                    onDelete={() => setDeleteTarget(b)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Pagination */}
+          {!loading && !error && filtered.length > PAGE_SIZE && (
+            <div className="mt-6 flex items-center justify-between rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+              <p className="text-sm text-muted-foreground">
+                Showing{" "}
+                <span className="font-medium text-foreground">
+                  {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+                </span>{" "}
+                of <span className="font-medium text-foreground">{filtered.length}</span>
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 text-sm tabular-nums text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+        {/* View dialog */}
+        <Dialog open={!!viewBooking} onOpenChange={(o) => !o && setViewBooking(null)}>
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+            {viewBooking && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2">
+                    <StatusPill status={viewBooking.status} />
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {viewBooking.bookingNumber}
+                    </span>
+                    {viewLoading && (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  <DialogTitle className="pt-1 text-xl">{viewBooking.customerName}</DialogTitle>
+                </DialogHeader>
+
+                <Separator />
+
+                <div className="space-y-3 text-sm">
+                  <DetailRow icon={Mail} label="Email" value={viewBooking.customerEmail} />
+                  <DetailRow icon={Phone} label="Phone" value={viewBooking.customerPhone} />
+                  <DetailRow icon={Building2} label="Company" value={viewBooking.companyName} />
+                  <DetailRow icon={Wrench} label="Service" value={viewBooking.serviceType} />
+                  <DetailRow
+                    icon={Calendar}
+                    label="Scheduled"
+                    value={`${formatDate(viewBooking.scheduledDate)} · ${viewBooking.scheduledTime}`}
+                  />
+                  <DetailRow icon={MapPin} label="Location" value={viewBooking.serviceLocation} />
+                  <DetailRow
+                    icon={FileText}
+                    label="Equipment"
+                    value={viewBooking.equipmentDetails}
+                  />
+                  {viewBooking.notes && (
+                    <div className="rounded-lg border border-border/70 bg-muted/40 p-3">
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        Customer notes
+                      </p>
+                      <p className="text-sm text-foreground">{viewBooking.notes}</p>
+                    </div>
+                  )}
+                  {viewBooking.adminNotes && (
+                    <div className="rounded-lg border border-amber-200/70 bg-amber-50/70 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                      <p className="mb-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                        Internal notes
+                      </p>
+                      <p className="text-sm text-amber-900 dark:text-amber-100">
+                        {viewBooking.adminNotes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter className="flex-col gap-2 sm:flex-row">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteTarget(viewBooking)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const b = viewBooking;
+                      setViewBooking(null);
+                      openUpdate(b);
+                    }}
+                  >
+                    Update status
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Update status dialog */}
+        <Dialog open={!!updateTarget} onOpenChange={(o) => !o && !saving && setUpdateTarget(null)}>
+          <DialogContent className="sm:max-w-md">
+            {updateTarget && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Update status</DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {updateTarget.customerName}{" "}
+                    <span className="font-mono text-xs">· {updateTarget.bookingNumber}</span>
+                  </p>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      New status
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ALL_STATUSES.map((s) => {
+                        const meta = STATUS_META[s];
+                        const active = newStatus === s;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => setNewStatus(s)}
+                            className={cn(
+                              "flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all",
+                              active
+                                ? "border-foreground/80 bg-foreground/5 ring-2 " + meta.ring
+                                : "border-border bg-card text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
+                            )}
+                          >
+                            <span className={cn("h-2 w-2 rounded-full", meta.dot)} />
+                            {meta.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="admin-notes" className="mb-1.5 block text-sm font-medium">
+                      Internal notes{" "}
+                      <span className="font-normal text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Textarea
+                      id="admin-notes"
+                      rows={3}
+                      value={adminNotes}
+                      onChange={(e) => setAdminNotes(e.target.value)}
+                      placeholder="e.g. Engineer dispatched, ETA 30 minutes…"
+                      className="resize-none"
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter className="flex-col gap-2 sm:flex-row">
+                  <Button
+                    variant="outline"
+                    onClick={() => setUpdateTarget(null)}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={saveStatus} disabled={saving}>
+                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save changes
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete confirm */}
+        <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Delete booking?</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                This will permanently remove{" "}
+                <span className="font-medium text-foreground">{deleteTarget?.bookingNumber}</span>{" "}
+                from your records.
+              </p>
+            </DialogHeader>
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
               >
                 Cancel
-              </button>
-            </div>
-          </>
-        )}
-      </Modal>
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+                {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
-};
+}
 
-export default BookingListPage;
+/* ------------------------------------------------------------------ */
+/* Subcomponents                                                       */
+/* ------------------------------------------------------------------ */
+
+// function StatTab({
+//   label,
+//   count,
+//   active,
+//   onClick,
+//   dotClass,
+// }: {
+//   label: string;
+//   count: number;
+//   active: boolean;
+//   onClick: () => void;
+//   dotClass?: string;
+// }) {
+//   return (
+//     <button
+//       onClick={onClick}
+//       className={cn(
+//         "group flex items-center justify-between gap-2 rounded-xl border bg-card px-3.5 py-3 text-left shadow-sm transition-all",
+//         active
+//           ? "border-foreground/70 ring-2 ring-foreground/10"
+//           : "border-border/70 hover:border-border hover:shadow",
+//       )}
+//     >
+//       <div className="flex min-w-0 items-center gap-2">
+//         {dotClass && <span className={cn("h-2 w-2 shrink-0 rounded-full", dotClass)} />}
+//         <span
+//           className={cn(
+//             "truncate text-sm font-medium",
+//             active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
+//           )}
+//         >
+//           {label}
+//         </span>
+//       </div>
+//       <span
+//         className={cn(
+//           "shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums",
+//           active ? "bg-foreground text-background" : "bg-muted text-muted-foreground",
+//         )}
+//       >
+//         {count}
+//       </span>
+//     </button>
+//   );
+// }
+
+function StatusPill({ status }: { status: BookingStatus }) {
+  const meta = STATUS_META[status];
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset",
+        meta.chip,
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
+      {meta.label}
+    </span>
+  );
+}
+
+function BookingCard({
+  booking,
+  onView,
+  onUpdate,
+  onDelete,
+}: {
+  booking: Booking;
+  onView: () => void;
+  onUpdate: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      onClick={onView}
+      className="group cursor-pointer rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:-translate-y-px hover:border-border hover:shadow-md sm:p-5"
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[minmax(0,2.5fr)_minmax(0,1.5fr)_minmax(0,1.5fr)_auto] sm:items-center sm:gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Avatar name={booking.customerName} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {booking.customerName}
+              </p>
+              <p className="truncate font-mono text-[11px] text-muted-foreground">
+                {booking.bookingNumber}
+              </p>
+            </div>
+          </div>
+          {booking.companyName && (
+            <p className="mt-2 hidden truncate text-xs text-muted-foreground sm:block">
+              <Building2 className="mr-1 inline h-3 w-3" />
+              {booking.companyName}
+            </p>
+          )}
+        </div>
+
+        <div className="hidden min-w-0 sm:block">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Service
+          </p>
+          <p className="mt-0.5 truncate text-sm text-foreground">{booking.serviceType}</p>
+        </div>
+
+        <div className="hidden min-w-0 sm:block">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Scheduled
+          </p>
+          <p className="mt-0.5 truncate text-sm text-foreground">
+            {formatDate(booking.scheduledDate)}
+          </p>
+          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            {booking.scheduledTime}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onUpdate();
+            }}
+            className="rounded-full transition hover:scale-105"
+            aria-label="Update status"
+          >
+            <StatusPill status={booking.status} />
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="More actions"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onSelect={onView}>
+                <Eye className="mr-2 h-4 w-4" />
+                View details
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onUpdate}>
+                <Wrench className="mr-2 h-4 w-4" />
+                Update status
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={onDelete}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3 text-xs text-muted-foreground sm:hidden">
+        <div className="min-w-0">
+          <p className="font-medium uppercase tracking-wide text-[10px]">Service</p>
+          <p className="truncate text-foreground">{booking.serviceType}</p>
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium uppercase tracking-wide text-[10px]">Scheduled</p>
+          <p className="truncate text-foreground">
+            {formatDate(booking.scheduledDate)} · {booking.scheduledTime}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Avatar({ name }: { name: string }) {
+  const initials = (name ?? "?")
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-linear-to-br from-muted to-muted/60 text-xs font-semibold text-foreground ring-1 ring-border/60">
+      {initials || "?"}
+    </div>
+  );
+}
+
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value?: string;
+}) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="wrap-break-word text-sm text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <ul className="space-y-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <li
+          key={i}
+          className="h-23 animate-pulse rounded-xl border border-border/70 bg-card shadow-sm"
+        />
+      ))}
+    </ul>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-8 text-center">
+      <p className="text-sm font-medium text-destructive">Couldn’t load bookings</p>
+      <p className="mt-1 text-sm text-muted-foreground">{message}</p>
+      <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>
+        <RefreshCw className="mr-2 h-4 w-4" />
+        Try again
+      </Button>
+    </div>
+  );
+}
+
+function EmptyState({ search }: { search: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border/70 bg-card/50 p-12 text-center">
+      <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-muted">
+        <Search className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-medium text-foreground">
+        {search ? "No bookings match your search" : "No bookings yet"}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {search
+          ? "Try adjusting your filters or clearing the search."
+          : "New service requests will show up here."}
+      </p>
+    </div>
+  );
+}
+
+function formatDate(iso: string) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}

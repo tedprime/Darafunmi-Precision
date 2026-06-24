@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import { apiFetch } from "./api.jsx";
 import { toastError } from "./useToast";
 
@@ -13,7 +14,7 @@ const wrap = async (label, fn) => {
 };
 
 const multipartFetch = async (endpoint, method, formData) => {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers: {
@@ -44,4 +45,10 @@ export async function deleteTeamMember(id) {
   return wrap("Delete member", () =>
     apiFetch(`/team/${id}`, { method: "DELETE" })
   );
+}
+
+export async function toggleTeamMemberVisibility(id, isActive) {
+  const fd = new FormData();
+  fd.append("isActive", String(isActive)); // DB column: isActive
+  return wrap("Toggle visibility", () => multipartFetch(`/team/${id}`, "PATCH", fd));
 }
