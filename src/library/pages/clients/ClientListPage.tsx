@@ -243,10 +243,10 @@ const ClientListPage: React.FC = () => {
                 <tbody className="divide-y divide-gray-50">
                   {clients.map((client) => (
                     <tr key={client.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal break-words">{client.name}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{client.email}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{client.phone}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{client.location}</td>
+                      <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal wrap-break-word">{client.name}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal wrap-break-word">{client.email}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal wrap-break-word">{client.phone}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal wrap-break-word">{client.location}</td>
                       <td className="px-4 py-3.5">
                         <Badge color={client.status === "active" ? "green" : "gray"}>{client.status}</Badge>
                       </td>
@@ -283,8 +283,8 @@ const ClientListPage: React.FC = () => {
               <div key={client.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 break-words">{client.name}</p>
-                    <p className="text-xs text-gray-500 break-words mt-0.5">{client.email}</p>
+                    <p className="text-sm font-semibold text-gray-900 wrap-break-word">{client.name}</p>
+                    <p className="text-xs text-gray-500 wrap-break-word mt-0.5">{client.email}</p>
                   </div>
                   <Badge color={client.status === "active" ? "green" : "gray"}>{client.status}</Badge>
                 </div>

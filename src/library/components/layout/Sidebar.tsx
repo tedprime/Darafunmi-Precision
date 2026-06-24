@@ -139,10 +139,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         {/* ── Header ── */}
         <div className="flex items-center justify-between h-14 px-4 border-b border-gray-100 shrink-0">
           {isOpen && (
-            <div className="flex items-center gap-2.5">
-              <div className="bg-blue-600 text-white text-sm px-2.5 py-1.5 rounded-lg font-bold tracking-wide">
-                DPT
-              </div>
+            <div className="flex items-center gap-2">
+              <img src="/dpt-logo.png" alt="DPT" className="h-9 w-auto object-contain" />
               <span className="text-sm font-semibold text-gray-800">Admin Panel</span>
             </div>
           )}
@@ -160,7 +158,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           className="
             flex-1 overflow-y-auto mt-3 px-2 space-y-0.5
             [scrollbar-width:thin]
-            [scrollbar-color:theme(colors.gray.300)_transparent]
+            [scrollbar-color:var(--color-gray-300)_transparent]
             [&::-webkit-scrollbar]:w-1
             [&::-webkit-scrollbar-track]:bg-transparent
             [&::-webkit-scrollbar-thumb]:bg-gray-300

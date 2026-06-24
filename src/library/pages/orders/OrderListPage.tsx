@@ -297,8 +297,8 @@ const OrderListPage: React.FC = () => {
                         <span className="font-mono text-xs font-medium text-gray-800">{o.orderNumber}</span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <p className="text-sm font-medium text-gray-900 whitespace-normal break-words">{o.customerName ?? "—"}</p>
-                        <p className="text-xs text-gray-400 whitespace-normal break-words">{o.customerEmail ?? ""}</p>
+                        <p className="text-sm font-medium text-gray-900 whitespace-normal wrap-break-word">{o.customerName ?? "—"}</p>
+                        <p className="text-xs text-gray-400 whitespace-normal wrap-break-word">{o.customerEmail ?? ""}</p>
                       </td>
                       <td className="px-4 py-3.5 text-sm text-gray-700">{fmtMoney(o.total)}</td>
                       <td className="px-4 py-3.5">
@@ -384,8 +384,8 @@ const OrderListPage: React.FC = () => {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-mono font-semibold text-gray-700">{o.orderNumber}</p>
-                    <p className="text-sm font-medium text-gray-900 mt-0.5 break-words">{o.customerName ?? "—"}</p>
-                    <p className="text-xs text-gray-500 break-words">{o.customerEmail ?? ""}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-0.5 wrap-break-word">{o.customerName ?? "—"}</p>
+                    <p className="text-xs text-gray-500 wrap-break-word">{o.customerEmail ?? ""}</p>
                   </div>
                   <Badge color={STATUS_COLOR[o.status] ?? "gray"}>{o.status}</Badge>
                 </div>
@@ -453,7 +453,7 @@ const OrderListPage: React.FC = () => {
                     ] as [string, string][]).map(([label, value]) => (
                       <div key={label}>
                         <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{label}</p>
-                        <p className="text-sm text-gray-800 font-medium mt-0.5 break-words">{value}</p>
+                        <p className="text-sm text-gray-800 font-medium mt-0.5 wrap-break-word">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -474,7 +474,7 @@ const OrderListPage: React.FC = () => {
                           <tbody className="divide-y divide-gray-100">
                             {viewOrder.items.map((item, idx) => (
                               <tr key={idx} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 text-gray-800 whitespace-normal break-words">{item.productName}</td>
+                                <td className="px-3 py-2 text-gray-800 whitespace-normal wrap-break-word">{item.productName}</td>
                                 <td className="text-center px-3 py-2 text-gray-700">{item.quantity}</td>
                                 <td className="text-right px-3 py-2 text-gray-700">{fmtMoney(item.unitPrice)}</td>
                                 <td className="text-right px-3 py-2 font-medium text-gray-800">{fmtMoney(item.totalPrice)}</td>

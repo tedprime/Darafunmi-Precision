@@ -36,9 +36,7 @@ const LoginPage: React.FC = () => {
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-blue-500 rounded-full opacity-40" />
         <div className="absolute -bottom-16 -right-16 w-80 h-80 bg-blue-700 rounded-full opacity-40" />
         <div className="relative z-10 text-center px-12">
-          <div className="bg-white text-blue-600 text-3xl font-extrabold px-6 py-4 rounded-2xl inline-block mb-6 shadow-lg">
-            DPT
-          </div>
+          <img src="/dpt-logo.png" alt="DPT" className="h-24 w-auto object-contain mb-6 drop-shadow-lg" />
           <h1 className="text-white text-4xl font-bold leading-tight mb-4">
             Darafunmi Precision
             <br />
@@ -55,9 +53,7 @@ const LoginPage: React.FC = () => {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="bg-blue-600 text-white text-2xl font-extrabold px-5 py-3 rounded-xl inline-block">
-              DPT
-            </div>
+            <img src="/dpt-logo.png" alt="DPT" className="h-16 w-auto object-contain mx-auto" />
           </div>
 
           <h2 className="text-3xl font-bold text-gray-900 mb-1">

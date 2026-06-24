@@ -226,11 +226,11 @@ const QuoteRequestListPage: React.FC = () => {
                         <span className="font-mono text-xs text-gray-600">{r.quoteNumber ?? "—"}</span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <p className="text-sm font-medium text-gray-900 whitespace-normal break-words">{r.customerName}</p>
-                        <p className="text-xs text-gray-400 whitespace-normal break-words">{r.customerEmail}</p>
+                        <p className="text-sm font-medium text-gray-900 whitespace-normal wrap-break-word">{r.customerName}</p>
+                        <p className="text-xs text-gray-400 whitespace-normal wrap-break-word">{r.customerEmail}</p>
                       </td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{r.companyName ?? "—"}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{r.serviceType ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal wrap-break-word">{r.companyName ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal wrap-break-word">{r.serviceType ?? "—"}</td>
                       <td className="px-4 py-3.5">
                         <Badge color={STATUS_COLOR[r.status] ?? "gray"}>{r.status}</Badge>
                       </td>
@@ -298,8 +298,8 @@ const QuoteRequestListPage: React.FC = () => {
               <div key={r.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 break-words">{r.customerName}</p>
-                    <p className="text-xs text-gray-500 break-words">{r.customerEmail}</p>
+                    <p className="text-sm font-semibold text-gray-900 wrap-break-word">{r.customerName}</p>
+                    <p className="text-xs text-gray-500 wrap-break-word">{r.customerEmail}</p>
                     {r.companyName && <p className="text-xs text-gray-400 mt-0.5">{r.companyName}</p>}
                   </div>
                   <Badge color={STATUS_COLOR[r.status] ?? "gray"}>{r.status}</Badge>
@@ -363,7 +363,7 @@ const QuoteRequestListPage: React.FC = () => {
                     ] as [string, string][]).map(([label, value]) => (
                       <div key={label} className="flex gap-2">
                         <dt className="w-28 shrink-0 font-medium text-gray-500">{label}</dt>
-                        <dd className="text-gray-800 break-words">{value}</dd>
+                        <dd className="text-gray-800 wrap-break-word">{value}</dd>
                       </div>
                     ))}
                     <div className="flex gap-2">
@@ -373,7 +373,7 @@ const QuoteRequestListPage: React.FC = () => {
                     {viewItem.description && (
                       <div className="flex gap-2">
                         <dt className="w-28 shrink-0 font-medium text-gray-500">Description</dt>
-                        <dd className="text-gray-800 whitespace-pre-wrap break-words">{viewItem.description}</dd>
+                        <dd className="text-gray-800 whitespace-pre-wrap wrap-break-word">{viewItem.description}</dd>
                       </div>
                     )}
                   </dl>
@@ -393,9 +393,9 @@ const QuoteRequestListPage: React.FC = () => {
                           <tbody className="divide-y divide-gray-100">
                             {viewItem.requestItems.map((item, idx) => (
                               <tr key={idx} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 font-medium text-gray-800 whitespace-normal break-words">{item.equipmentName}</td>
+                                <td className="px-3 py-2 font-medium text-gray-800 whitespace-normal wrap-break-word">{item.equipmentName}</td>
                                 <td className="text-center px-3 py-2 text-gray-700">{item.quantity ?? "—"}</td>
-                                <td className="px-3 py-2 text-gray-500 text-xs whitespace-normal break-words">{item.note ?? "—"}</td>
+                                <td className="px-3 py-2 text-gray-500 text-xs whitespace-normal wrap-break-word">{item.note ?? "—"}</td>
                               </tr>
                             ))}
                           </tbody>
