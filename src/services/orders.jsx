@@ -58,10 +58,37 @@ export async function getOrderById(id) {
 
 export async function generateInvoice(id, { lpoNumber = "", tinNumber = "", send = false } = {}) {
   return wrap("Generate invoice", async () => {
-    const res = await apiFetch(`/orders/${id}/invoice`, {
+    const token = (await import("js-cookie")).default.get("token");
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    const response = await fetch(`${BASE_URL}/orders/${id}/invoice`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
       body: JSON.stringify({ lpoNumber, tinNumber, send }),
     });
-    return res;
+
+    if (!response.ok) {
+      throw { status: response.status, message: `Invoice generation failed (${response.status})` };
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+
+    // PDF response — trigger browser download
+    if (contentType.includes("application/pdf")) {
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-order-${id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return { success: true };
+    }
+
+    // JSON response (e.g. send=true just emails it)
+    return await response.json();
   });
 }

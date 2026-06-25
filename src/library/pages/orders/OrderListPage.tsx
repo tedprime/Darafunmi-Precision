@@ -180,9 +180,9 @@ const OrderListPage: React.FC = () => {
     if (!invoiceTarget) return;
     setInvoicing(true);
     try {
-      const apiBase = (import.meta as any).env?.VITE_API_URL ?? "";
+      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "";
       const token = Cookies.get("token") ?? "";
-      const res = await fetch(`${apiBase}/api/orders/${invoiceTarget.id}/invoice`, {
+      const res = await fetch(`${apiBase}/orders/${invoiceTarget.id}/invoice`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
