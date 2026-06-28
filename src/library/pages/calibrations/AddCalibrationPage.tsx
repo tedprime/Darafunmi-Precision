@@ -11,7 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertCircle, Loader2, Save, Wrench, CalendarCheck,
-  StickyNote, User, Thermometer, FlaskConical, Hash,
+  User, Thermometer, FlaskConical,
   Plus, Trash2, ClipboardCheck, FileText, Info, Link2,
 } from "lucide-react";
 import { createCalibration } from "../../../services/calibration.jsx";
