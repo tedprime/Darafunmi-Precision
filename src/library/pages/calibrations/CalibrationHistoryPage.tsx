@@ -14,16 +14,16 @@ interface Calibration {
   calibrationDate: string;
   nextDueDate: string;
   technician: string;
-  status: "passed" | "due-soon" | "overdue" | string;
+  status: "active" | "due-soon" | "expired" | string;
   serviceType?: string;
   certificateId?: number | null;
   client?: { id: number; name: string } | null;
 }
 
 const STATUS_COLOR: Record<string, "green" | "yellow" | "red" | "gray"> = {
-  passed:   "green",
+  active:     "green",
   "due-soon": "yellow",
-  overdue:  "red",
+  expired:    "red",
 };
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
@@ -111,9 +111,9 @@ const CalibrationHistoryPage: React.FC = () => {
           className="px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
         >
           <option value="">All Statuses</option>
-          <option value="passed">Passed</option>
+          <option value="active">Active</option>
           <option value="due-soon">Due Soon</option>
-          <option value="overdue">Overdue</option>
+          <option value="expired">Expired</option>
         </select>
       </div>
 

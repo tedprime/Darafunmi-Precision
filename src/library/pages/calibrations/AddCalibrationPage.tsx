@@ -203,7 +203,7 @@ const AddCalibrationPage: React.FC = () => {
           r.standardValue || r.measuredValue || r.asFoundValue || r.asLeftValue || r.deviation
         ),
       });
-      navigate("/calibrations");
+      navigate("/calibrations/history");
     } catch {
       setError("Failed to save calibration record. Please try again.");
     } finally {
