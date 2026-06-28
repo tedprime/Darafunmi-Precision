@@ -23,8 +23,8 @@ const fmtMoney = (n: number) =>
 const inputCls =
   "w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors";
 
-const Skeleton = ({ className = "" }: { className?: string }) => (
-  <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} />
+const Skeleton = ({ className = "", style }: { className?: string; style?: React.CSSProperties }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-lg ${className}`} style={style} />
 );
 
 const EditQuotePage: React.FC = () => {
