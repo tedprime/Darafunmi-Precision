@@ -21,6 +21,7 @@ import {
   Mail,
   Building2,
   MapPin,
+  Phone,
 } from "lucide-react";
 import { createQuote } from "../../../services/quote.jsx";
 import { getClients } from "../../../services/client.jsx";
@@ -59,6 +60,7 @@ const AddQuotePage: React.FC = () => {
   const [customerName,  setCustomerName]  = useState("");
   const [companyName,   setCompanyName]   = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [clientAddress, setClientAddress] = useState("");
 
   const [clients, setClients]             = useState<Client[]>([]);
@@ -92,6 +94,7 @@ const AddQuotePage: React.FC = () => {
         if (!customerName)  setCustomerName(c.name);
         if (!companyName)   setCompanyName(c.name);
         if (!customerEmail) setCustomerEmail(c.email ?? "");
+        if (!customerPhone) setCustomerPhone((c as any).phone ?? "");
         if (!clientAddress) setClientAddress(c.address ?? c.location ?? "");
       }
     }
@@ -139,6 +142,7 @@ const AddQuotePage: React.FC = () => {
         customerName:  customerName.trim()  || undefined,
         companyName:   companyName.trim()   || undefined,
         customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
         clientAddress: clientAddress.trim() || undefined,
         notes:         notes.trim()         || undefined,
         description:   description.trim()   || undefined,
@@ -283,6 +287,20 @@ const AddQuotePage: React.FC = () => {
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="customer@example.com"
+                    className={inputCls}
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5">
+                    <Phone size={12} className="text-gray-400" />
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="e.g. +234 801 234 5678"
                     className={inputCls}
                   />
                 </div>

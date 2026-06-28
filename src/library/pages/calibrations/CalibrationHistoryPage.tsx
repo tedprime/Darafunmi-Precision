@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Search, TriangleAlert } from "lucide-react";
-import { getCalibrations } from "../../../services/calibration.jsx";
+import { Plus, Search, TriangleAlert, FileCheck, Loader2, ExternalLink } from "lucide-react";
+import { getCalibrations, generateCertificateFromCalibration } from "../../../services/calibration.jsx";
+import { useToast } from "../../../services/useToast";
 
 interface Calibration {
   id: number;
@@ -14,12 +15,15 @@ interface Calibration {
   nextDueDate: string;
   technician: string;
   status: "passed" | "due-soon" | "overdue" | string;
+  serviceType?: string;
+  certificateId?: number | null;
+  client?: { id: number; name: string } | null;
 }
 
 const STATUS_COLOR: Record<string, "green" | "yellow" | "red" | "gray"> = {
-  passed: "green",
+  passed:   "green",
   "due-soon": "yellow",
-  overdue: "red",
+  overdue:  "red",
 };
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
@@ -28,29 +32,61 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
 
 const CalibrationHistoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast() as { toast: { error: (m: string) => void; success: (m: string) => void; info: (m: string) => void } };
 
   const [calibrations, setCalibrations] = useState<Calibration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [count, setCount] = useState(0);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [search,       setSearch]       = useState("");
+  const [status,       setStatus]       = useState("");
+  const [count,        setCount]        = useState(0);
+  const [generating,   setGenerating]   = useState<number | null>(null); // calibration id being processed
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     getCalibrations({ search, status })
-      .then(({ data, count }) => {
+      .then(({ data, count }: { data: Calibration[]; count: number }) => {
         setCalibrations(data);
         setCount(count);
         setError(null);
       })
-      .catch((err) => setError(err.message))
+      .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [search, status]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleGenerateCert = async (cal: Calibration) => {
+    // If already has cert, just navigate to it
+    if (cal.certificateId) {
+      navigate(`/certifications?id=${cal.certificateId}&tab=preview`);
+      return;
+    }
+    setGenerating(cal.id);
+    try {
+      const res: any = await generateCertificateFromCalibration(cal.id);
+      const cert = res.data;
+      if (res.alreadyExists) {
+        toast.info("Certificate already exists — opening it.");
+      } else {
+        toast.success("Certificate created successfully!");
+        // Update local state so the row now shows "View Certificate"
+        setCalibrations((prev) =>
+          prev.map((c) => (c.id === cal.id ? { ...c, certificateId: cert.id } : c))
+        );
+      }
+      navigate(`/certifications?id=${cert.id}&tab=preview`);
+    } catch {
+      toast.error("Failed to generate certificate. Please try again.");
+    } finally {
+      setGenerating(null);
+    }
+  };
 
   return (
     <Layout
       pageTitle="Calibration History"
-      pageSubtitle={`View all past calibration records. ${count ? `(${count} total)` : ""}`}
+      pageSubtitle={`All calibration records.${count ? ` (${count} total)` : ""}`}
       action={
         <Button onClick={() => navigate("/calibrations/add")}>
           <Plus size={16} /> Add Calibration
@@ -66,7 +102,7 @@ const CalibrationHistoryPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
-            placeholder="Search equipment or serial number..."
+            placeholder="Search equipment or serial number…"
           />
         </div>
         <select
@@ -81,31 +117,26 @@ const CalibrationHistoryPage: React.FC = () => {
         </select>
       </div>
 
-      {/* Loading Skeleton */}
+      {/* Loading */}
       {loading && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="grid grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <Skeleton key={j} className="h-8" />
-                ))}
+              <div key={i} className="grid grid-cols-7 gap-4">
+                {Array.from({ length: 7 }).map((_, j) => <Skeleton key={j} className="h-8" />)}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Error State */}
+      {/* Error */}
       {!loading && error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <TriangleAlert className="w-8 h-8 text-gray-400 mb-4" />
           <p className="text-gray-700 font-medium">Failed to load calibration records</p>
           <p className="text-sm text-gray-400 mt-1">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
+          <button onClick={load} className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Retry
           </button>
         </div>
@@ -121,24 +152,49 @@ const CalibrationHistoryPage: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50/80 border-b border-gray-100">
                   <tr>
-                    {["Equipment", "Serial No", "Calibrated On", "Next Due", "Technician", "Status"].map((h) => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                    {["Equipment", "Serial No", "Calibrated On", "Next Due", "Technician", "Status", "Certificate"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {calibrations.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal break-words">{c.equipmentName}</td>
-                      <td className="px-4 py-3.5 text-sm font-mono text-gray-600">{c.serialNumber}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(c.calibrationDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(c.nextDueDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words">{c.technician}</td>
-                      <td className="px-4 py-3.5">
-                        <Badge color={STATUS_COLOR[c.status] ?? "gray"}>{c.status}</Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {calibrations.map((c) => {
+                    const isGenerating = generating === c.id;
+                    const hasCert      = Boolean(c.certificateId);
+                    return (
+                      <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-3.5 text-sm font-medium text-gray-900 whitespace-normal break-words max-w-[180px]">{c.equipmentName}</td>
+                        <td className="px-4 py-3.5 text-sm font-mono text-gray-600">{c.serialNumber || "—"}</td>
+                        <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-nowrap">{c.calibrationDate ? new Date(c.calibrationDate).toLocaleDateString() : "—"}</td>
+                        <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-nowrap">{c.nextDueDate ? new Date(c.nextDueDate).toLocaleDateString() : "—"}</td>
+                        <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-normal break-words max-w-[140px]">{c.technician || "—"}</td>
+                        <td className="px-4 py-3.5">
+                          <Badge color={STATUS_COLOR[c.status] ?? "gray"}>{c.status}</Badge>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {hasCert ? (
+                            <button
+                              onClick={() => navigate(`/certifications?id=${c.certificateId}&tab=preview`)}
+                              className="flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                            >
+                              <ExternalLink size={12} /> View Certificate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleGenerateCert(c)}
+                              disabled={isGenerating}
+                              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50 font-medium transition-colors"
+                            >
+                              {isGenerating
+                                ? <><Loader2 size={12} className="animate-spin" /> Generating…</>
+                                : <><FileCheck size={12} /> Generate Certificate</>
+                              }
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -148,22 +204,46 @@ const CalibrationHistoryPage: React.FC = () => {
           <div className="md:hidden space-y-3">
             {calibrations.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-12">No calibration records found.</p>
-            ) : calibrations.map((c) => (
-              <div key={c.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 break-words">{c.equipmentName}</p>
-                    <p className="text-xs font-mono text-gray-500 mt-0.5">{c.serialNumber}</p>
+            ) : calibrations.map((c) => {
+              const isGenerating = generating === c.id;
+              const hasCert      = Boolean(c.certificateId);
+              return (
+                <div key={c.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 break-words">{c.equipmentName}</p>
+                      {c.serialNumber && <p className="text-xs font-mono text-gray-500 mt-0.5">{c.serialNumber}</p>}
+                    </div>
+                    <Badge color={STATUS_COLOR[c.status] ?? "gray"}>{c.status}</Badge>
                   </div>
-                  <Badge color={STATUS_COLOR[c.status] ?? "gray"}>{c.status}</Badge>
+                  <div className="text-xs text-gray-500 space-y-1 mb-3">
+                    {c.calibrationDate && <p>Calibrated: {new Date(c.calibrationDate).toLocaleDateString()}</p>}
+                    {c.nextDueDate && <p>Next due: {new Date(c.nextDueDate).toLocaleDateString()}</p>}
+                    {c.technician && <p>Technician: {c.technician}</p>}
+                    {c.client?.name && <p>Client: {c.client.name}</p>}
+                  </div>
+                  {hasCert ? (
+                    <button
+                      onClick={() => navigate(`/certifications?id=${c.certificateId}&tab=preview`)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 font-medium transition-colors"
+                    >
+                      <ExternalLink size={12} /> View Certificate
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleGenerateCert(c)}
+                      disabled={isGenerating}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-50 font-medium transition-colors"
+                    >
+                      {isGenerating
+                        ? <><Loader2 size={12} className="animate-spin" /> Generating…</>
+                        : <><FileCheck size={12} /> Generate Certificate</>
+                      }
+                    </button>
+                  )}
                 </div>
-                <div className="text-xs text-gray-500 space-y-1">
-                  <p>Calibrated: {new Date(c.calibrationDate).toLocaleDateString()}</p>
-                  <p>Next due: {new Date(c.nextDueDate).toLocaleDateString()}</p>
-                  <p>Technician: {c.technician}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

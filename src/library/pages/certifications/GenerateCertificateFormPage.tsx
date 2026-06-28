@@ -129,6 +129,9 @@ const GenerateCertificateFormPage: React.FC = () => {
   const [certNo,          setCertNo]          = useState("");
   const [calDate,         setCalDate]         = useState("");
   const [custName,        setCustName]        = useState("");
+  const [custCompany,     setCustCompany]     = useState("");
+  const [custEmail,       setCustEmail]       = useState("");
+  const [custPhone,       setCustPhone]       = useState("");
   const [custAddress,     setCustAddress]     = useState("");
   const [equipCalibrated, setEquipCalibrated] = useState("");
   const [equipLocation,   setEquipLocation]   = useState("");
@@ -177,6 +180,8 @@ const GenerateCertificateFormPage: React.FC = () => {
     const client = clients.find((c) => String(c.id) === clientId);
     if (!client) return;
     setCustName(client.name);
+    if ((client as any).email)   setCustEmail((client as any).email);
+    if ((client as any).phone)   setCustPhone((client as any).phone);
     const addr = client.address || client.location || "";
     if (addr) setCustAddress(addr);
   }, [clientId, userPickedClient, clients]);
@@ -192,6 +197,9 @@ const GenerateCertificateFormPage: React.FC = () => {
         setCertNo(str(d.certificateNumber));
         setCalDate(d.calibrationDate ? str(d.calibrationDate).slice(0, 10) : "");
         setCustName(str(d.customerName));
+        setCustCompany(str(d.customerCompanyName));
+        setCustEmail(str(d.customerEmail));
+        setCustPhone(str(d.customerPhone));
         setCustAddress(str(d.customerAddress));
         setEquipCalibrated(str(d.equipmentCalibrated));
         setEquipLocation(str(d.equipmentLocation));
@@ -249,6 +257,9 @@ const GenerateCertificateFormPage: React.FC = () => {
     return {
       ...(clientIdNum !== undefined && { clientId: clientIdNum }),
       customerName:          custName.trim(),
+      customerCompanyName:   custCompany.trim()  || undefined,
+      customerEmail:         custEmail.trim()    || undefined,
+      customerPhone:         custPhone.trim()    || undefined,
       customerAddress:       custAddress.trim(),
       equipmentCalibrated:   equipCalibrated.trim(),
       equipmentLocation:     equipLocation.trim(),
@@ -371,7 +382,7 @@ const GenerateCertificateFormPage: React.FC = () => {
 
   const previewData = {
     certificateNumber: certNo, calibrationDate: calDate, recommendedRecalibDate: recDate,
-    customerName: custName, customerAddress: custAddress, equipCalibrated,
+    customerName: custName, customerCompanyName: custCompany, customerEmail: custEmail, customerPhone: custPhone, customerAddress: custAddress, equipCalibrated,
     equipmentLocation: equipLocation, identificationNo: idNo, scale, scaleRange,
     scaleDivision: scaleDiv, maxScaleError: maxError, referenceInstrument: refInst,
     referenceInstrumentSN: refInstSn, temperature: temp, humidity, physicalExamText: physExam,
@@ -521,6 +532,42 @@ const GenerateCertificateFormPage: React.FC = () => {
                         />
                       </div>
                       <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                          Company / Organisation Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Lagos Bottling Company Ltd."
+                          value={custCompany}
+                          onChange={(e) => setCustCompany(e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                          Customer Email
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="e.g. procurement@company.com"
+                          value={custEmail}
+                          onChange={(e) => setCustEmail(e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                          Customer Phone
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="e.g. +234 801 234 5678"
+                          value={custPhone}
+                          onChange={(e) => setCustPhone(e.target.value)}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
                         <label className="block text-xs font-medium text-gray-600 mb-1.5">
                           Customer Address <Req />
                         </label>

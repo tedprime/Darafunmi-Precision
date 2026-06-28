@@ -24,6 +24,16 @@ export const getCalibrations = ({ page = 1, limit = 20, search = "", status = ""
     return { data: res.data, count: res.count };
   });
 
+export const getCalibration = (id) =>
+  wrap("Load calibration", async () => {
+    const res = await apiFetch(`/calibrations/${id}`);
+    if (!res.success) {
+      toastError(res.message || "Failed to load calibration.");
+      throw new Error(res.message);
+    }
+    return res.data;
+  });
+
 export const createCalibration = (body) =>
   wrap("Create calibration", () =>
     apiFetch("/calibrations", {
@@ -31,3 +41,26 @@ export const createCalibration = (body) =>
       body: JSON.stringify(body),
     })
   );
+
+export const updateCalibration = (id, body) =>
+  wrap("Update calibration", () =>
+    apiFetch(`/calibrations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    })
+  );
+
+export const deleteCalibration = (id) =>
+  wrap("Delete calibration", () =>
+    apiFetch(`/calibrations/${id}`, { method: "DELETE" })
+  );
+
+export const generateCertificateFromCalibration = (id) =>
+  wrap("Generate certificate", async () => {
+    const res = await apiFetch(`/calibrations/${id}/generate-certificate`, { method: "POST" });
+    if (!res.success) {
+      toastError(res.message || "Failed to generate certificate.");
+      throw new Error(res.message);
+    }
+    return res; // includes { data: certificate, alreadyExists? }
+  });

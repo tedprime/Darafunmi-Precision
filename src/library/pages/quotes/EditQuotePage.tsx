@@ -4,7 +4,7 @@ import Layout from "../../components/layout/Layout";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Plus, Trash2, TriangleAlert, Loader2, FileText,
-  User, Building2, Mail, MapPin, Link2, Receipt, StickyNote,
+  User, Building2, Mail, MapPin, Phone, Link2, Receipt, StickyNote,
 } from "lucide-react";
 import { getQuoteById, updateQuote } from "../../../services/quote.jsx";
 import { getClients } from "../../../services/client.jsx";
@@ -40,6 +40,7 @@ const EditQuotePage: React.FC = () => {
   const [customerName,  setCustomerName]  = useState("");
   const [companyName,   setCompanyName]   = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [clientAddress, setClientAddress] = useState("");
 
   const [clients, setClients]     = useState<Client[]>([]);
@@ -59,10 +60,11 @@ const EditQuotePage: React.FC = () => {
         setDescription(quote.description ?? "");
         setStatus(quote.status ?? "draft");
         setValidUntil(quote.validUntil ? quote.validUntil.slice(0, 10) : "");
-        setCustomerName(quote.customerName   ?? "");
-        setCompanyName(quote.companyName     ?? "");
-        setCustomerEmail(quote.customerEmail ?? "");
-        setClientAddress(quote.clientAddress ?? "");
+        setCustomerName(quote.customerName    ?? "");
+        setCompanyName(quote.companyName      ?? "");
+        setCustomerEmail(quote.customerEmail  ?? "");
+        setCustomerPhone(quote.customerPhone  ?? "");
+        setClientAddress(quote.clientAddress  ?? "");
         if (quote.items && quote.items.length > 0) {
           setItems(
             quote.items.map((it: any) => ({
@@ -113,6 +115,7 @@ const EditQuotePage: React.FC = () => {
         customerName:  customerName.trim()  || undefined,
         companyName:   companyName.trim()   || undefined,
         customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
         clientAddress: clientAddress.trim() || undefined,
         notes:         notes.trim()         || undefined,
         description:   description.trim()   || undefined,
@@ -294,6 +297,20 @@ const EditQuotePage: React.FC = () => {
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder="customer@example.com"
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5">
+                      <Phone size={12} className="text-gray-400" />
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="e.g. +234 801 234 5678"
                       className={inputCls}
                     />
                   </div>
