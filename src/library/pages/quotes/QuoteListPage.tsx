@@ -22,10 +22,14 @@ interface Quote {
   client?: { name: string; email?: string } | string;
   clientId?: number;
   quoteRequestId?: number;
+  customerName?: string;
+  companyName?: string;
+  customerEmail?: string;
+  clientAddress?: string;
   status: "draft" | "sent" | "accepted" | "rejected" | "revision_requested" | string;
   subtotal?: string | number;
-  tax?: string | number;
-  total?: string | number;
+  vatAmount?: string | number;
+  totalAmount?: string | number;
   notes?: string;
   description?: string;
   items?: QuoteItem[];
@@ -151,10 +155,12 @@ const QuoteListPage: React.FC = () => {
     }
   };
 
-  const getClientName = (client: Quote["client"]) => {
-    if (!client) return "—";
-    if (typeof client === "object") return client.name;
-    return client;
+  const getRecipientName = (quote: Quote) => {
+    if (quote.companyName) return quote.companyName;
+    if (quote.customerName) return quote.customerName;
+    if (!quote.client) return "—";
+    if (typeof quote.client === "object") return quote.client.name;
+    return quote.client;
   };
 
   const revisionQuotes = quotes.filter((q) => q.status === "revision_requested");
@@ -256,8 +262,8 @@ const QuoteListPage: React.FC = () => {
                       <td className="px-4 py-3.5">
                         <span className="font-mono text-xs font-medium text-gray-700">{quote.quoteNumber}</span>
                       </td>
-                      <td className="px-4 py-3.5 text-sm text-gray-700 whitespace-normal break-words">{getClientName(quote.client)}</td>
-                      <td className="px-4 py-3.5 text-sm text-gray-700">{fmtMoney(quote.total)}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-700 whitespace-normal break-words">{getRecipientName(quote)}</td>
+                      <td className="px-4 py-3.5 text-sm text-gray-700">{fmtMoney(quote.totalAmount)}</td>
                       <td className="px-4 py-3.5">
                         <Badge color={STATUS_COLOR[quote.status] ?? "gray"}>{quote.status.replace("_", " ")}</Badge>
                       </td>
@@ -344,12 +350,12 @@ const QuoteListPage: React.FC = () => {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-mono font-semibold text-gray-700">{quote.quoteNumber}</p>
-                    <p className="text-sm font-medium text-gray-900 mt-0.5 break-words">{getClientName(quote.client)}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-0.5 break-words">{getRecipientName(quote)}</p>
                   </div>
                   <Badge color={STATUS_COLOR[quote.status] ?? "gray"}>{quote.status.replace("_", " ")}</Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <span className="font-medium text-gray-800">{fmtMoney(quote.total)}</span>
+                  <span className="font-medium text-gray-800">{fmtMoney(quote.totalAmount)}</span>
                   <span>{quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "—"}</span>
                 </div>
                 <div className="flex gap-2 pt-3 border-t border-gray-100">
@@ -413,15 +419,18 @@ const QuoteListPage: React.FC = () => {
                   )}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     {([
-                      ["Quote #",     viewQuote.quoteNumber],
-                      ["Status",      viewQuote.status.replace("_", " ")],
-                      ["Client",      getClientName(viewQuote.client)],
-                      ["Date",        viewQuote.createdAt ? new Date(viewQuote.createdAt).toLocaleDateString() : "—"],
+                      ["Quote #",      viewQuote.quoteNumber],
+                      ["Status",       viewQuote.status.replace("_", " ")],
+                      ["Contact",      viewQuote.customerName  || "—"],
+                      ["Company",      viewQuote.companyName   || "—"],
+                      ["Email",        viewQuote.customerEmail || "—"],
+                      ["Address",      viewQuote.clientAddress || "—"],
+                      ["Date",         viewQuote.createdAt ? new Date(viewQuote.createdAt).toLocaleDateString() : "—"],
                       ["Valid Until",  viewQuote.validUntil ? new Date(viewQuote.validUntil).toLocaleDateString() : "—"],
                     ] as [string, string][]).map(([label, value]) => (
                       <div key={label}>
                         <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{label}</p>
-                        <p className="text-sm text-gray-800 font-medium mt-0.5 capitalize break-words">{value}</p>
+                        <p className="text-sm text-gray-800 font-medium mt-0.5 break-words">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -458,12 +467,12 @@ const QuoteListPage: React.FC = () => {
                     {viewQuote.subtotal !== undefined && (
                       <div className="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span>{fmtMoney(viewQuote.subtotal)}</span></div>
                     )}
-                    {viewQuote.tax !== undefined && (
-                      <div className="flex justify-between text-sm text-gray-600"><span>VAT (7.5%)</span><span>{fmtMoney(viewQuote.tax)}</span></div>
+                    {viewQuote.vatAmount !== undefined && (
+                      <div className="flex justify-between text-sm text-gray-600"><span>VAT (7.5%)</span><span>{fmtMoney(viewQuote.vatAmount)}</span></div>
                     )}
                     <div className="flex justify-between font-semibold text-gray-800 pt-2 border-t border-gray-200">
                       <span>Total</span>
-                      <span className="text-blue-700">{fmtMoney(viewQuote.total)}</span>
+                      <span className="text-blue-700">{fmtMoney(viewQuote.totalAmount)}</span>
                     </div>
                   </div>
 

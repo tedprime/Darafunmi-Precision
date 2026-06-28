@@ -12,20 +12,30 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Plus,
   Trash2,
-  AlertCircle,
   Loader2,
   FileText,
   User,
   Link2,
   Receipt,
   StickyNote,
+  Mail,
+  Building2,
+  MapPin,
 } from "lucide-react";
 import { createQuote } from "../../../services/quote.jsx";
 import { getClients } from "../../../services/client.jsx";
 import { getQuoteRequests } from "../../../services/quoteRequests";
+import { useToast } from "../../../services/useToast";
 
-interface Client { id: number; name: string; }
-interface QuoteRequest { id: number; quoteNumber?: string; customerName: string; customerEmail: string; }
+interface Client {
+  id: number; name: string; email?: string;
+  address?: string; location?: string;
+}
+interface QuoteRequest {
+  id: number; quoteNumber?: string;
+  customerName: string; customerEmail: string;
+  companyName?: string; customerAddress?: string;
+}
 interface LineItem { description: string; quantity: string; unitPrice: string; }
 
 const emptyItem = (): LineItem => ({ description: "", quantity: "1", unitPrice: "" });
@@ -39,16 +49,22 @@ const inputCls =
 const AddQuotePage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [clientId, setClientId]           = useState("");
+  const [clientId, setClientId]             = useState("");
   const [quoteRequestId, setQuoteRequestId] = useState("");
-  const [notes, setNotes]                 = useState("");
-  const [description, setDescription]     = useState("");
-  const [items, setItems]                 = useState<LineItem[]>([emptyItem()]);
+  const [notes, setNotes]                   = useState("");
+  const [description, setDescription]       = useState("");
+  const [items, setItems]                   = useState<LineItem[]>([emptyItem()]);
+
+  // Recipient details — manually entered or auto-filled from client/quote request
+  const [customerName,  setCustomerName]  = useState("");
+  const [companyName,   setCompanyName]   = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [clientAddress, setClientAddress] = useState("");
 
   const [clients, setClients]             = useState<Client[]>([]);
   const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>([]);
   const [submitting, setSubmitting]       = useState(false);
-  const [error, setError]                 = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     Promise.all([
@@ -67,6 +83,34 @@ const AddQuotePage: React.FC = () => {
   const removeItem = (idx: number) =>
     setItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev));
 
+  // Auto-fill recipient fields from a selected client (only if field is empty)
+  const handleClientChange = (val: string) => {
+    setClientId(val === "none" ? "" : val);
+    if (val && val !== "none") {
+      const c = clients.find((c) => String(c.id) === val);
+      if (c) {
+        if (!customerName)  setCustomerName(c.name);
+        if (!companyName)   setCompanyName(c.name);
+        if (!customerEmail) setCustomerEmail(c.email ?? "");
+        if (!clientAddress) setClientAddress(c.address ?? c.location ?? "");
+      }
+    }
+  };
+
+  // Auto-fill from a selected quote request
+  const handleQuoteRequestChange = (val: string) => {
+    setQuoteRequestId(val === "none" ? "" : val);
+    if (val && val !== "none") {
+      const qr = quoteRequests.find((q) => String(q.id) === val);
+      if (qr) {
+        if (!customerName)  setCustomerName(qr.customerName);
+        if (!companyName)   setCompanyName(qr.companyName ?? "");
+        if (!customerEmail) setCustomerEmail(qr.customerEmail);
+        if (!clientAddress) setClientAddress(qr.customerAddress ?? "");
+      }
+    }
+  };
+
   const lineTotal  = (it: LineItem) => (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0);
   const subtotal   = items.reduce((s, it) => s + lineTotal(it), 0);
   const tax        = subtotal * 0.075;
@@ -74,13 +118,16 @@ const AddQuotePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (!customerName.trim())  { toast.error("Contact name is required."); return; }
+    if (!companyName.trim())   { toast.error("Company name is required."); return; }
+    if (!customerEmail.trim()) { toast.error("Customer email is required."); return; }
+    if (!clientAddress.trim()) { toast.error("Address is required."); return; }
 
     const validItems = items.filter(
       (it) => it.description.trim() && parseFloat(it.quantity) > 0 && parseFloat(it.unitPrice) > 0,
     );
     if (!validItems.length) {
-      setError("Add at least one line item with a description, quantity, and unit price.");
+      toast.error("Add at least one line item with a description, quantity, and unit price.");
       return;
     }
 
@@ -89,8 +136,12 @@ const AddQuotePage: React.FC = () => {
       await createQuote({
         ...(clientId       && { clientId: Number(clientId) }),
         ...(quoteRequestId && { quoteRequestId: Number(quoteRequestId) }),
-        notes:       notes.trim()       || undefined,
-        description: description.trim() || undefined,
+        customerName:  customerName.trim()  || undefined,
+        companyName:   companyName.trim()   || undefined,
+        customerEmail: customerEmail.trim() || undefined,
+        clientAddress: clientAddress.trim() || undefined,
+        notes:         notes.trim()         || undefined,
+        description:   description.trim()   || undefined,
         items: validItems.map((it) => ({
           description: it.description.trim(),
           quantity:    parseFloat(it.quantity),
@@ -99,7 +150,7 @@ const AddQuotePage: React.FC = () => {
       });
       navigate("/quotes");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save quote.");
+      toast.error(err instanceof Error ? err.message : "Failed to save quote.");
     } finally {
       setSubmitting(false);
     }
@@ -108,14 +159,6 @@ const AddQuotePage: React.FC = () => {
   return (
     <Layout pageTitle="New Quote" pageSubtitle="Create a quotation for a client">
       <form onSubmit={handleSubmit}>
-
-        {/* Error banner */}
-        {error && (
-          <div className="flex items-start gap-3 p-4 mb-6 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
-            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
@@ -139,7 +182,7 @@ const AddQuotePage: React.FC = () => {
                     Client
                     <span className="text-gray-400 font-normal ml-0.5">— optional</span>
                   </label>
-                  <Select value={clientId || "none"} onValueChange={(v) => setClientId(v === "none" ? "" : v)}>
+                  <Select value={clientId || "none"} onValueChange={handleClientChange}>
                     <SelectTrigger className="w-full h-10 text-sm border-gray-200 rounded-lg">
                       <SelectValue placeholder="Select a client…" />
                     </SelectTrigger>
@@ -159,7 +202,7 @@ const AddQuotePage: React.FC = () => {
                     Linked Quote Request
                     <span className="text-gray-400 font-normal ml-0.5">— optional</span>
                   </label>
-                  <Select value={quoteRequestId || "none"} onValueChange={(v) => setQuoteRequestId(v === "none" ? "" : v)}>
+                  <Select value={quoteRequestId || "none"} onValueChange={handleQuoteRequestChange}>
                     <SelectTrigger className="w-full h-10 text-sm border-gray-200 rounded-lg">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
@@ -174,17 +217,87 @@ const AddQuotePage: React.FC = () => {
                   </Select>
                 </div>
 
-                {/* Description */}
+                {/* Service Type */}
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                    Description
-                    <span className="text-gray-400 font-normal ml-1">— optional</span>
+                    Service Type
+                    <span className="text-gray-400 font-normal ml-1">— used in PDF heading</span>
                   </label>
-                  <Textarea
+                  <input
+                    type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Scope or context for this quote…"
-                    className="resize-none text-sm min-h-[72px]"
+                    placeholder="e.g. Calibration, Maintenance, Repair…"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Recipient Details */}
+            <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <User size={14} className="text-purple-600" />
+                </div>
+                <h3 className="text-sm font-semibold text-gray-800">Recipient Details</h3>
+                <span className="text-xs text-gray-400 font-normal ml-0.5">— auto-filled or enter manually</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5">
+                    <User size={12} className="text-gray-400" />
+                    Contact Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    className={inputCls}
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5">
+                    <Building2 size={12} className="text-gray-400" />
+                    Company Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="e.g. Acme Corp Ltd."
+                    className={inputCls}
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5">
+                    <Mail size={12} className="text-gray-400" />
+                    Email <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="customer@example.com"
+                    className={inputCls}
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-1.5">
+                    <MapPin size={12} className="text-gray-400" />
+                    Address <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={clientAddress}
+                    onChange={(e) => setClientAddress(e.target.value)}
+                    placeholder="Street, City, State"
+                    className={inputCls}
                   />
                 </div>
               </div>
