@@ -5,7 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import {
-  AlertCircle, Loader2, Save, Send,
+  AlertCircle, Loader2, Save, Send, Calendar,
   Bold, Italic, List, Link as LinkIcon, Unlink,
 } from "lucide-react";
 import { confirmDialog } from "../../components/common/confirmDialog";
@@ -51,9 +51,12 @@ const NewsletterComposePage: React.FC = () => {
   const [campaignId, setCampaignId] = useState<number | null>(null);
   const [loading,   setLoading]   = useState(isEdit);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [saving,    setSaving]    = useState(false);
-  const [sending,   setSending]   = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
+  const [saving,       setSaving]       = useState(false);
+  const [sending,      setSending]      = useState(false);
+  const [scheduling,   setScheduling]   = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [error,        setError]        = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -76,6 +79,12 @@ const NewsletterComposePage: React.FC = () => {
         setPreheader(c.preheader ?? "");
         setCampaignId(c.id);
         editor?.commands.setContent(c.content ?? "");
+        if (c.scheduledFor) {
+          // Format as datetime-local string (YYYY-MM-DDTHH:mm)
+          const d = new Date(c.scheduledFor);
+          setScheduledFor(d.toISOString().slice(0, 16));
+          setShowSchedule(true);
+        }
       })
       .catch((err: any) => setLoadError(err?.message || "Failed to load campaign."))
       .finally(() => setLoading(false));
@@ -90,24 +99,61 @@ const NewsletterComposePage: React.FC = () => {
     return true;
   };
 
+  const basePayload = () => ({
+    subject:    subject.trim(),
+    preheader:  preheader.trim(),
+    content:    getContent(),
+  });
+
+  const saveOrCreate = async (extra: Record<string, any> = {}): Promise<number> => {
+    const payload = { ...basePayload(), ...extra };
+    if (campaignId) {
+      await updateCampaign(campaignId, payload);
+      return campaignId;
+    }
+    const res: any = await createCampaign(payload);
+    const id = (res.data ?? res).id;
+    setCampaignId(id);
+    navigate(`/newsletter/edit/${id}`, { replace: true });
+    return id;
+  };
+
   const handleSaveDraft = async () => {
     setError(null);
     if (!subject.trim()) { setError("Subject line is required."); return; }
     setSaving(true);
     try {
-      const payload = { subject: subject.trim(), preheader: preheader.trim(), content: getContent() };
-      if (campaignId) {
-        await updateCampaign(campaignId, payload);
-      } else {
-        const res: any = await createCampaign(payload);
-        const created  = res.data ?? res;
-        setCampaignId(created.id);
-        navigate(`/newsletter/edit/${created.id}`, { replace: true });
-      }
+      await saveOrCreate({ scheduledFor: null }); // clear any schedule when saving as draft
     } catch (err: any) {
       setError(err?.message || "Failed to save draft.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSchedule = async () => {
+    setError(null);
+    if (!validate()) return;
+    if (!scheduledFor) { setError("Please pick a date and time to schedule."); return; }
+    const schedDate = new Date(scheduledFor);
+    if (schedDate <= new Date()) { setError("Scheduled time must be in the future."); return; }
+
+    if (!(await confirmDialog({
+      title: "Schedule newsletter?",
+      description: `This will send to all active subscribers on ${schedDate.toLocaleString()}.`,
+      confirmLabel: "Schedule",
+      variant: "danger",
+    }))) return;
+
+    setScheduling(true);
+    try {
+      await saveOrCreate({ scheduledFor });
+      toast.success("Newsletter scheduled!");
+      navigate("/newsletter");
+    } catch (err: any) {
+      setError(err?.message || "Failed to schedule campaign.");
+    } finally {
+      setScheduling(false);
     }
   };
 
@@ -117,31 +163,15 @@ const NewsletterComposePage: React.FC = () => {
 
     if (!(await confirmDialog({
       title: "Send newsletter?",
-      description: "This will send the email to all active subscribers. This cannot be undone.",
+      description: "This will send the email to all active subscribers immediately. This cannot be undone.",
       confirmLabel: "Send Now",
       variant: "danger",
     }))) return;
 
     setSending(true);
     try {
-      // Save first if new or unsaved
-      let idToSend = campaignId;
-      if (!idToSend) {
-        const res: any = await createCampaign({
-          subject: subject.trim(),
-          preheader: preheader.trim(),
-          content: getContent(),
-        });
-        idToSend = (res.data ?? res).id;
-        setCampaignId(idToSend);
-      } else {
-        await updateCampaign(idToSend, {
-          subject: subject.trim(),
-          preheader: preheader.trim(),
-          content: getContent(),
-        });
-      }
-      const result: any = await sendCampaign(idToSend!);
+      const idToSend = await saveOrCreate({ scheduledFor: null });
+      const result: any = await sendCampaign(idToSend);
       toast.success(result?.message || "Newsletter sent successfully!");
       navigate("/newsletter");
     } catch (err: any) {
@@ -293,25 +323,57 @@ const NewsletterComposePage: React.FC = () => {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Publish</h3>
-            <p className="text-xs text-gray-500 mb-5">
-              Save as a draft to continue editing later, or send immediately to all active subscribers.
-            </p>
             <div className="flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={sending || saving}
+                disabled={sending || saving || scheduling}
                 className="w-full px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {sending
                   ? <><Loader2 size={15} className="animate-spin" />Sending…</>
-                  : <><Send size={15} />Send Newsletter</>
+                  : <><Send size={15} />Send Now</>
                 }
               </button>
+
+              {/* Schedule toggle */}
+              <button
+                type="button"
+                onClick={() => setShowSchedule((v) => !v)}
+                disabled={sending || saving || scheduling}
+                className="w-full px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Calendar size={15} />
+                {showSchedule ? "Cancel schedule" : "Schedule for later"}
+              </button>
+
+              {showSchedule && (
+                <div className="space-y-2">
+                  <input
+                    type="datetime-local"
+                    value={scheduledFor}
+                    onChange={(e) => setScheduledFor(e.target.value)}
+                    min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSchedule}
+                    disabled={!scheduledFor || scheduling || sending || saving}
+                    className="w-full px-5 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  >
+                    {scheduling
+                      ? <><Loader2 size={15} className="animate-spin" />Scheduling…</>
+                      : <><Calendar size={15} />Confirm Schedule</>
+                    }
+                  </button>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                disabled={saving || sending}
+                disabled={saving || sending || scheduling}
                 className="w-full px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {saving
@@ -322,7 +384,7 @@ const NewsletterComposePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate("/newsletter")}
-                disabled={saving || sending}
+                disabled={saving || sending || scheduling}
                 className="w-full px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
               >
                 Cancel

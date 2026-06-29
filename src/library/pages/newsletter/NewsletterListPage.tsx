@@ -4,7 +4,7 @@ import Layout from "../../components/layout/Layout";
 import { confirmDialog } from "../../components/common/confirmDialog";
 import {
   TriangleAlert, Trash2, Search, ChevronLeft, ChevronRight,
-  Loader2, PenSquare, Send, Clock, Edit,
+  Loader2, PenSquare, Send, Clock, Edit, Calendar,
 } from "lucide-react";
 import {
   getNewsletterSubscribers, unsubscribeNewsletter,
@@ -25,7 +25,8 @@ interface Campaign {
   id: number;
   subject: string;
   preheader?: string | null;
-  status: "draft" | "sent";
+  status: "draft" | "scheduled" | "sent";
+  scheduledFor?: string | null;
   sentAt?: string | null;
   recipientCount?: number;
   createdAt: string;
@@ -336,6 +337,10 @@ const NewsletterListPage: React.FC = () => {
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
                                 <Send size={11} />Sent
                               </span>
+                            ) : c.status === "scheduled" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700">
+                                <Calendar size={11} />Scheduled
+                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
                                 <Clock size={11} />Draft
@@ -343,17 +348,19 @@ const NewsletterListPage: React.FC = () => {
                             )}
                           </td>
                           <td className="px-4 py-3.5 text-sm text-gray-600 whitespace-nowrap">
-                            {c.sentAt ? fmt(c.sentAt) : "—"}
+                            {c.status === "sent" && c.sentAt ? fmt(c.sentAt)
+                              : c.status === "scheduled" && c.scheduledFor ? fmt(c.scheduledFor)
+                              : "—"}
                           </td>
                           <td className="px-4 py-3.5 text-sm text-gray-600">
                             {c.status === "sent" ? (c.recipientCount ?? 0) : "—"}
                           </td>
                           <td className="px-4 py-3.5">
-                            {c.status === "draft" ? (
+                            {c.status !== "sent" ? (
                               <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() => navigate(`/newsletter/edit/${c.id}`)}
-                                  title="Edit draft"
+                                  title={c.status === "scheduled" ? "Edit scheduled campaign" : "Edit draft"}
                                   className="p-1.5 border border-gray-200 text-gray-500 hover:bg-gray-50 rounded-md transition-colors"
                                 >
                                   <Edit size={14} />
@@ -361,7 +368,7 @@ const NewsletterListPage: React.FC = () => {
                                 <button
                                   onClick={() => handleDeleteCampaign(c)}
                                   disabled={deletingId === c.id}
-                                  title="Delete draft"
+                                  title={c.status === "scheduled" ? "Cancel schedule" : "Delete draft"}
                                   className="p-1.5 border border-red-100 text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-40"
                                 >
                                   {deletingId === c.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
@@ -387,13 +394,21 @@ const NewsletterListPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{c.subject}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{c.sentAt ? fmt(c.sentAt) : "Draft · not sent"}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {c.status === "sent" && c.sentAt ? `Sent ${fmt(c.sentAt)}`
+                            : c.status === "scheduled" && c.scheduledFor ? `Scheduled for ${fmt(c.scheduledFor)}`
+                            : "Draft · not sent"}
+                        </p>
                       </div>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${c.status === "sent" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
-                        {c.status === "sent" ? "Sent" : "Draft"}
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                        c.status === "sent" ? "bg-green-50 text-green-700"
+                        : c.status === "scheduled" ? "bg-violet-50 text-violet-700"
+                        : "bg-amber-50 text-amber-700"
+                      }`}>
+                        {c.status === "sent" ? "Sent" : c.status === "scheduled" ? "Scheduled" : "Draft"}
                       </span>
                     </div>
-                    {c.status === "draft" && (
+                    {c.status !== "sent" && (
                       <div className="pt-3 mt-3 border-t border-gray-100 flex gap-4">
                         <button onClick={() => navigate(`/newsletter/edit/${c.id}`)} className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800">
                           <Edit size={12} />Edit

@@ -51,7 +51,7 @@ export async function getCampaign(id) {
 }
 
 /**
- * @param {{ subject: string, preheader?: string, content: string }} data
+ * @param {{ subject: string, preheader?: string, content: string, scheduledFor?: string|null }} data
  */
 export async function createCampaign(data) {
   return wrap("Create campaign", async () => {
@@ -66,7 +66,7 @@ export async function createCampaign(data) {
 
 /**
  * @param {number} id
- * @param {{ subject?: string, preheader?: string, content?: string }} data
+ * @param {{ subject?: string, preheader?: string, content?: string, scheduledFor?: string|null }} data
  */
 export async function updateCampaign(id, data) {
   return wrap("Update campaign", async () => {
