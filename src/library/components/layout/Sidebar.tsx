@@ -16,7 +16,6 @@ import {
   Users2,
   CalendarCheck,
   ShoppingBag,
-  Wrench,
   BookOpen,
   UserCog,
   Newspaper,
@@ -42,7 +41,6 @@ const navItems = [
     ],
   },
   { name: "Site Users", icon: UserCog, path: "/site-users" },
-  { name: "Services",   icon: Wrench,  path: "/services"   },
   {
     name: "Team",
     icon: Users2,

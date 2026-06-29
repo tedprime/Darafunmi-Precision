@@ -33,9 +33,6 @@ import EditCaseStudyPage from "./library/pages/caseStudy/EditCaseStudyPage";
 import SettingsPage from "./library/pages/settings/SettingsPage";
 import OrderListPage from "./library/pages/orders/OrderListPage";
 import SiteUserListPage from "./library/pages/siteUsers/siteUserListPage";
-import ServiceListPage from "./library/pages/services/ServicesListPage";
-import AddServicePage from "./library/pages/services/AddServicePage";
-import EditServicePage from "./library/pages/services/EditServicePage";
 import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
 import NewsletterComposePage from "./library/pages/newsletter/NewsletterComposePage";
 import TeamListPage from "./library/pages/team/TeamListPage";
@@ -146,32 +143,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Services */}
-          <Route
-            path="/services"
-            element={
-              <ProtectedRoute>
-                <ServiceListPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/services/add"
-            element={
-              <ProtectedRoute>
-                <AddServicePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/services/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditServicePage />
-              </ProtectedRoute>
-            }
-          />
-
           {/* Products */}
           <Route
             path="/products"
