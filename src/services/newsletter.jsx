@@ -11,11 +11,13 @@ const wrap = async (label, fn) => {
   }
 };
 
-export async function getNewsletterSubscribers({ page = 1, limit = 50 } = {}) {
+export async function getNewsletterSubscribers({ page = 1, limit = 20, search = "", isActive } = {}) {
   return wrap("Load subscribers", () => {
     const params = new URLSearchParams();
     params.set("page", String(page));
     params.set("limit", String(limit));
+    if (search) params.set("search", search);
+    if (isActive !== undefined) params.set("isActive", String(isActive));
     return apiFetch(`/newsletter?${params.toString()}`);
   });
 }
