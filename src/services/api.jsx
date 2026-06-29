@@ -51,7 +51,12 @@ export async function apiFetch(endpoint, options = {}, retries = 3) {
       }
 
       if (!response.ok) {
-        const message = getFriendlyErrorMessage(response.status);
+        let serverMessage;
+        try {
+          const body = await response.json();
+          serverMessage = body?.message;
+        } catch { /* response body wasn't JSON */ }
+        const message = serverMessage || getFriendlyErrorMessage(response.status);
         toastError(message);
         throw { status: response.status, message };
       }

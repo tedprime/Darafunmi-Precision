@@ -98,6 +98,7 @@ const EditQuotePage: React.FC = () => {
     if (!customerName.trim())  { toast.error("Contact name is required."); return; }
     if (!companyName.trim())   { toast.error("Company name is required."); return; }
     if (!customerEmail.trim()) { toast.error("Customer email is required."); return; }
+    if (!customerPhone.trim()) { toast.error("Customer phone is required."); return; }
     if (!clientAddress.trim()) { toast.error("Address is required."); return; }
 
     const validItems = items.filter(
@@ -129,8 +130,8 @@ const EditQuotePage: React.FC = () => {
         })),
       });
       navigate("/quotes");
-    } catch {
-      toast.error("Failed to update quote. Please try again.");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update quote. Please try again.");
     } finally {
       setSubmitting(false);
     }

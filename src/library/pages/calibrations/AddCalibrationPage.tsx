@@ -164,8 +164,13 @@ const AddCalibrationPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!equipmentName.trim()) { setError("Equipment name is required."); return; }
-    if (!calibrationDate)       { setError("Calibration date is required."); return; }
+    if (!equipmentName.trim())         { setError("Equipment name is required."); return; }
+    if (!calibrationDate)               { setError("Calibration date is required."); return; }
+    if (!customerName.trim())           { setError("Customer name is required."); return; }
+    if (!customerCompanyName.trim())    { setError("Company name is required."); return; }
+    if (!customerEmail.trim())          { setError("Customer email is required."); return; }
+    if (!customerPhone.trim())          { setError("Customer phone is required."); return; }
+    if (!customerAddress.trim())        { setError("Customer address is required."); return; }
 
     setSubmitting(true);
     try {
@@ -204,8 +209,8 @@ const AddCalibrationPage: React.FC = () => {
         ),
       });
       navigate("/calibrations/history");
-    } catch {
-      setError("Failed to save calibration record. Please try again.");
+    } catch (err: any) {
+      setError(err?.message || "Failed to save calibration record. Please try again.");
     } finally {
       setSubmitting(false);
     }

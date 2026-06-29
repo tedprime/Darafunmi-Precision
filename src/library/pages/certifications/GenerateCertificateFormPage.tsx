@@ -296,6 +296,9 @@ const GenerateCertificateFormPage: React.FC = () => {
     if (!serviceType)             missing.push("Service Type");
     if (!calDate)                 missing.push("Calibration Date");
     if (!custName.trim())         missing.push("Customer Name");
+    if (!custCompany.trim())      missing.push("Company Name");
+    if (!custEmail.trim())        missing.push("Customer Email");
+    if (!custPhone.trim())        missing.push("Customer Phone");
     if (!custAddress.trim())      missing.push("Customer Address");
     if (!equipCalibrated.trim())  missing.push("Equipment Calibrated");
     if (!equipLocation.trim())    missing.push("Equipment Location");
@@ -328,7 +331,7 @@ const GenerateCertificateFormPage: React.FC = () => {
       }
       navigate("/certifications");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : `Failed to ${isEditMode ? "update" : "create"} certificate.`);
+      toast.error((err as any)?.message ||`Failed to ${isEditMode ? "update" : "create"} certificate.`);
     } finally {
       setSubmitting(false);
     }
@@ -353,7 +356,7 @@ const GenerateCertificateFormPage: React.FC = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to generate PDF.");
+      toast.error((err as any)?.message ||"Failed to generate PDF.");
     } finally {
       setDownloading(false);
     }
@@ -374,7 +377,7 @@ const GenerateCertificateFormPage: React.FC = () => {
       toast.success("Certificate emailed successfully.");
       setEmailModalOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to send email.");
+      toast.error((err as any)?.message ||"Failed to send email.");
     } finally {
       setSending(false);
     }
