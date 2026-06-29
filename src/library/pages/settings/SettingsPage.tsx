@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
-import Card from "../../components/common/Card";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import { Save, UserPlus } from "lucide-react";
+import { Save, UserPlus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { apiFetch } from "../../../services/api.jsx";
 import { updateProfile, changePassword, register } from "../../../services/auth.jsx";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -22,382 +19,421 @@ interface Settings {
 }
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
+type Tab = "general" | "company" | "notifications" | "profile" | "users";
 
-const SkeletonPulse = ({ className = "" }: { className?: string }) => (
-  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+const Skeleton = ({ className = "" }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded-md ${className}`} />
 );
 
-const SettingsSkeleton = () => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div className="lg:col-span-2 space-y-6">
-      <Card>
-        <SkeletonPulse className="h-4 w-24 mb-4" />
-        <SkeletonPulse className="h-10 w-full" />
-        <SkeletonPulse className="h-3 w-48 mt-2" />
-      </Card>
-      <Card>
-        <SkeletonPulse className="h-4 w-20 mb-4" />
-        <SkeletonPulse className="h-24 w-full" />
-        <SkeletonPulse className="h-3 w-32 mt-2" />
-      </Card>
-    </div>
-    <div className="space-y-6">
-      <Card>
-        <SkeletonPulse className="h-4 w-32 mb-4" />
-        <SkeletonPulse className="h-40 w-full rounded-lg" />
-      </Card>
-      <SkeletonPulse className="h-10 w-full" />
-    </div>
+/* ── Reusable field components ─────────────────────────────────── */
+const Field = ({
+  label, id, children,
+}: { label: string; id?: string; children: React.ReactNode }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label}
+    </label>
+    {children}
   </div>
 );
 
+const TextInput = ({
+  id, type = "text", value, onChange, placeholder,
+}: {
+  id?: string; type?: string; value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+}) => (
+  <input
+    id={id}
+    type={type}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors placeholder-gray-400"
+  />
+);
+
+const Toggle = ({
+  checked, onChange,
+}: { checked: boolean; onChange: (v: boolean) => void }) => (
+  <button
+    type="button"
+    onClick={() => onChange(!checked)}
+    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
+      checked ? "bg-blue-600" : "bg-gray-200"
+    }`}
+  >
+    <span
+      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+        checked ? "translate-x-6" : "translate-x-1"
+      }`}
+    />
+  </button>
+);
+
+const StatusBanner = ({ status, error }: { status: SaveStatus; error?: string | null }) => {
+  if (status === "error" && error) return (
+    <div className="flex items-center gap-2 p-3.5 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600 mb-5">
+      <AlertCircle size={15} className="shrink-0" />{error}
+    </div>
+  );
+  if (status === "success") return (
+    <div className="flex items-center gap-2 p-3.5 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 mb-5">
+      <CheckCircle2 size={15} className="shrink-0" />Saved successfully.
+    </div>
+  );
+  return null;
+};
+
+const SaveBtn = ({
+  status, label = "Save Changes", savingLabel = "Saving…", successLabel = "Saved!",
+}: { status: SaveStatus; label?: string; savingLabel?: string; successLabel?: string }) => (
+  <button
+    type="submit"
+    disabled={status === "saving"}
+    className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+      status === "success" ? "bg-green-600 hover:bg-green-700 text-white"
+      : status === "error"   ? "bg-red-600 hover:bg-red-700 text-white"
+      : "bg-blue-600 hover:bg-blue-700 text-white"
+    }`}
+  >
+    {status === "saving"
+      ? <><Loader2 size={15} className="animate-spin" />{savingLabel}</>
+      : status === "success"
+      ? <><CheckCircle2 size={15} />{successLabel}</>
+      : <><Save size={15} />{label}</>
+    }
+  </button>
+);
+
+/* ── Main page ─────────────────────────────────────────────────── */
 const SettingsPage: React.FC = () => {
   const { user, setUser } = useAuth();
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTab, setActiveTab] = useState<Tab>("general");
   const [settings, setSettings] = useState<Settings>({
     appName: "", timezone: "", language: "",
     companyName: "", companyEmail: "", companyPhone: "", companyAddress: "",
     emailNotifications: true, certExpiryAlerts: true, newOrderNotifications: true,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading,    setLoading]    = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg,   setErrorMsg]   = useState<string | null>(null);
 
-  // Profile state
-  const [profileName, setProfileName] = useState(user?.name ?? "");
-  const [profileEmail, setProfileEmail] = useState(user?.email ?? "");
+  const [profileName,   setProfileName]   = useState(user?.name ?? "");
+  const [profileEmail,  setProfileEmail]  = useState(user?.email ?? "");
   const [profileStatus, setProfileStatus] = useState<SaveStatus>("idle");
-  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileError,  setProfileError]  = useState<string | null>(null);
 
-  // Password state
   const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [newPassword,     setNewPassword]     = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordStatus, setPasswordStatus] = useState<SaveStatus>("idle");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordStatus,  setPasswordStatus]  = useState<SaveStatus>("idle");
+  const [passwordError,   setPasswordError]   = useState<string | null>(null);
 
-  // Invite admin user state
-  const [inviteName, setInviteName] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"staff" | "admin" | "superadmin">("staff");
-  const [inviteStatus, setInviteStatus] = useState<SaveStatus>("idle");
-  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteName,    setInviteName]    = useState("");
+  const [inviteEmail,   setInviteEmail]   = useState("");
+  const [inviteRole,    setInviteRole]    = useState<"staff" | "admin" | "superadmin">("staff");
+  const [inviteStatus,  setInviteStatus]  = useState<SaveStatus>("idle");
+  const [inviteError,   setInviteError]   = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch("/settings")
-      .then((res) => { if (res.success) setSettings(res.data); })
+      .then((res: any) => { if (res.success) setSettings(res.data); })
       .catch(() => setErrorMsg("Failed to load settings."))
       .finally(() => setLoading(false));
   }, []);
 
+  const after = (set: (s: SaveStatus) => void, ms = 2500) =>
+    setTimeout(() => set("idle"), ms);
+
   const handleSave = async (patch: Partial<Settings>) => {
-    setSaveStatus("saving");
-    setErrorMsg(null);
+    setSaveStatus("saving"); setErrorMsg(null);
     try {
-      const res = await apiFetch("/settings", {
-        method: "PATCH",
-        body: JSON.stringify(patch),
-      });
-      if (res.success) {
-        setSettings((prev) => ({ ...prev, ...patch }));
-        setSaveStatus("success");
-        setTimeout(() => setSaveStatus("idle"), 2500);
-      }
-    } catch (err) {
-      const error = err as { message?: string };
-      setErrorMsg(
-        error.message?.includes("403")
-          ? "Permission denied — superadmin role required."
-          : "Failed to save settings. Please try again."
-      );
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      await apiFetch("/settings", { method: "PATCH", body: JSON.stringify(patch) });
+      setSettings((p) => ({ ...p, ...patch }));
+      setSaveStatus("success"); after(setSaveStatus);
+    } catch (err: any) {
+      setErrorMsg(err?.message?.includes("403")
+        ? "Permission denied — superadmin role required."
+        : "Failed to save settings.");
+      setSaveStatus("error"); after(setSaveStatus, 3000);
     }
   };
 
   const handleProfileSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProfileError(null);
+    e.preventDefault(); setProfileError(null);
     if (!profileName.trim()) { setProfileError("Name is required."); return; }
     if (!profileEmail.trim()) { setProfileError("Email is required."); return; }
     setProfileStatus("saving");
     try {
       await updateProfile({ name: profileName.trim(), email: profileEmail.trim() });
-      // Sync updated name/email into auth context so Header reflects immediately
-      const updated = { ...(user ?? {}), name: profileName.trim(), email: profileEmail.trim() };
-      setUser(updated as typeof user);
-      setProfileStatus("success");
-      setTimeout(() => setProfileStatus("idle"), 2500);
-    } catch (err) {
-      const error = err as { message?: string };
-      setProfileError(error.message ?? "Failed to update profile.");
-      setProfileStatus("error");
-      setTimeout(() => setProfileStatus("idle"), 3000);
+      setUser({ ...(user ?? {}), name: profileName.trim(), email: profileEmail.trim() } as typeof user);
+      setProfileStatus("success"); after(setProfileStatus);
+    } catch (err: any) {
+      setProfileError(err?.message ?? "Failed to update profile.");
+      setProfileStatus("error"); after(setProfileStatus, 3000);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault(); setPasswordError(null);
+    if (!currentPassword) { setPasswordError("Current password is required."); return; }
+    if (!newPassword)     { setPasswordError("New password is required."); return; }
+    if (newPassword !== confirmPassword) { setPasswordError("Passwords do not match."); return; }
+    if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
+    setPasswordStatus("saving");
+    try {
+      await changePassword(currentPassword, newPassword);
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+      setPasswordStatus("success"); after(setPasswordStatus);
+    } catch (err: any) {
+      setPasswordError(err?.message ?? "Failed to change password.");
+      setPasswordStatus("error"); after(setPasswordStatus, 3000);
     }
   };
 
   const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setInviteError(null);
-    setInviteSuccess(null);
-    if (!inviteName.trim()) { setInviteError("Name is required."); return; }
+    e.preventDefault(); setInviteError(null); setInviteSuccess(null);
+    if (!inviteName.trim())  { setInviteError("Name is required."); return; }
     if (!inviteEmail.trim()) { setInviteError("Email is required."); return; }
     setInviteStatus("saving");
     try {
       await register({ name: inviteName.trim(), email: inviteEmail.trim(), role: inviteRole });
       setInviteSuccess(`Account created — a temporary password has been sent to ${inviteEmail.trim()}.`);
-      setInviteName("");
-      setInviteEmail("");
-      setInviteRole("staff");
+      setInviteName(""); setInviteEmail(""); setInviteRole("staff");
       setInviteStatus("success");
       setTimeout(() => { setInviteStatus("idle"); setInviteSuccess(null); }, 5000);
-    } catch (err) {
-      const error = err as { message?: string };
-      setInviteError(error.message ?? "Failed to create user.");
-      setInviteStatus("error");
-      setTimeout(() => setInviteStatus("idle"), 3000);
+    } catch (err: any) {
+      setInviteError(err?.message ?? "Failed to create user.");
+      setInviteStatus("error"); after(setInviteStatus, 3000);
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    if (!currentPassword) { setPasswordError("Current password is required."); return; }
-    if (!newPassword) { setPasswordError("New password is required."); return; }
-    if (newPassword !== confirmPassword) { setPasswordError("New passwords do not match."); return; }
-    if (newPassword.length < 6) { setPasswordError("New password must be at least 6 characters."); return; }
-    setPasswordStatus("saving");
-    try {
-      await changePassword(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setPasswordStatus("success");
-      setTimeout(() => setPasswordStatus("idle"), 2500);
-    } catch (err) {
-      const error = err as { message?: string };
-      setPasswordError(error.message ?? "Failed to change password.");
-      setPasswordStatus("error");
-      setTimeout(() => setPasswordStatus("idle"), 3000);
-    }
-  };
-
-  const saveLabel = (status: SaveStatus) => {
-    if (status === "saving") return "Saving...";
-    if (status === "success") return "Saved!";
-    if (status === "error") return "Failed";
-    return "Save Changes";
-  };
-
-  const saveButtonClass = (status: SaveStatus) => {
-    if (status === "success") return "bg-green-600 hover:bg-green-700";
-    if (status === "error") return "bg-red-600 hover:bg-red-700";
-    return "";
-  };
+  const TABS: { key: Tab; label: string }[] = [
+    { key: "general",       label: "General" },
+    { key: "company",       label: "Company" },
+    { key: "notifications", label: "Notifications" },
+    { key: "profile",       label: "Profile" },
+    { key: "users",         label: "Users" },
+  ];
 
   return (
     <Layout pageTitle="Settings" pageSubtitle="Manage your application settings and preferences">
-      {errorMsg && !loading && (
-        <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600 max-w-3xl">
-          {errorMsg}
-        </div>
-      )}
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit flex-wrap">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => { setActiveTab(key); setErrorMsg(null); setSaveStatus("idle"); }}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === key
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
-        <SettingsSkeleton />
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 max-w-2xl space-y-4">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-32" />
+        </div>
       ) : (
-        <>
-          {/* Tab bar */}
-          <div className="bg-gray-100 p-1 rounded-lg flex mb-6">
-            {["general", "company", "notifications", "profile", "users"].map((tab) => (
-              <button
-                key={tab}
-                className={`flex-1 py-2 px-4 text-sm font-medium rounded-md capitalize ${
-                  activeTab === tab
-                    ? "bg-white shadow text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-                onClick={() => {
-                  setActiveTab(tab);
-                  setErrorMsg(null);
-                  setSaveStatus("idle");
-                }}
+        <div className="max-w-2xl">
+
+          {/* ── General ── */}
+          {activeTab === "general" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">General Settings</h3>
+              <StatusBanner status={saveStatus} error={errorMsg} />
+              <form
+                className="space-y-4"
+                onSubmit={(e) => { e.preventDefault(); handleSave({ appName: settings.appName, timezone: settings.timezone, language: settings.language }); }}
               >
-                {tab}
-              </button>
-            ))}
-          </div>
+                <Field label="Application Name" id="appName">
+                  <TextInput id="appName" value={settings.appName} onChange={(e) => setSettings((p) => ({ ...p, appName: e.target.value }))} placeholder="Darafunmi Admin" />
+                </Field>
+                <Field label="Timezone" id="timezone">
+                  <TextInput id="timezone" value={settings.timezone} onChange={(e) => setSettings((p) => ({ ...p, timezone: e.target.value }))} placeholder="Africa/Lagos" />
+                </Field>
+                <Field label="Language" id="language">
+                  <TextInput id="language" value={settings.language} onChange={(e) => setSettings((p) => ({ ...p, language: e.target.value }))} placeholder="en" />
+                </Field>
+                <div className="pt-2">
+                  <SaveBtn status={saveStatus} />
+                </div>
+              </form>
+            </div>
+          )}
 
-          <Card className="w-full">
-            {/* General */}
-            {activeTab === "general" && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">General Settings</h3>
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave({ appName: settings.appName, timezone: settings.timezone, language: settings.language }); }}>
-                  <Input id="appName" label="Application Name" value={settings.appName} onChange={(e) => setSettings((p) => ({ ...p, appName: e.target.value }))} />
-                  <Input id="timezone" label="Timezone" value={settings.timezone} onChange={(e) => setSettings((p) => ({ ...p, timezone: e.target.value }))} />
-                  <Input id="language" label="Language" value={settings.language} onChange={(e) => setSettings((p) => ({ ...p, language: e.target.value }))} />
-                  <Button type="submit" disabled={saveStatus === "saving"} className={`flex items-center mt-4 ${saveButtonClass(saveStatus)}`}>
-                    <Save size={16} className="mr-2" /> {saveLabel(saveStatus)}
-                  </Button>
-                </form>
-              </div>
-            )}
+          {/* ── Company ── */}
+          {activeTab === "company" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Company Information</h3>
+              <StatusBanner status={saveStatus} error={errorMsg} />
+              <form
+                className="space-y-4"
+                onSubmit={(e) => { e.preventDefault(); handleSave({ companyName: settings.companyName, companyEmail: settings.companyEmail, companyPhone: settings.companyPhone, companyAddress: settings.companyAddress }); }}
+              >
+                <Field label="Company Name" id="compName">
+                  <TextInput id="compName" value={settings.companyName} onChange={(e) => setSettings((p) => ({ ...p, companyName: e.target.value }))} placeholder="Darafunmi Precision Technologies" />
+                </Field>
+                <Field label="Email" id="compEmail">
+                  <TextInput id="compEmail" type="email" value={settings.companyEmail} onChange={(e) => setSettings((p) => ({ ...p, companyEmail: e.target.value }))} placeholder="info@darafunmi.com" />
+                </Field>
+                <Field label="Phone" id="compPhone">
+                  <TextInput id="compPhone" value={settings.companyPhone} onChange={(e) => setSettings((p) => ({ ...p, companyPhone: e.target.value }))} placeholder="+234 803 468 0544" />
+                </Field>
+                <Field label="Address" id="compAddress">
+                  <TextInput id="compAddress" value={settings.companyAddress} onChange={(e) => setSettings((p) => ({ ...p, companyAddress: e.target.value }))} placeholder="123 Main Street, Lagos" />
+                </Field>
+                <div className="pt-2">
+                  <SaveBtn status={saveStatus} />
+                </div>
+              </form>
+            </div>
+          )}
 
-            {/* Company */}
-            {activeTab === "company" && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Company Information</h3>
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave({ companyName: settings.companyName, companyEmail: settings.companyEmail, companyPhone: settings.companyPhone, companyAddress: settings.companyAddress }); }}>
-                  <Input id="compName" label="Company Name" placeholder="Your Company Name" value={settings.companyName} onChange={(e) => setSettings((p) => ({ ...p, companyName: e.target.value }))} />
-                  <Input id="compEmail" label="Company Email" placeholder="info@company.com" type="email" value={settings.companyEmail} onChange={(e) => setSettings((p) => ({ ...p, companyEmail: e.target.value }))} />
-                  <Input id="compPhone" label="Company Phone" placeholder="+1 (555) 000-0000" value={settings.companyPhone} onChange={(e) => setSettings((p) => ({ ...p, companyPhone: e.target.value }))} />
-                  <Input id="compAddress" label="Address" placeholder="123 Main Street, City, State" value={settings.companyAddress} onChange={(e) => setSettings((p) => ({ ...p, companyAddress: e.target.value }))} />
-                  <Button type="submit" disabled={saveStatus === "saving"} className={`flex items-center mt-4 ${saveButtonClass(saveStatus)}`}>
-                    <Save size={16} className="mr-2" /> {saveLabel(saveStatus)}
-                  </Button>
-                </form>
-              </div>
-            )}
-
-            {/* Notifications */}
-            {activeTab === "notifications" && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Notification Preferences</h3>
-                <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSave({ emailNotifications: settings.emailNotifications, certExpiryAlerts: settings.certExpiryAlerts, newOrderNotifications: settings.newOrderNotifications }); }}>
-                  {[
-                    { key: "emailNotifications" as const, label: "Email Notifications", description: "Receive email for important updates" },
-                    { key: "certExpiryAlerts" as const, label: "Certificate Expiry Alerts", description: "Get notified when certificates are about to expire" },
-                    { key: "newOrderNotifications" as const, label: "New Order Notifications", description: "Get notified when new orders are received" },
-                  ].map(({ key, label, description }) => (
-                    <div key={key} className="flex items-start justify-between border-b border-gray-200 pb-4">
+          {/* ── Notifications ── */}
+          {activeTab === "notifications" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Notification Preferences</h3>
+              <StatusBanner status={saveStatus} error={errorMsg} />
+              <form
+                onSubmit={(e) => { e.preventDefault(); handleSave({ emailNotifications: settings.emailNotifications, certExpiryAlerts: settings.certExpiryAlerts, newOrderNotifications: settings.newOrderNotifications }); }}
+              >
+                <div className="space-y-0 divide-y divide-gray-100">
+                  {([
+                    { key: "emailNotifications" as const,    label: "Email Notifications",        desc: "Receive emails for important updates" },
+                    { key: "certExpiryAlerts" as const,      label: "Certificate Expiry Alerts",   desc: "Get notified when certificates are about to expire" },
+                    { key: "newOrderNotifications" as const, label: "New Order Notifications",     desc: "Get notified when new orders are received" },
+                  ] as const).map(({ key, label, desc }) => (
+                    <div key={key} className="flex items-center justify-between py-4 gap-4">
                       <div>
-                        <p className="font-medium text-gray-900">{label}</p>
-                        <p className="text-sm text-gray-500">{description}</p>
+                        <p className="text-sm font-medium text-gray-900">{label}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
                       </div>
-                      <input type="checkbox" checked={settings[key]} onChange={(e) => setSettings((p) => ({ ...p, [key]: e.target.checked }))} className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                      <Toggle checked={settings[key]} onChange={(v) => setSettings((p) => ({ ...p, [key]: v }))} />
                     </div>
                   ))}
-                  <Button type="submit" disabled={saveStatus === "saving"} className={`flex items-center mt-4 ${saveButtonClass(saveStatus)}`}>
-                    <Save size={16} className="mr-2" /> {saveLabel(saveStatus)}
-                  </Button>
+                </div>
+                <div className="pt-5">
+                  <SaveBtn status={saveStatus} />
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ── Profile ── */}
+          {activeTab === "profile" && (
+            <div className="space-y-5">
+              {/* Name + email */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Your Profile</h3>
+                <p className="text-xs text-gray-400 mb-5">Update the name and email used to log in.</p>
+                <StatusBanner status={profileStatus} error={profileError} />
+                <form className="space-y-4" onSubmit={handleProfileSave}>
+                  <Field label="Full Name" id="profileName">
+                    <TextInput id="profileName" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Your name" />
+                  </Field>
+                  <Field label="Email Address" id="profileEmail">
+                    <TextInput id="profileEmail" type="email" value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} placeholder="you@darafunmi.com" />
+                  </Field>
+                  <div className="pt-2">
+                    <SaveBtn status={profileStatus} />
+                  </div>
                 </form>
               </div>
-            )}
 
-            {/* Profile */}
-            {activeTab === "profile" && (
-              <div className="space-y-8">
-                {/* Update name / email */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Your Profile</h3>
-                  <p className="text-sm text-gray-500 mb-4">Update the name and email address used to log in.</p>
-                  {profileError && (
-                    <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
-                      {profileError}
-                    </div>
-                  )}
-                  <form className="space-y-4 max-w-md" onSubmit={handleProfileSave}>
-                    <Input id="profileName" label="Full Name" value={profileName} onChange={(e) => setProfileName(e.target.value)} />
-                    <Input id="profileEmail" label="Email Address" type="email" value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} />
-                    <Button type="submit" disabled={profileStatus === "saving"} className={`flex items-center mb-4${saveButtonClass(profileStatus)}`}>
-                      <Save size={16} className="mr-2" /> {saveLabel(profileStatus)}
-                    </Button>
-                  </form>
-                </div>
-
-                <hr className="border-gray-200" />
-
-                {/* Change password */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Change Password</h3>
-                  <p className="text-sm text-gray-500 mb-4">Enter your current password then choose a new one.</p>
-                  {passwordError && (
-                    <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
-                      {passwordError}
-                    </div>
-                  )}
-                  {passwordStatus === "success" && (
-                    <div className="mb-4 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">
-                      Password updated successfully.
-                    </div>
-                  )}
-                  <form className="space-y-4 max-w-md" onSubmit={handlePasswordChange}>
-                    <Input id="currentPassword" label="Current Password" type="password" placeholder="••••••••" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-                    <Input id="newPassword" label="New Password" type="password" placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                    <Input id="confirmPassword" label="Confirm New Password" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                    <Button type="submit" disabled={passwordStatus === "saving"} className={`flex items-center ${saveButtonClass(passwordStatus)}`}>
-                      <Save size={16} className="mr-2" />
-                      {passwordStatus === "saving" ? "Updating..." : passwordStatus === "success" ? "Updated!" : "Update Password"}
-                    </Button>
-                  </form>
-                </div>
+              {/* Password */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Change Password</h3>
+                <p className="text-xs text-gray-400 mb-5">Enter your current password then choose a new one.</p>
+                <StatusBanner status={passwordStatus} error={passwordError} />
+                <form className="space-y-4" onSubmit={handlePasswordChange}>
+                  <Field label="Current Password" id="currentPw">
+                    <TextInput id="currentPw" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" />
+                  </Field>
+                  <Field label="New Password" id="newPw">
+                    <TextInput id="newPw" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" />
+                  </Field>
+                  <Field label="Confirm New Password" id="confirmPw">
+                    <TextInput id="confirmPw" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+                  </Field>
+                  <div className="pt-2">
+                    <SaveBtn status={passwordStatus} label="Update Password" savingLabel="Updating…" successLabel="Updated!" />
+                  </div>
+                </form>
               </div>
-            )}
-            {/* Users */}
-            {activeTab === "users" && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-1">Invite Admin User</h3>
-                <p className="text-sm text-gray-500 mb-6">
-                  Create a new admin account. A temporary password will be emailed to the new user automatically.
-                </p>
+            </div>
+          )}
 
-                {inviteError && (
-                  <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
-                    {inviteError}
-                  </div>
-                )}
-                {inviteSuccess && (
-                  <div className="mb-4 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700">
-                    {inviteSuccess}
-                  </div>
-                )}
+          {/* ── Users ── */}
+          {activeTab === "users" && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Invite Admin User</h3>
+              <p className="text-xs text-gray-400 mb-5">Create a new admin account. A temporary password will be emailed to the new user.</p>
 
-                <form className="space-y-4 max-w-md" onSubmit={handleInvite}>
-                  <Input
-                    id="inviteName"
-                    label="Full Name"
-                    placeholder="John Doe"
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                  />
-                  <Input
-                    id="inviteEmail"
-                    label="Email Address"
-                    type="email"
-                    placeholder="john@darafunmi.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                  />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as "staff" | "admin" | "superadmin")}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                      <option value="superadmin">Superadmin</option>
-                    </select>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Staff can manage content. Admins have full access. Superadmin can manage settings.
-                    </p>
-                  </div>
-                  <Button
+              {inviteError && (
+                <div className="flex items-center gap-2 p-3.5 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600 mb-5">
+                  <AlertCircle size={15} className="shrink-0" />{inviteError}
+                </div>
+              )}
+              {inviteSuccess && (
+                <div className="flex items-center gap-2 p-3.5 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700 mb-5">
+                  <CheckCircle2 size={15} className="shrink-0" />{inviteSuccess}
+                </div>
+              )}
+
+              <form className="space-y-4" onSubmit={handleInvite}>
+                <Field label="Full Name" id="inviteName">
+                  <TextInput id="inviteName" value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="John Doe" />
+                </Field>
+                <Field label="Email Address" id="inviteEmail">
+                  <TextInput id="inviteEmail" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="john@darafunmi.com" />
+                </Field>
+                <Field label="Role" id="inviteRole">
+                  <select
+                    id="inviteRole"
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as "staff" | "admin" | "superadmin")}
+                    className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
+                  >
+                    <option value="staff">Staff — can manage content</option>
+                    <option value="admin">Admin — full access</option>
+                    <option value="superadmin">Superadmin — can manage settings</option>
+                  </select>
+                </Field>
+                <div className="pt-2">
+                  <button
                     type="submit"
                     disabled={inviteStatus === "saving"}
-                    className={`flex items-center mt-2 ${saveButtonClass(inviteStatus)}`}
+                    className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${
+                      inviteStatus === "success" ? "bg-green-600 hover:bg-green-700 text-white"
+                      : inviteStatus === "error"  ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
                   >
-                    <UserPlus size={16} className="mr-2" />
-                    {inviteStatus === "saving" ? "Sending invite..." : inviteStatus === "success" ? "Invited!" : "Send Invite"}
-                  </Button>
-                </form>
-              </div>
-            )}
-          </Card>
-        </>
+                    {inviteStatus === "saving"
+                      ? <><Loader2 size={15} className="animate-spin" />Sending invite…</>
+                      : inviteStatus === "success"
+                      ? <><CheckCircle2 size={15} />Invited!</>
+                      : <><UserPlus size={15} />Send Invite</>
+                    }
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
       )}
     </Layout>
   );
