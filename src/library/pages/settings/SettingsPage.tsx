@@ -110,7 +110,8 @@ const SaveBtn = ({
 /* ── Main page ─────────────────────────────────────────────────── */
 const SettingsPage: React.FC = () => {
   const { user, setUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>("general");
+  const isAdminRole = user?.role === "admin" || user?.role === "superadmin";
+  const [activeTab, setActiveTab] = useState<Tab>(isAdminRole ? "general" : "profile");
   const [settings, setSettings] = useState<Settings>({
     appName: "", timezone: "", language: "",
     companyName: "", companyEmail: "", companyPhone: "", companyAddress: "",
@@ -211,13 +212,17 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const TABS: { key: Tab; label: string }[] = [
-    { key: "general",       label: "General" },
-    { key: "company",       label: "Company" },
-    { key: "notifications", label: "Notifications" },
-    { key: "profile",       label: "Profile" },
-    { key: "users",         label: "Users" },
+  const role = user?.role ?? "staff";
+  const isAdmin = role === "admin" || role === "superadmin";
+
+  const ALL_TABS: { key: Tab; label: string; adminOnly: boolean }[] = [
+    { key: "general",       label: "General",       adminOnly: true  },
+    { key: "company",       label: "Company",       adminOnly: true  },
+    { key: "notifications", label: "Notifications", adminOnly: true  },
+    { key: "profile",       label: "Profile",       adminOnly: false },
+    { key: "users",         label: "Users",         adminOnly: true  },
   ];
+  const TABS = ALL_TABS.filter((t) => !t.adminOnly || isAdmin);
 
   return (
     <Layout pageTitle="Settings" pageSubtitle="Manage your application settings and preferences">
