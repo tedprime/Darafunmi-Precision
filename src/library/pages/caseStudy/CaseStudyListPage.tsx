@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
@@ -32,7 +32,7 @@ const CaseStudyListPage = () => {
   const load = () => {
     setLoading(true);
     setError(null);
-    getCaseStudies({ limit: 50 })
+    getCaseStudies({ limit: 50, adminView: true })
       .then(({ data }) => setStudies(data))
       .catch((err: { message?: string }) =>
         setError(err.message ?? "Failed to load case studies.")
@@ -40,13 +40,14 @@ const CaseStudyListPage = () => {
       .finally(() => setLoading(false));
   };
 
-  // useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []);
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog({
       title: "Delete case study?",
-      description: "Delete this case study?",
+      description: "This case study will be permanently removed. This cannot be undone.",
       confirmLabel: "Delete",
+      variant: "danger",
     }))) return;
     try {
       await deleteCaseStudy(id);

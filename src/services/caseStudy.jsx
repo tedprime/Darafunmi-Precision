@@ -29,9 +29,10 @@ async function apiFormData(endpoint, method, formData) {
   return response.json();
 }
 
-export async function getCaseStudies({ page = 1, limit = 50 } = {}) {
+export async function getCaseStudies({ page = 1, limit = 50, adminView = false } = {}) {
   return wrap("Load case studies", async () => {
     const params = new URLSearchParams({ page, limit });
+    if (adminView) params.set("adminView", "true");
     const res = await apiFetch(`/case-studies?${params.toString()}`);
     const list = Array.isArray(res) ? res : res.data ?? [];
     return { data: list, pagination: res.pagination ?? {} };
