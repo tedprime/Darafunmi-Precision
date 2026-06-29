@@ -349,8 +349,8 @@ const NewsletterListPage: React.FC = () => {
                             {c.status === "sent" ? (c.recipientCount ?? 0) : "—"}
                           </td>
                           <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-1.5">
-                              {c.status === "draft" && (
+                            {c.status === "draft" ? (
+                              <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() => navigate(`/newsletter/edit/${c.id}`)}
                                   title="Edit draft"
@@ -358,8 +358,6 @@ const NewsletterListPage: React.FC = () => {
                                 >
                                   <Edit size={14} />
                                 </button>
-                              )}
-                              {c.status === "draft" && (
                                 <button
                                   onClick={() => handleDeleteCampaign(c)}
                                   disabled={deletingId === c.id}
@@ -368,8 +366,10 @@ const NewsletterListPage: React.FC = () => {
                                 >
                                   {deletingId === c.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                                 </button>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
+                            )}
                           </td>
                         </tr>
                       ))}
