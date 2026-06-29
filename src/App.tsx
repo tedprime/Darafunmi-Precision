@@ -37,6 +37,7 @@ import ServiceListPage from "./library/pages/services/ServicesListPage";
 import AddServicePage from "./library/pages/services/AddServicePage";
 import EditServicePage from "./library/pages/services/EditServicePage";
 import NewsletterListPage from "./library/pages/newsletter/NewsletterListPage";
+import NewsletterComposePage from "./library/pages/newsletter/NewsletterComposePage";
 import TeamListPage from "./library/pages/team/TeamListPage";
 import AddTeamMemberPage from "./library/pages/team/AddTeamMemberPage";
 import EditTeamMemberPage from "./library/pages/team/EditTeamMemberPage";
@@ -91,6 +92,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <NewsletterListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/newsletter/compose"
+            element={
+              <ProtectedRoute>
+                <NewsletterComposePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/newsletter/edit/:id"
+            element={
+              <ProtectedRoute>
+                <NewsletterComposePage />
               </ProtectedRoute>
             }
           />

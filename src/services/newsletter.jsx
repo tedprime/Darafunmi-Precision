@@ -33,3 +33,62 @@ export async function unsubscribeNewsletter(email) {
     })
   );
 }
+
+/* ── Campaigns ─────────────────────────────────────────────────────── */
+
+/**
+ * @param {{ page?: number, limit?: number }} [opts]
+ */
+export async function getCampaigns({ page = 1, limit = 20 } = {}) {
+  return wrap("Load campaigns", () => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    return apiFetch(`/newsletter/campaigns?${params}`);
+  });
+}
+
+export async function getCampaign(id) {
+  return wrap("Load campaign", () => apiFetch(`/newsletter/campaigns/${id}`));
+}
+
+/**
+ * @param {{ subject: string, preheader?: string, content: string }} data
+ */
+export async function createCampaign(data) {
+  return wrap("Create campaign", async () => {
+    const res = await apiFetch("/newsletter/campaigns", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    toastSuccess("Draft saved.");
+    return res;
+  });
+}
+
+/**
+ * @param {number} id
+ * @param {{ subject?: string, preheader?: string, content?: string }} data
+ */
+export async function updateCampaign(id, data) {
+  return wrap("Update campaign", async () => {
+    const res = await apiFetch(`/newsletter/campaigns/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    toastSuccess("Draft saved.");
+    return res;
+  });
+}
+
+export async function deleteCampaign(id) {
+  return wrap("Delete campaign", async () => {
+    const res = await apiFetch(`/newsletter/campaigns/${id}`, { method: "DELETE" });
+    toastSuccess("Campaign deleted.");
+    return res;
+  });
+}
+
+export async function sendCampaign(id) {
+  return wrap("Send campaign", () =>
+    apiFetch(`/newsletter/campaigns/${id}/send`, { method: "POST" })
+  );
+}
