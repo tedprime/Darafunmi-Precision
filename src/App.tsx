@@ -20,6 +20,7 @@ import QuoteListPage from "./library/pages/quotes/QuoteListPage";
 import AddQuotePage from "./library/pages/quotes/AddQuotePage";
 import EditQuotePage from "./library/pages/quotes/EditQuotePage";
 import AddCalibrationPage from "./library/pages/calibrations/AddCalibrationPage";
+import EditCalibrationPage from "./library/pages/calibrations/EditCalibrationPage";
 import CalibrationHistoryPage from "./library/pages/calibrations/CalibrationHistoryPage";
 import CertificationListPage from "./library/pages/certifications/CertificationListPage";
 import GenerateCertificateFormPage from "./library/pages/certifications/GenerateCertificateFormPage";
@@ -228,6 +229,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddCalibrationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calibrations/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditCalibrationPage />
               </ProtectedRoute>
             }
           />

@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
-import { Plus, Search, TriangleAlert, FileCheck, Loader2, ExternalLink } from "lucide-react";
-import { getCalibrations, generateCertificateFromCalibration } from "../../../services/calibration.jsx";
+import { Plus, Search, TriangleAlert, FileCheck, Loader2, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { getCalibrations, deleteCalibration, generateCertificateFromCalibration } from "../../../services/calibration.jsx";
+import { confirmDialog } from "../../components/common/confirmDialog";
 import { useToast } from "../../../services/useToast";
 
 interface Calibration {
@@ -40,7 +41,8 @@ const CalibrationHistoryPage: React.FC = () => {
   const [search,       setSearch]       = useState("");
   const [status,       setStatus]       = useState("");
   const [count,        setCount]        = useState(0);
-  const [generating,   setGenerating]   = useState<number | null>(null); // calibration id being processed
+  const [generating,   setGenerating]   = useState<number | null>(null);
+  const [deleting,     setDeleting]     = useState<number | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -55,6 +57,26 @@ const CalibrationHistoryPage: React.FC = () => {
   }, [search, status]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleDelete = async (cal: Calibration) => {
+    if (!(await confirmDialog({
+      title: "Delete calibration record?",
+      description: `"${cal.equipmentName}" will be permanently removed. This cannot be undone.`,
+      confirmLabel: "Delete",
+      variant: "danger",
+    }))) return;
+    setDeleting(cal.id);
+    try {
+      await deleteCalibration(cal.id);
+      toast.success("Calibration record deleted.");
+      setCalibrations((prev) => prev.filter((c) => c.id !== cal.id));
+      setCount((n) => n - 1);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete calibration.");
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const handleGenerateCert = async (cal: Calibration) => {
     // If already has cert, just navigate to it
@@ -152,7 +174,7 @@ const CalibrationHistoryPage: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50/80 border-b border-gray-100">
                   <tr>
-                    {["Equipment", "Serial No", "Calibrated On", "Next Due", "Technician", "Status", "Certificate"].map((h) => (
+                    {["Equipment", "Serial No", "Calibrated On", "Next Due", "Technician", "Status", "Certificate", "Actions"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -191,6 +213,23 @@ const CalibrationHistoryPage: React.FC = () => {
                               }
                             </button>
                           )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => navigate(`/calibrations/edit/${c.id}`)}
+                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 font-medium transition-colors"
+                            >
+                              <Pencil size={12} /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(c)}
+                              disabled={deleting === c.id}
+                              className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-600 disabled:opacity-50 font-medium transition-colors"
+                            >
+                              {deleting === c.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -241,6 +280,21 @@ const CalibrationHistoryPage: React.FC = () => {
                       }
                     </button>
                   )}
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => navigate(`/calibrations/edit/${c.id}`)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                    >
+                      <Pencil size={12} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c)}
+                      disabled={deleting === c.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 font-medium transition-colors"
+                    >
+                      {deleting === c.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Delete
+                    </button>
+                  </div>
                 </div>
               );
             })}
