@@ -11,6 +11,9 @@ const wrap = async (label, fn) => {
   }
 };
 
+/**
+ * @param {{ page?: number, limit?: number, search?: string, isActive?: boolean }} [opts]
+ */
 export async function getNewsletterSubscribers({ page = 1, limit = 20, search = "", isActive } = {}) {
   return wrap("Load subscribers", () => {
     const params = new URLSearchParams();
