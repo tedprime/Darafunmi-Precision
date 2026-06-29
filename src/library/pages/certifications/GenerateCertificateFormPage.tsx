@@ -292,7 +292,6 @@ const GenerateCertificateFormPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const missing: string[] = [];
-    if (!clientId.trim())         missing.push("Client");
     if (!serviceType)             missing.push("Service Type");
     if (!calDate)                 missing.push("Calibration Date");
     if (!custName.trim())         missing.push("Customer Name");
